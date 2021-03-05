@@ -1,0 +1,25 @@
+Package: scRICA
+Title: single-cell RNA-Seq integration comparative analysis
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Yan",
+           family = "Li",
+           role = c("aut", "cre"),
+           email = "yli22@bsd.uchicago.edu",
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+Description: What the package does (one paragraph).
+Imports:
+    Seurat, 
+    dplyr, 
+    gplots, 
+    ggplot2, 
+    DoubletDecon, 
+    gridExtra
+Suggests:
+    devtools,
+    roxygen2
+License: GPL (>= 3)
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.1
