@@ -4,10 +4,10 @@
 \alias{getClusterMarkers}
 \title{getClusterMarkers() Function}
 \usage{
-getClusterMarkers(seuratObjList, anchorIntegrate, resDirName)
+getClusterMarkers(qcProcessedSeuratObjList, anchorIntegrate, resDirName)
 }
 \arguments{
-\item{seuratObjList}{returned 'seuratObjList' from countReadin() function.}
+\item{qcProcessedSeuratObjList}{returned 'qcProcessObj' from countReadin() function.}
 
 \item{anchorIntegrate}{whehter to implement anchorIntegrate, default = T.}
 

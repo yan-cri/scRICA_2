@@ -5,24 +5,41 @@
 \title{findDoublets() Function}
 \usage{
 findDoublets(
-  cellrangerResList,
+  metadata,
   genomeSpecies,
   doubletDeconRhop,
   doubletDeconPMF,
   doubletDeconNoCore,
-  filenamePrefix
+  resFilename
 )
 }
 \arguments{
-\item{cellrangerResList}{list including full path to cellranger analysis results for different samples.}
+\item{metadata}{txt file with 2 columns, where sample specifiy the sample names, and path specify full path to cellranger analysis results for that sample.}
 
 \item{genomeSpecies}{genome species, supporting human, mouse, and rate so far.}
+
+\item{doubletDeconRhop}{to be added}
+
+\item{doubletDeconPMF}{to be added}
+
+\item{doubletDeconNoCore}{to be added}
+
+\item{resFilename}{to be added}
 }
 \value{
-
+no returned value directly, instead all results are saved in the defined 'resFilename' folder, where includes
+doublets identification analysis results for all samples in the metadata with data structure shown as below:
+\enumerate{
+\item 'metadata$sample' + '_medoids_doublet_cells_name.Rdata': detected doublet cells with mediods, object named as 'centroidsDoubletCells'
+\item 'metadata$sample' + '_centroids_doublet_cells_name.Rdata': detected doublet cells with centroids, object named as 'centroidsDoubletCells'
+\item 'metadata$sample' + '_OL_doublet_cells_name.Rdata': detected overlapped doublet cells with centroids and mediods, object named as 'olDoubletCells'
+\item 'metadata$sample' + '_doubletDeconRes.Rdata': Main_Doublet_Decon() analysis results for Centroids (object named as 'doubletDeconResCentroids') and Medoids (object named as 'doubletDeconResMedoids')
+\item 'metadata$sample' + '_doubletDecon_mediod_centroid_vennComp.pdf': venn-diagram plot of detected doublets with centroids and mediods algorithms
+\item 'metadata$sample' + '_doublets_no_summary.txt': centroids and mediods algorithms detected doublets summary
+}
 }
 \description{
-This function allows you to find and estimate doublets with DoubletDecon for the provide iput 'cellrangerResList'
+This function allows you to identify doublets with DoubletDecon for the provide input in metadata
 }
 \examples{
 findDoublets()

@@ -5,20 +5,21 @@
 \title{countReadin() Function}
 \usage{
 countReadin(
-  cellrangerResList,
+  metadata,
   resDirName,
   genomeSpecies,
   minCells,
   minFeatures,
-  doubletsRmOn,
-  doubletsRmMethods,
-  doubletsResDir,
   mtFiltering,
   mtPerCutoff
 )
 }
 \arguments{
-\item{cellrangerResList}{list item, to specify full path to cellranger analysis results for each sample.}
+\item{metadata}{txt file with 4 columns,
+where sample specifiy the sample names,
+path specify full path to cellranger analysis results for that sample,
+doubletsRmMethods specify doublet removal methods,
+doubletsResDir specify the full path of saved doublet removal results.}
 
 \item{resDirName}{optional, define folder/directory name where integration analysis results will be saved}
 
@@ -27,12 +28,6 @@ countReadin(
 \item{minCells}{optional, default = 3, used in creating seurat object to indicate the minumn detected number of cells to be included.}
 
 \item{minFeatures}{optional, default = 200, used in creating seurat object to indicate the minimum detected number of gene features (genes) of included cells.}
-
-\item{doubletsRmOn}{required, default = T}
-
-\item{doubletsRmMethods}{To be added}
-
-\item{doubletsResDir}{To be added}
 
 \item{mtFiltering}{default = F, logical, whehter to filter mitochondrial content}
 
@@ -48,6 +43,6 @@ countReadin() Function
 This function is used to readin cellranger results into seurat object by defining w/wo doublets removal
 }
 \examples{
-findDoublets()
+countReadin()
 }
 \keyword{countReadin}

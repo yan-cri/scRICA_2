@@ -4,18 +4,32 @@
 #' countReadin() Function
 #' @details
 #' This function is used to readin cellranger results into seurat object by defining w/wo doublets removal
-#' @param cellrangerResList list item, to specify full path to cellranger analysis results for each sample.
+#' @param metadata txt file with 4 columns,
+#'                 where sample specifiy the sample names,
+#'                 path specify full path to cellranger analysis results for that sample,
+#'                 doubletsRmMethods specify doublet removal methods,
+#'                 doubletsResDir specify the full path of saved doublet removal results.
 #' @param resDirName optional, define folder/directory name where integration analysis results will be saved
 #' @param genomeSpecies To be added
 #' @param minCells optional, default = 3, used in creating seurat object to indicate the minumn detected number of cells to be included.
 #' @param minFeatures optional, default = 200, used in creating seurat object to indicate the minimum detected number of gene features (genes) of included cells.
-#' @param doubletsRmOn required, default = T
-#' @param doubletsRmMethods To be added
-#' @param doubletsResDir To be added
 #' @param mtFiltering default = F, logical, whehter to filter mitochondrial content
 #' @param mtPerCutoff optional, if mtFiltering = T, default = 20, indicating the percentage cut-off of mitochondrial content
+#'
+#' @importFrom Seurat Read10X
+#' @importFrom Seurat CreateSeuratObject
+#' @importFrom Seurat AddMetaData
+#' @importFrom Seurat PercentageFeatureSet
+#' @importFrom Seurat FeatureScatter
+#' @importFrom Seurat LabelPoints
+#' @importFrom Seurat VlnPlot
+#' @importFrom Seurat NormalizeData
+#' @importFrom Seurat FindVariableFeatures
+#' @importFrom Seurat VariableFeatures
+#' @importFrom Seurat VariableFeaturePlot
+#'
 #' @keywords countReadin
-#' @examples findDoublets()
+#' @examples countReadin()
 #' @export
 #' @return
 #' results of analysis
@@ -36,17 +50,17 @@
 ## 5. 'featureViolin_', names(seuratObjList)[x].pdf: featureViolin plot for each items in 'cellrangerResList'
 ##    if 'mtFiltering' is on: 'featureViolin_', names(seuratObjList)[x] +'_afterFiltering.pdf'
 ## 6. 'topVariableFeature_', names(seuratObjList)[x], '.pdf': topVariableFeature plot for each items in 'cellrangerResList'
-countReadin <- function(cellrangerResList, resDirName, genomeSpecies, minCells, minFeatures, doubletsRmOn, doubletsRmMethods, doubletsResDir, mtFiltering, mtPerCutoff) {
+countReadin <- function(metadata, resDirName, genomeSpecies, minCells, minFeatures, mtFiltering, mtPerCutoff) {
+  if (!all(c("sample", "path","doubletsRmMethod","doubletsResDir" ) %in% colnames(metadata))) stop('Please provide metadata table with 4 columns: sample, path, doubletsRmMethod, and doubletsResDir')
+  ## ---
+  cellrangerResList              <- meata2list(metadata = metadata)
+  doubletsRmMethods              <- as.character(metadata$doubletsRmMethod)
+  doubletsResDirs                <- as.character(metadata$doubletsResDir)
+  ## ---
   if (missing(resDirName)) resDirName <- as.character('countReadin_results')
   if (!is.list(cellrangerResList)) stop("Please provide list item of 'cellrangerResList', which is required.")
   if (missing(minCells)) minCells <- as.numeric(3)
   if (missing(minFeatures)) minFeatures <- as.numeric(2000)
-  if (as.logical(doubletsRmOn)) {
-    if (length(doubletsRmMethods) != length(cellrangerResList)) stop("please provide the same length of 'doubletsRmMethods' items as items in 'cellrangerResList'.")
-  } else {
-    doubletsRmMethods <- rep('none', length(cellrangerResList))
-    doubletsResDir    <- getwd()
-  }
   if (missing(mtFiltering)) mtFiltering <- as.logical(F)
   if (missing(mtPerCutoff)) mtPerCutoff <- as.numeric(20)
   ## 0. create 'resDir' based on provided 'resDirName' under current workDir
@@ -78,19 +92,20 @@ countReadin <- function(cellrangerResList, resDirName, genomeSpecies, minCells, 
     ## ---
     doubletsMethod         <- doubletsRmMethods[x]
     if (doubletsMethod != 'none') {
+      if (is.na(doubletsResDirs[x])) stop('doubletsMethod is on, please provide corresponding full path to the saved doublets removal results')
       print(sprintf('%s doublet removal methods were implemented.', doubletsMethod))
       if (doubletsMethod == 'centroids') {
-        doubletFname       <- paste(doubletsResDir[x], '/', names(cellrangerResList), '_centroids_doublet_cells_name.Rdata', sep = '')
+        doubletFname       <- paste(doubletsResDirs[x], '/', names(cellrangerResList), '_centroids_doublet_cells_name.Rdata', sep = '')
         load(doubletFname[x])
         print(sprintf('%s doublets were estimated from %s sample', length(centroidsDoubletCells), names(cellrangerResList)[x] ))
         doubletCellsUpdate <- gsub(pattern = '[.]', replacement = '-', centroidsDoubletCells)
       } else if (doubletsMethod == 'medoids') {
-        doubletFname       <- paste(doubletsResDir[x], '/', names(cellrangerResList), '_medoids_doublet_cells_name.Rdata', sep = '')
+        doubletFname       <- paste(doubletsResDirs[x], '/', names(cellrangerResList), '_medoids_doublet_cells_name.Rdata', sep = '')
         load(doubletFname[x])
         print(sprintf('%s doublets were estimated from %s sample', length(medoidsDoubletCells), names(cellrangerResList)[x] ))
         doubletCellsUpdate <- gsub(pattern = '[.]', replacement = '-', medoidsDoubletCells)
       } else if (doubletsMethod == 'OL') {
-        doubletFname       <- paste(doubletsResDir[x], '/', names(cellrangerResList), '_OL_doublet_cells_name.Rdata', sep = '')
+        doubletFname       <- paste(doubletsResDirs[x], '/', names(cellrangerResList), '_OL_doublet_cells_name.Rdata', sep = '')
         load(doubletFname[x])
         print(sprintf('%s doublets were estimated from %s sample', length(olDoubletCells), names(cellrangerResList)[x] ))
         doubletCellsUpdate <- gsub(pattern = '[.]', replacement = '-', olDoubletCells)

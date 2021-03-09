@@ -9,11 +9,14 @@ Authors@R:
            comment = c(ORCID = "YOUR-ORCID-ID"))
 Description: What the package does (one paragraph).
 Imports:
-    Seurat, 
-    dplyr, 
-    gplots, 
-    ggplot2, 
-    DoubletDecon, 
+    Seurat (>= 4.0.0),
+    SeuratObject (>= 4.0.0),
+    utils, 
+    plyr,
+    dplyr,
+    gplots,
+    ggplot2,
+    DoubletDecon,
     gridExtra
 Suggests:
     devtools,

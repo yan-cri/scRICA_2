@@ -3,14 +3,28 @@
 ##--------------------------------------------------------------------------------------##
 #' findDoublets() Function
 #'
-#' This function allows you to find and estimate doublets with DoubletDecon for the provide iput 'cellrangerResList'
-#' @param cellrangerResList list including full path to cellranger analysis results for different samples.
+#' This function allows you to identify doublets with DoubletDecon for the provide input in metadata
+#' @param metadata txt file with 2 columns, where sample specifiy the sample names, and path specify full path to cellranger analysis results for that sample.
 #' @param genomeSpecies genome species, supporting human, mouse, and rate so far.
+#' @param doubletDeconRhop to be added
+#' @param doubletDeconPMF to be added
+#' @param doubletDeconNoCore to be added
+#' @param resFilename to be added
+#'
+#' @importFrom SeuratObject UpdateSeuratObject
+#' @importFrom dplyr %>%
+#' @importFrom DoubletDecon Main_Doublet_Decon
 #' @keywords findDoublets
 #' @export
 #' @examples findDoublets()
-#' @return
-#'
+#' @return no returned value directly, instead all results are saved in the defined 'resFilename' folder, where includes
+#' doublets identification analysis results for all samples in the metadata with data structure shown as below:
+#' 1. 'metadata$sample' + '_medoids_doublet_cells_name.Rdata': detected doublet cells with mediods, object named as 'centroidsDoubletCells'
+#' 2. 'metadata$sample' + '_centroids_doublet_cells_name.Rdata': detected doublet cells with centroids, object named as 'centroidsDoubletCells'
+#' 3. 'metadata$sample' + '_OL_doublet_cells_name.Rdata': detected overlapped doublet cells with centroids and mediods, object named as 'olDoubletCells'
+#' 4. 'metadata$sample' + '_doubletDeconRes.Rdata': Main_Doublet_Decon() analysis results for Centroids (object named as 'doubletDeconResCentroids') and Medoids (object named as 'doubletDeconResMedoids')
+#' 5. 'metadata$sample' + '_doubletDecon_mediod_centroid_vennComp.pdf': venn-diagram plot of detected doublets with centroids and mediods algorithms
+#' 6. 'metadata$sample' + '_doublets_no_summary.txt': centroids and mediods algorithms detected doublets summary
 ##----------------------------------------------------------------------------------------
 # library(Seurat)
 # library(DoubletDecon)
@@ -18,28 +32,20 @@
 # library(gplots)
 # Sys.setenv('R_MAX_VSIZE'=32000000000)
 ##----------------------------------------------------------------------------------------
-## findDoublets(): find/estimate doublets with DoubletDecon for the provide iput 'cellrangerResList'
-## this functions execution will return doubletDecon analysis resDir names, and output analysis results in that dir as below:
-## 1. 'cellrangerResList' names + '_medoids_doublet_cells_name.Rdata': detected doublet cells with mediods, object named as 'centroidsDoubletCells'
-## 2. 'cellrangerResList' names + '_centroids_doublet_cells_name.Rdata': detected doublet cells with centroids, object named as 'centroidsDoubletCells'
-## 3. 'cellrangerResList' names + '_OL_doublet_cells_name.Rdata': detected overlapped doublet cells with centroids and mediods, object named as 'olDoubletCells'
-## 4. 'cellrangerResList' names + '_doubletDeconRes.Rdata': Main_Doublet_Decon() analysis results for Centroids (object named as 'doubletDeconResCentroids') and Medoids (object named as 'doubletDeconResMedoids')
-## 5. 'cellrangerResList' names + '_doubletDecon_mediod_centroid_vennComp.pdf': venn-diagram plot of detected doublets with centroids and mediods algorithms
-## 6. 'cellrangerResList' names + '_doublets_no_summary.txt': centroids and mediods algorithms detected doublets summary
-##----------------------------------------------------------------------------------------
-findDoublets <- function(cellrangerResList, genomeSpecies, doubletDeconRhop, doubletDeconPMF, doubletDeconNoCore, filenamePrefix) {
+findDoublets <- function(metadata, genomeSpecies, doubletDeconRhop, doubletDeconPMF, doubletDeconNoCore, resFilename) {
+  ## ---
+  cellrangerResList              <- meata2list(metadata = metadata)
   ## ---
   ## prepare results saving directory, if not exist, creat one
-  resDir  <- sprintf('%s/%s_checking_results', getwd(), filenamePrefix)
+  resDir  <- sprintf('%s/%s', getwd(), resFilename)
   if(!dir.exists(resDir)) dir.create(resDir)
-  print(sprintf('DoubletDecon results will be saved in %s', resDir))
+  print(sprintf('Doublets identification results will be saved in %s', resDir))
   ## intermediate 'resProcessDir' under/inside provided 'resDir'
-  resProcessDir                  <- paste(resDir, 'doubletDecon_processed_results', sep = '/')
+  resProcessDir                  <- paste(resDir, 'doubletDecon_preProcessed_results', sep = '/')
   if(!dir.exists(resProcessDir)) dir.create(resProcessDir)
   ## ---
   ## loop over provided 'cellrangerResList' to identify/estimate doublets in each list item of provided 'cellrangerResList'
   for ( x in 1:length(cellrangerResList)) {
-    # for ( x in c(3, 6)) {
     ## ---
     ## 1. creat seurat object as DoubletDecon suggested
     print('---')
@@ -74,17 +80,17 @@ findDoublets <- function(cellrangerResList, genomeSpecies, doubletDeconRhop, dou
     print(sprintf('Complete finding clustering'))
     print('END step1 for orignal seurat processing')
     ## 2. Improved_Seurat_Pre_Process() from DoubletDecon on established seurat object, and output results to 'resDir' for next step usage
-    print(sprintf("Step2: improve seurat pre process"))
+    print(sprintf("Start Step2: 'improve seurat pre process'."))
     filename                     <- names(cellrangerResList)[x]
-    newFiles                     <- DoubletDecon::Improved_Seurat_Pre_Process(seuratObject = seuratObject, num_genes=50, write_files=FALSE)
+    newFiles                     <- Improved_Seurat_Pre_Process(seuratObject = seuratObject, num_genes=50, write_files=FALSE)
     write.table(newFiles$newExpressionFile, paste0(resProcessDir, '/', filename, "_expression"), sep="\t")
     write.table(newFiles$newFullExpressionFile, paste0(resProcessDir, '/', filename, "_fullExpression"), sep="\t")
     write.table(newFiles$newGroupsFile, paste0(resProcessDir, '/', filename , "_groups"), sep="\t", col.names = F)
-    print(sprintf("END Step2: improve seurat pre process"))
+    print(sprintf("END Step2: 'improve seurat pre process'."))
     ## 3.1 DoubletDecon doublets detection with Main_Doublet_Decon() based on centroid method
     print('=========')
-    print(sprintf("Step3: DoubletDecon (centroids & medoids) use rhop = %s based on %s genome with PMF = %s", doubletDeconRhop, as.character(doubletDeconSpecies(genomeSpecies)), doubletDeconPMF ))
-    print('Step 3.1: DoubletDecon centroid detection')
+    print(sprintf("Start Step3: DoubletDecon (centroids & medoids) use rhop = %s based on %s genome with PMF = %s", doubletDeconRhop, as.character(doubletDeconSpecies(genomeSpecies)), doubletDeconPMF ))
+    print('Start Step 3.1: DoubletDecon centroid detection')
     doubletDeconResCentroids     <- DoubletDecon::Main_Doublet_Decon(rawDataFile = paste0(resProcessDir, '/', filename, "_expression"),
                                                                      groupsFile = paste0(resProcessDir, '/', filename , "_groups"),
                                                                      filename = filename,
@@ -101,7 +107,7 @@ findDoublets <- function(cellrangerResList, genomeSpecies, doubletDeconRhop, dou
     print( table(doubletDeconResCentroids$DRS_doublet_table$isADoublet) )
     print('END Step 3.1: DoubletDecon centroid detection')
     ## 3.2 DoubletDecon doublets detection with Main_Doublet_Decon() based on medoids method
-    print('Step 3.2: DoubletDecon medoids detection')
+    print('Start Step 3.2: DoubletDecon medoids detection')
     print('=========')
     doubletDeconResMedoids       <- DoubletDecon::Main_Doublet_Decon(rawDataFile = paste0(resProcessDir, '/', filename, "_expression"),
                                                                      groupsFile = paste0(resProcessDir, '/', filename , "_groups"),
@@ -119,12 +125,10 @@ findDoublets <- function(cellrangerResList, genomeSpecies, doubletDeconRhop, dou
     print( table(doubletDeconResMedoids$DRS_doublet_table$isADoublet) )
     print('=========')
     print('END Step 3.2: DoubletDecon medoids detection')
-    print(sprintf("Complete DoubletDecon doublets dection for sample '%s'.", as.character(cellrangerResList[[x]])))
-    print('---')
-    print(sprintf("DoubletDecon results ('doubletDeconResCentroids' & 'doubletDeconResMedoids') saved in '%s'.", as.character(file.path(resDir, sprintf('%s_doubletDeconRes.Rdata', filename)))))
+    print(sprintf("Doublets identification results ('doubletDeconResCentroids' & 'doubletDeconResMedoids') saved in '%s'.", as.character(file.path(resDir, sprintf('%s_doubletDeconRes.Rdata', filename)))))
     save(doubletDeconResCentroids, doubletDeconResMedoids, file = file.path(resDir, sprintf('%s_doubletDeconRes.Rdata', filename)) )
     ## -
-    print('Step 4: DoubletDecon results summary')
+    print('Start Step 4: Doublets identification results summary')
     ## 4. summarize doubletDecon detection results.
     ## 4.1 Medoids detection summary
     doubletNoSummaryMedoids             <- as.data.frame(table(doubletDeconResMedoids$DRS_doublet_table$isADoublet))
@@ -140,11 +144,9 @@ findDoublets <- function(cellrangerResList, genomeSpecies, doubletDeconRhop, dou
     print( table(doubletDeconResCentroids$DRS_doublet_table$isADoublet) )
     if (sum(doubletNoSummaryMedoids[,2]) != sum(doubletNoSummaryCentroids[,2])) stop('Error: total number of cells different from medoids and centroids detection methods.')
     medoidsDoubletCells = rownames(doubletDeconResMedoids$DRS_doublet_table %>% dplyr:: filter(isADoublet == TRUE))
-    # save(medoidsDoubletCells, file = paste(resDir, '/', filename, '_medoids_doublet_cells_name.Rdata', sep = ''))
     save(medoidsDoubletCells, file = file.path(resDir, sprintf("%s_medoids_doublet_cells_name.Rdata", filename) ) )
     ## -
     centroidsDoubletCells = rownames(doubletDeconResCentroids$DRS_doublet_table %>% dplyr:: filter(isADoublet == TRUE))
-    # save(centroidsDoubletCells, file = paste(resDir, '/', filename, '_centroids_doublet_cells_name.Rdata', sep = ''))
     save(centroidsDoubletCells, file = file.path(resDir, sprintf("%s_centroids_doublet_cells_name.Rdata", filename) ) )
     ## -
     print('Start overlapping medoids and centroids doublet detection results')
@@ -157,20 +159,20 @@ findDoublets <- function(cellrangerResList, genomeSpecies, doubletDeconRhop, dou
     dev.off()
     ## -
     olDoubletCells <- attr(olRes, 'intersection')[[grep('medoids:centroid', names(attr(olRes, 'intersection')) )]]
-    print('Complete overlapping medoids and centroids doublet detection results')
+    print('Finish overlapping medoids and centroids doublet detection results')
     ## -
     doubletNoSummaryComb                <- data.frame(Doublet = c('TRUE', 'FALSE'),
                                                       No = c(length(olDoubletCells), sum(doubletNoSummaryCentroids[,2])-length(olDoubletCells) ))
     doubletNoSummaryComb$Per            <- round(x = doubletNoSummaryComb[,2] / sum(doubletNoSummaryComb[,2]) * 100, digits = 1)
     colnames(doubletNoSummaryComb)      <- c('Doublet', 'Combined detection No', 'Combined detection Per')
     doubletNoSummary                    <- dplyr::left_join(doubletNoSummaryMedoids, doubletNoSummaryCentroids, by = 'Doublet') %>% dplyr::left_join(doubletNoSummaryComb, by = 'Doublet')
-    # write.table(x = doubletNoSummary, file = paste(resDir, '/', filename, '_doublets_no_summary.txt', sep = ''), quote = F, sep = '\t', row.names = F, col.names = T)
     write.table(x = doubletNoSummary, file = file.path(resDir, sprintf("%s_doublets_no_summary.txt", filename)), quote = F, sep = '\t', row.names = F, col.names = T)
     ## -
-    # save(olDoubletCells, file = paste(resDir, '/', filename, '_OL_doublet_cells_name.Rdata', sep = ''))
     save(olDoubletCells, file = file.path(resDir, sprintf("%s_OL_doublet_cells_name.Rdata", filename) ) )
-    print('END Step 4: DoubletDecon results summary')
+    print('END Step 4: Doublets identification results summary')
     print('=========')
+    print(sprintf("COMPLETE doublets identification for sample '%s'.", as.character(cellrangerResList[[x]])))
+    print('---END---END---END---')
     ## ---
   }
   return(resDir)

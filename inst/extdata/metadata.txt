@@ -1,0 +1,4 @@
+sample	path
+3396A	/Library/Frameworks/R.framework/Versions/4.0/Resources/library/scRICA/extdata/3396A/
+3396F	/Library/Frameworks/R.framework/Versions/4.0/Resources/library/scRICA/extdata/3396F/
+3396I	/Library/Frameworks/R.framework/Versions/4.0/Resources/library/scRICA/extdata/3396I/

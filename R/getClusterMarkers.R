@@ -10,9 +10,10 @@
 #' @details
 #' This function is used to integrate seurat objects with identified anchor via seurat method,
 #' followed with conducing cluster analysis, and identifying cluster markers
-#' @param seuratObjList returned 'seuratObjList' from countReadin() function.
+#' @param qcProcessedSeuratObjList returned 'qcProcessObj' from countReadin() function.
 #' @param anchorIntegrate whehter to implement anchorIntegrate, default = T.
 #' @param resDirName optional, define folder/directory name where integration analysis results will be saved
+#'
 #' @keywords getClusterMarkers, seuratIntegrate
 #' @examples getClusterMarkers()
 #' @export
@@ -21,9 +22,9 @@
 #' finalized integrated seurat object in 'integratedObj',
 #' and identified positively expressed cluster markers in 'posMarkers'
 ##----------------------------------------------------------------------------------------
-getClusterMarkers <- function(seuratObjList, anchorIntegrate, resDirName) {
+getClusterMarkers <- function(qcProcessedSeuratObjList, anchorIntegrate, resDirName) {
   if (missing(anchorIntegrate)) anchorIntegrate <- as.logical(T)
-  if (length(seuratObjList) == 1 & anchorIntegrate == as.logical(T)) stop("ERROR: only 1 item in input 'seuratObjList', no integration can be performed ")
+  if (length(qcProcessedSeuratObjList) == 1 & anchorIntegrate == as.logical(T)) stop("ERROR: only 1 item in input 'qcProcessedSeuratObjList', no integration can be performed ")
   if (missing(resDirName)) resDirName <- 'integration_analysis_results'
   ## 0. create 'resDir' based on provided 'resDirName' under current workDir
   resDir               <- paste(getwd(), resDirName, sep = '/')
@@ -52,8 +53,8 @@ getClusterMarkers <- function(seuratObjList, anchorIntegrate, resDirName) {
     ## 3. Integration
     ## 3.1 Finding anchors, by default runing CCA
     print(sprintf('Step 3: Process data integration at %s', Sys.time()))
-    print(sprintf('%s samples will be integrated', length(seuratObjList)))
-    anchors                     <- FindIntegrationAnchors(object.list = seuratObjList)
+    print(sprintf('%s samples will be integrated', length(qcProcessedSeuratObjList)))
+    anchors                     <- FindIntegrationAnchors(object.list = qcProcessedSeuratObjList)
     ## 3.2 Integrating data based on found anchors above
     seuratObjIntegrated         <- IntegrateData(anchorset = anchors)
     print(sprintf('End Step 3: data integration at %s', Sys.time()))
@@ -66,9 +67,9 @@ getClusterMarkers <- function(seuratObjList, anchorIntegrate, resDirName) {
     DefaultAssay(seuratObjIntegrated) <- "integrated"
   } else {
     ## ---
-    print("No integration is needed, only 1 object in the input 'seuratObjList'.")
+    print("No integration is needed, only 1 object in the input 'qcProcessedSeuratObjList'.")
     print(sprintf('Start: Step 4 tSNE and UMP clustering at %s.', Sys.time()))
-    seuratObjIntegrated         <-  seuratObjList[[1]]
+    seuratObjIntegrated         <-  qcProcessedSeuratObjList[[1]]
   }
   ## ---
   seuratObjFinal                <- ScaleData(object = seuratObjIntegrated)
@@ -101,7 +102,7 @@ getClusterMarkers <- function(seuratObjList, anchorIntegrate, resDirName) {
   #              arrangeGrob(umapCluster + theme1wLegend, umapExpCond + theme1wLegend, nrow = 1, ncol = 2),
   #              nrow = 2, ncol = 1)
   dev.off()
-  pdf(file = file.path(resDir, 'umap_plot_samplSep.pdf'), width = 4.5*length(seuratObjList), height = 6)
+  pdf(file = file.path(resDir, 'umap_plot_samplSep.pdf'), width = 4.5*length(qcProcessedSeuratObjList), height = 6)
   grid.arrange(umapSplit + theme1noLegend)
   dev.off()
 
@@ -116,7 +117,7 @@ getClusterMarkers <- function(seuratObjList, anchorIntegrate, resDirName) {
   #              arrangeGrob(tsneCluster + theme1wLegend, tsneExpCond + theme1wLegend, nrow = 1, ncol = 2),
   #              nrow = 2, ncol = 1)
   dev.off()
-  pdf(file = file.path(resDir, 'tsne_plot_samplSep.pdf'), width = 4.5*length(seuratObjList), height = 6)
+  pdf(file = file.path(resDir, 'tsne_plot_samplSep.pdf'), width = 4.5*length(qcProcessedSeuratObjList), height = 6)
   print(tsneSplit + theme1noLegend)
   dev.off()
   print(sprintf('END: Step 4 tSNE and UMP clustering at %s.', Sys.time()))
