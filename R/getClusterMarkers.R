@@ -16,7 +16,7 @@
 #'
 #' @importFrom ggplot2 theme
 #' @importFrom gridExtra grid.arrange
-#' @importFrom SeuratObject DefaultAssay
+#' @importFrom Seurat DefaultAssay
 #' @importFrom Seurat FindIntegrationAnchors
 #' @importFrom Seurat IntegrateData
 #' @importFrom Seurat ScaleData
@@ -29,6 +29,7 @@
 #' @importFrom Seurat DimPlot
 #' @importFrom Seurat FindAllMarkers
 #' @importFrom Seurat DoHeatmap
+#' @importFrom Seurat NoLegend
 #' @importFrom dplyr %>%
 #' @importFrom dplyr top_n
 #' @importFrom dplyr group_by
@@ -89,7 +90,7 @@ getClusterMarkers <- function(qcProcessedSeuratObjList, anchorIntegrate, resDirN
     ## 4. dimentional reduction with PCA, KNN/clusters, tsne/umap
     ## 4.1 scale top 2000 identified variable features with default liner model in 'model.use' option
     ##     The results of this are stored in seuratObjFinal[["RNA"]]@scale.data for sep & seuratObjFinal[["integrated"]]@scale.data for integrated data
-    DefaultAssay(seuratObjIntegrated) <- "integrated"
+    Seurat::DefaultAssay(seuratObjIntegrated) <- "integrated"
   } else {
     ## ---
     print("No integration is needed, only 1 object in the input 'qcProcessedSeuratObjList'.")
@@ -164,33 +165,33 @@ getClusterMarkers <- function(qcProcessedSeuratObjList, anchorIntegrate, resDirN
   print('---===---')
   ## -
   print('Start: Step 6 making cluster marker genes heatmap plot')
-  top10                 <- allPosMarkers %>% group_by(cluster) %>% top_n(n = 10, wt = avg_logFC) %>% as.data.frame()
+  top10                 <- allPosMarkers %>% group_by(cluster) %>% top_n(n = 10, wt = avg_log2FC) %>% as.data.frame()
   write.table(x = top10, file = file.path(resDir, 'allCluster_pos_markers_top10.txt'), quote = F, sep = '\t', row.names = T, col.names = NA)
   cluterTop10heatmap    <- DoHeatmap(seuratObjFinal, features = top10$gene) + NoLegend()
   pdf(file = file.path(resDir, 'cluster_heatmap_top10PosMarkers.pdf'), width = 25, height = 20)
   print(cluterTop10heatmap)
   dev.off()
-  # ## -
-  # top20                 <- allPosMarkers %>% group_by(cluster) %>% top_n(n = 20, wt = avg_logFC) %>% as.data.frame()
-  # write.table(x = top20, file = file.path(resDir, 'allCluster_pos_markers_top20.txt'), quote = F, sep = '\t', row.names = T, col.names = NA)
-  # cluterTop20heatmap    <- DoHeatmap(seuratObjFinal, features = top20$gene) + NoLegend()
-  # pdf(file = file.path(resDir, 'cluster_heatmap_top20PosMarkers.pdf'), width = 25, height = 20)
-  # print(cluterTop20heatmap)
-  # dev.off()
   ## -
-  top50                 <- allPosMarkers %>% group_by(cluster) %>% top_n(n = 50, wt = avg_logFC) %>% as.data.frame()
+  top20                 <- allPosMarkers %>% group_by(cluster) %>% top_n(n = 20, wt = avg_log2FC) %>% as.data.frame()
+  write.table(x = top20, file = file.path(resDir, 'allCluster_pos_markers_top20.txt'), quote = F, sep = '\t', row.names = T, col.names = NA)
+  cluterTop20heatmap    <- DoHeatmap(seuratObjFinal, features = top20$gene) + NoLegend()
+  pdf(file = file.path(resDir, 'cluster_heatmap_top20PosMarkers.pdf'), width = 25, height = 20)
+  print(cluterTop20heatmap)
+  dev.off()
+  ## -
+  top50                 <- allPosMarkers %>% group_by(cluster) %>% top_n(n = 50, wt = avg_log2FC) %>% as.data.frame()
   write.table(x = top50, file = file.path(resDir, 'allCluster_pos_markers_top50.txt'), quote = F, sep = '\t', row.names = T, col.names = NA)
   cluterTop50heatmap    <- DoHeatmap(seuratObjFinal, features = top50$gene) + NoLegend()
   pdf(file = file.path(resDir, 'cluster_heatmap_top50PosMarkers.pdf'), width = 25, height = 20)
   print(cluterTop50heatmap)
   dev.off()
-  # ## -
-  # top100                <- allPosMarkers %>% group_by(cluster) %>% top_n(n = 100, wt = avg_logFC) %>% as.data.frame()
-  # write.table(x = top100, file = file.path(resDir, 'allCluster_pos_markers_top100.txt'), quote = F, sep = '\t', row.names = T, col.names = NA)
-  # cluterTop100heatmap   <- DoHeatmap(seuratObjFinal, features = top100$gene) + NoLegend()
-  # pdf(file = file.path(resDir, 'cluster_heatmap_top100PosMarkers.pdf'), width = 30, height = 25)
-  # print(cluterTop100heatmap)
-  # dev.off()
+  ## -
+  top100                <- allPosMarkers %>% group_by(cluster) %>% top_n(n = 100, wt = avg_log2FC) %>% as.data.frame()
+  write.table(x = top100, file = file.path(resDir, 'allCluster_pos_markers_top100.txt'), quote = F, sep = '\t', row.names = T, col.names = NA)
+  cluterTop100heatmap   <- DoHeatmap(seuratObjFinal, features = top100$gene) + NoLegend()
+  pdf(file = file.path(resDir, 'cluster_heatmap_top100PosMarkers.pdf'), width = 30, height = 25)
+  print(cluterTop100heatmap)
+  dev.off()
   print('END: Step 6 making cluster marker genes heatmap plot')
   print('END===END===END')
   return(list('resDir' = resDir, 'integratedObj' = seuratObjFinal, 'posMarkers' = allPosMarkers))

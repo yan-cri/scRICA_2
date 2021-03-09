@@ -21,22 +21,22 @@
 #' None
 ## ---------------------------------------------------------------------------------------
 
-clusterSummary <- function(resDir, rdsFname, clusteringPlotRemake, clusterCellsNoSummary) {
-  # resDir                <- paste(workDir, resDirName, sep = '/')
-  # seuratObjFinal        <- readRDS(file = file.path('/Users/yanli/Desktop/757_scRNA-seq/', sprintf("%s.rds", resDirName)))
-  resDirName            <- strsplit(x = resDir, split = '/')[[1]][length(strsplit(x = resDir, split = '/')[[1]])]
-  if (missing(rdsFname)) rdsFname <- paste(resDir, sprintf("%s.rds", resDirName), sep = '/' )
-  if (!file.exists(rdsFname)) stop("Please provide 'rdsFname' with full path.")
-  seuratObjFinal        <- readRDS(file = as.character(rdsFname))
-  if (missing(clusteringPlotRemake)) clusteringPlotRemake  <- as.logical(T)
-  if (missing(clusterCellsNoSummary)) clusterCellsNoSummary <- as.logical(T)
+getClusterSummaryReplot <- function(resDir, newAnnotation) {
+  resDirName              <- strsplit(x = resDir, split = '/')[[1]][length(strsplit(x = resDir, split = '/')[[1]])]
+  rdsFname                <- paste(resDir, sprintf("%s.rds", resDirName), sep = '/' )
+  if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
+  seuratObjFinal          <- readRDS(file = as.character(rdsFname))
+  ## ------
+  getClusterSummaryReplot <- as.logical(T)
+  clusterCellsNoSummary   <- as.logical(T)
+  ## ------
   ##  below scripts copied over to 'afterClustering_downstream_dirSetup.R'
   source(paste(orgDir, 'R/afterClustering_downstream_dirSetup.R', sep = '/'))
   ## ---------------------------------------------------------------------------------------
   ## update 'seuratObjFinal@meta.data$expCond' and create corresponding updated 'resDir' for new tSNE/UMAP plots to save
-  resDir              <- paste(resDir, sprintf('expCond_%s', expCondSep), sep = '/')
+  resDir                  <- paste(resDir, sprintf('expCond_%s', expCondSep), sep = '/')
   if (expCondSep == 'org') {
-    seuratObjFinal    <- seuratObjFinal
+    seuratObjFinal        <- seuratObjFinal
   } else {
     seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
   }
@@ -44,14 +44,14 @@ clusterSummary <- function(resDir, rdsFname, clusteringPlotRemake, clusterCellsN
   ## ---------------------------------------------------------------------------------------
   ## 1. re-make tSNE plot
   if (clusteringPlotRemake) {
-    newResDir          <- paste(resDir, sprintf('new_tSNE_plot_%s', expCondSep), sep = '/')
+    newResDir             <- paste(resDir, sprintf('new_tSNE_plot_%s', expCondSep), sep = '/')
     if(!dir.exists(newResDir)) dir.create(newResDir)
     ## tsne plot
-    tsneCluster        <- DimPlot(seuratObjFinal, reduction = "tsne", label = T, label.size = 6, repel = T) + labs(title = 'tSNE clustering', x = "tSNE 1", y = 'tSNE 2')
+    tsneCluster           <- DimPlot(seuratObjFinal, reduction = "tsne", label = T, label.size = 6, repel = T) + labs(title = 'tSNE clustering', x = "tSNE 1", y = 'tSNE 2')
     tsneClusterNolabel <- DimPlot(seuratObjFinal, reduction = "tsne", label = F, repel = T) + labs(title = 'tSNE clustering', x = "tSNE 1", y = 'tSNE 2')
     if (length(levels(as.factor(seuratObjFinal$expCond)))>1) {
       ## relevel the 'expCond' for split.by= ordering
-      tsneSplit          <- DimPlot(seuratObjFinal, reduction = "tsne", label = T, label.size = 4, repel = T, split.by = 'expCond') + labs(title = 'tSNE clustering', x = "tSNE 1", y = 'tSNE 2')
+      tsneSplit           <- DimPlot(seuratObjFinal, reduction = "tsne", label = T, label.size = 4, repel = T, split.by = 'expCond') + labs(title = 'tSNE clustering', x = "tSNE 1", y = 'tSNE 2')
     }
     ## -
     if (newAnnotation) {
