@@ -14,13 +14,39 @@
 #' @param anchorIntegrate whehter to implement anchorIntegrate, default = T.
 #' @param resDirName optional, define folder/directory name where integration analysis results will be saved
 #'
+#' @importFrom ggplot2 theme
+#' @importFrom gridExtra grid.arrange
+#' @importFrom SeuratObject DefaultAssay
+#' @importFrom Seurat FindIntegrationAnchors
+#' @importFrom Seurat IntegrateData
+#' @importFrom Seurat ScaleData
+#' @importFrom Seurat RunPCA
+#' @importFrom Seurat ElbowPlot
+#' @importFrom Seurat RunUMAP
+#' @importFrom Seurat FindNeighbors
+#' @importFrom Seurat FindClusters
+#' @importFrom Seurat RunTSNE
+#' @importFrom Seurat DimPlot
+#' @importFrom Seurat FindAllMarkers
+#' @importFrom Seurat DoHeatmap
+#' @importFrom dplyr %>%
+#' @importFrom dplyr top_n
+#' @importFrom dplyr group_by
+#' @importFrom grDevices dev.off
+#' @importFrom grDevices pdf
+#' @importFrom stats filter
+#' @importFrom utils head
+#' @importFrom utils tail
+#' @importFrom utils write.table
+#'
 #' @keywords getClusterMarkers, seuratIntegrate
 #' @examples getClusterMarkers()
 #' @export
 #' @return
-#' list item including 3 elements: full path of results directory in 'resDir',
-#' finalized integrated seurat object in 'integratedObj',
-#' and identified positively expressed cluster markers in 'posMarkers'
+#' a list item including 3 elements:
+#' 1. 'integratedObj': finalized integrated seurat object;
+#' 2. 'posMarkers': identified positively expressed cluster markers;
+#' 3. 'resDir': full path of results directory, where includes TO BE ADDED.
 ##----------------------------------------------------------------------------------------
 getClusterMarkers <- function(qcProcessedSeuratObjList, anchorIntegrate, resDirName) {
   if (missing(anchorIntegrate)) anchorIntegrate <- as.logical(T)
@@ -31,7 +57,6 @@ getClusterMarkers <- function(qcProcessedSeuratObjList, anchorIntegrate, resDirN
   if (!dir.exists(resDir)) dir.create(resDir)
   ## intermediate RDS result dir
   rdsDir               <- paste(resDir, 'RDS_Dir', sep = '/')
-  # rdsDir               <- '/Users/yanli/Desktop/757_scRNA-seq'
   if (!dir.exists(rdsDir)) dir.create(rdsDir)
   ## setup cutome theme for plotting
   theme1noLegend       <- theme(plot.title = element_text(size = 16, hjust = 0.5),
@@ -145,13 +170,13 @@ getClusterMarkers <- function(qcProcessedSeuratObjList, anchorIntegrate, resDirN
   pdf(file = file.path(resDir, 'cluster_heatmap_top10PosMarkers.pdf'), width = 25, height = 20)
   print(cluterTop10heatmap)
   dev.off()
-  ## -
-  top20                 <- allPosMarkers %>% group_by(cluster) %>% top_n(n = 20, wt = avg_logFC) %>% as.data.frame()
-  write.table(x = top20, file = file.path(resDir, 'allCluster_pos_markers_top20.txt'), quote = F, sep = '\t', row.names = T, col.names = NA)
-  cluterTop20heatmap    <- DoHeatmap(seuratObjFinal, features = top20$gene) + NoLegend()
-  pdf(file = file.path(resDir, 'cluster_heatmap_top20PosMarkers.pdf'), width = 25, height = 20)
-  print(cluterTop20heatmap)
-  dev.off()
+  # ## -
+  # top20                 <- allPosMarkers %>% group_by(cluster) %>% top_n(n = 20, wt = avg_logFC) %>% as.data.frame()
+  # write.table(x = top20, file = file.path(resDir, 'allCluster_pos_markers_top20.txt'), quote = F, sep = '\t', row.names = T, col.names = NA)
+  # cluterTop20heatmap    <- DoHeatmap(seuratObjFinal, features = top20$gene) + NoLegend()
+  # pdf(file = file.path(resDir, 'cluster_heatmap_top20PosMarkers.pdf'), width = 25, height = 20)
+  # print(cluterTop20heatmap)
+  # dev.off()
   ## -
   top50                 <- allPosMarkers %>% group_by(cluster) %>% top_n(n = 50, wt = avg_logFC) %>% as.data.frame()
   write.table(x = top50, file = file.path(resDir, 'allCluster_pos_markers_top50.txt'), quote = F, sep = '\t', row.names = T, col.names = NA)
@@ -159,13 +184,13 @@ getClusterMarkers <- function(qcProcessedSeuratObjList, anchorIntegrate, resDirN
   pdf(file = file.path(resDir, 'cluster_heatmap_top50PosMarkers.pdf'), width = 25, height = 20)
   print(cluterTop50heatmap)
   dev.off()
-  ## -
-  top100                <- allPosMarkers %>% group_by(cluster) %>% top_n(n = 100, wt = avg_logFC) %>% as.data.frame()
-  write.table(x = top100, file = file.path(resDir, 'allCluster_pos_markers_top100.txt'), quote = F, sep = '\t', row.names = T, col.names = NA)
-  cluterTop100heatmap   <- DoHeatmap(seuratObjFinal, features = top100$gene) + NoLegend()
-  pdf(file = file.path(resDir, 'cluster_heatmap_top100PosMarkers.pdf'), width = 30, height = 25)
-  print(cluterTop100heatmap)
-  dev.off()
+  # ## -
+  # top100                <- allPosMarkers %>% group_by(cluster) %>% top_n(n = 100, wt = avg_logFC) %>% as.data.frame()
+  # write.table(x = top100, file = file.path(resDir, 'allCluster_pos_markers_top100.txt'), quote = F, sep = '\t', row.names = T, col.names = NA)
+  # cluterTop100heatmap   <- DoHeatmap(seuratObjFinal, features = top100$gene) + NoLegend()
+  # pdf(file = file.path(resDir, 'cluster_heatmap_top100PosMarkers.pdf'), width = 30, height = 25)
+  # print(cluterTop100heatmap)
+  # dev.off()
   print('END: Step 6 making cluster marker genes heatmap plot')
   print('END===END===END')
   return(list('resDir' = resDir, 'integratedObj' = seuratObjFinal, 'posMarkers' = allPosMarkers))

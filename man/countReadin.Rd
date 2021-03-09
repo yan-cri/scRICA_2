@@ -34,7 +34,13 @@ doubletsResDir specify the full path of saved doublet removal results.}
 \item{mtPerCutoff}{optional, if mtFiltering = T, default = 20, indicating the percentage cut-off of mitochondrial content}
 }
 \value{
-results of analysis
+a list item including 3 elements:
+\enumerate{
+\item 'countReadInOjb': a list of orignial counts seurat objects
+\item 'qcProcessObj': a list of QC passed seurat objects, such as mitochondrial content removal
+\item 'resDir': full path of directory/folder name where the entire QC analysis results are saved, it includes
+TO BE ADDED.
+}
 }
 \description{
 countReadin() Function

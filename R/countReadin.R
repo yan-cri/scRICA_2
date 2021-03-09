@@ -27,12 +27,23 @@
 #' @importFrom Seurat FindVariableFeatures
 #' @importFrom Seurat VariableFeatures
 #' @importFrom Seurat VariableFeaturePlot
+#' @importFrom grDevices dev.off
+#' @importFrom grDevices pdf
+#' @importFrom stats filter
+#' @importFrom utils head
+#' @importFrom utils tail
+#' @importFrom utils write.table
 #'
 #' @keywords countReadin
 #' @examples countReadin()
 #' @export
+#'
 #' @return
-#' results of analysis
+#' a list item including 3 elements:
+#' 1. 'countReadInOjb': a list of orignial counts seurat objects
+#' 2. 'qcProcessObj': a list of QC passed seurat objects, such as mitochondrial content removal
+#' 3. 'resDir': full path of directory/folder name where the entire QC analysis results are saved, it includes
+#' TO BE ADDED.
 ##----------------------------------------------------------------------------------------##
 # library(Seurat)
 # library(ggplot2)
@@ -66,9 +77,9 @@ countReadin <- function(metadata, resDirName, genomeSpecies, minCells, minFeatur
   ## 0. create 'resDir' based on provided 'resDirName' under current workDir
   resDir               <- paste(getwd(), resDirName, sep = '/')
   if (!dir.exists(resDir)) dir.create(resDir)
-  ## intermediate RDS result dir
-  rdsDir               <- paste(resDir, 'RDS_Dir', sep = '/')
-  if (!dir.exists(rdsDir)) dir.create(rdsDir)
+  # ## intermediate RDS result dir
+  # rdsDir               <- paste(resDir, 'RDS_Dir', sep = '/')
+  # if (!dir.exists(rdsDir)) dir.create(rdsDir)
   ## -------
   ## 1. setup the original seurat object into a list for each item in the 'cellrangerResList'
   # Sys.time()

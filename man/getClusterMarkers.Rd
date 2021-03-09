@@ -14,9 +14,12 @@ getClusterMarkers(qcProcessedSeuratObjList, anchorIntegrate, resDirName)
 \item{resDirName}{optional, define folder/directory name where integration analysis results will be saved}
 }
 \value{
-list item including 3 elements: full path of results directory in 'resDir',
-finalized integrated seurat object in 'integratedObj',
-and identified positively expressed cluster markers in 'posMarkers'
+a list item including 3 elements:
+\enumerate{
+\item 'integratedObj': finalized integrated seurat object;
+\item 'posMarkers': identified positively expressed cluster markers;
+\item 'resDir': full path of results directory, where includes TO BE ADDED.
+}
 }
 \description{
 getClusterMarkers() Function
