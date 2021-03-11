@@ -5,46 +5,98 @@
 # library(ggplot2)
 # library(dplyr)
 ##--------------------------------------------------------------------------------------##
-#' clusterSummary() Function
+#' getClusterSummaryReplot() Function
 #' @details
 #' This function is used to annotate/assign and merge identified clusters,
 #'
-#' @param resDir to be added
-#' @param rdsFname to be added
-#' @param clusteringPlotRemake To be added
-#' @param clusterCellsNoSummary To be added
+#' @param resDir full path of integration results analysis returned in getClusterMarkers()
+#' @param newAnnotation logical value, whether to provide manual annotation
+#' @param newAnnotationRscriptName if newAnnotation == T, this script is used to redefine the old clusters
+#' @param expCondSepName character string, user defined name either to be 'org' or any character string
+#' @param clusterCellsNoSummary if above 'expCondSepName' is defined not as 'org', provide the name to be changed
+#'
+#' @importFrom ggplot2 theme
+#' @importFrom ggplot2 guides
+#' @importFrom ggplot2 guide_legend
+#' @importFrom ggplot2 labs
+#' @importFrom Seurat NoLegend
+#' @importFrom Seurat DefaultAssay
+#' @importFrom Seurat Idents
+#' @importFrom Seurat RenameIdents
+#' @importFrom Seurat DimPlot
+#' @importFrom reshape2 dcast
+#' @importFrom grDevices dev.off
+#' @importFrom grDevices pdf
+#' @importFrom utils write.table
+#' @importFrom ggplot2 element_text
+#'
 #'
 #' @keywords clusterSummary
 #' @examples clusterSummary()
 #' @export
 #' @return
-#' None
 ## ---------------------------------------------------------------------------------------
-
-getClusterSummaryReplot <- function(resDir, newAnnotation) {
+getClusterSummaryReplot <- function(resDir, newAnnotation, newAnnotationRscriptName, expCondSepName, expCondName2change) {
   resDirName              <- strsplit(x = resDir, split = '/')[[1]][length(strsplit(x = resDir, split = '/')[[1]])]
-  rdsFname                <- paste(resDir, sprintf("%s.rds", resDirName), sep = '/' )
+  # print(sprintf('TEST TETST  resDirName is %s', resDirName))
+  rdsFname                <- paste(resDir, sprintf("RDS_Dir/%s.rds", resDirName), sep = '/' )
+  # print(sprintf('85858 rdsFname is %s', rdsFname))
   if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
-  seuratObjFinal          <- readRDS(file = as.character(rdsFname))
+  seuratObjFinal          <<- readRDS(file = as.character(rdsFname))
+  print('Done for RDS readin')
   ## ------
-  getClusterSummaryReplot <- as.logical(T)
+  clusteringPlotRemake    <- as.logical(T)
   clusterCellsNoSummary   <- as.logical(T)
   ## ------
-  ##  below scripts copied over to 'afterClustering_downstream_dirSetup.R'
-  source(paste(orgDir, 'R/afterClustering_downstream_dirSetup.R', sep = '/'))
-  ## ---------------------------------------------------------------------------------------
+  ## update results directory if new annotation is used
+  if (newAnnotation) {
+    resDir <- paste(resDir, 'results_wNewAnnotation', sep = '/')
+  } else {
+    resDir <- paste(resDir, 'results_wOrgClusterAnnotation', sep = '/')
+  }
+  if (!dir.exists(resDir)) dir.create(resDir)
+  print(sprintf('cluster summary and new plots will be saved at %s', resDir))
+  ## -------------------------------------------------------------------------------------
+  if (newAnnotation) {
+    ## Assign cell type identity to clusters
+    ## redefine the level of Idents on the y-axis can be adjusted here by inputting order for cell annotation
+    source(as.character(newAnnotationRscriptName))
+  }
+  ## -------------------------------------------------------------------------------------
+  # setup cutome theme for plotting
+  theme1noLegend          <- theme(plot.title = element_text(size = 16, hjust = 0.5),
+                                   # legend.key.size = unit(0.7, "cm"),
+                                   axis.title = element_text(size = 20),
+                                   axis.text = element_text(size = 25),
+                                   legend.position="bottom",
+                                   legend.text = element_text(size = 14) ) + NoLegend()
+  theme1wLegend           <- theme(plot.title = element_text(size = 16, hjust = 0.5),
+                                   # legend.key.size = unit(0.7, "cm"),
+                                   axis.title = element_text(size = 15),
+                                   axis.text = element_text(size = 20),
+                                   legend.position="bottom",
+                                   legend.text = element_text(size = 15) )
+  theme1wLegendRight      <- theme(plot.title = element_text(size = 16, hjust = 0.5),
+                                   # legend.key.size = unit(0.7, "cm"),
+                                   axis.title = element_text(size = 20),
+                                   axis.text = element_text(size = 25),
+                                   legend.position="right",
+                                   legend.text = element_text(size = 14) )
+  ## -------------------------------------------------------------------------------------
   ## update 'seuratObjFinal@meta.data$expCond' and create corresponding updated 'resDir' for new tSNE/UMAP plots to save
-  resDir                  <- paste(resDir, sprintf('expCond_%s', expCondSep), sep = '/')
-  if (expCondSep == 'org') {
+  resDir                  <- paste(resDir, sprintf('expCond_%s', expCondSepName), sep = '/')
+  ## ---------------------------------------------------------------------------------------
+  if (expCondSepName == 'org') {
     seuratObjFinal        <- seuratObjFinal
   } else {
     seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
   }
   if (!dir.exists(resDir)) dir.create(resDir)
-  ## ---------------------------------------------------------------------------------------
+  ## -------------------------------------------------------------------------------------
   ## 1. re-make tSNE plot
   if (clusteringPlotRemake) {
-    newResDir             <- paste(resDir, sprintf('new_tSNE_plot_%s', expCondSep), sep = '/')
+    print(sprintf('Start step1: remake tSNE/UMAP plots'))
+    newResDir             <- paste(resDir, sprintf('new_tSNE_plot_%s', expCondSepName), sep = '/')
     if(!dir.exists(newResDir)) dir.create(newResDir)
     ## tsne plot
     tsneCluster           <- DimPlot(seuratObjFinal, reduction = "tsne", label = T, label.size = 6, repel = T) + labs(title = 'tSNE clustering', x = "tSNE 1", y = 'tSNE 2')
@@ -57,11 +109,11 @@ getClusterSummaryReplot <- function(resDir, newAnnotation) {
     if (newAnnotation) {
       plotName1 = paste(newResDir, 'tsne_plot_noLabel_integrate_newAnnotation.pdf', sep = '/')
       plotName2 = paste(newResDir, 'tsne_plot_wLabel_integrate_newAnnotation.pdf', sep = '/')
-      plotName3 = paste(newResDir, sprintf('tsne_plot_wLabel_newAnnotation_expCondSep%s.pdf', expCondSep), sep = '/')
+      plotName3 = paste(newResDir, sprintf('tsne_plot_wLabel_newAnnotation_expCondSep%s.pdf', expCondSepName), sep = '/')
     } else {
       plotName1 = paste(newResDir, 'tsne_plot_noLabel_integrate_orgAnnotation.pdf', sep = '/')
       plotName2 = paste(newResDir, 'tsne_plot_wLabel_integrate_orgAnnotation.pdf', sep = '/')
-      plotName3 = paste(newResDir, sprintf('tsne_plot_wLabel_orgAnnotation_expCondSep%s.pdf', expCondSep), sep = '/')
+      plotName3 = paste(newResDir, sprintf('tsne_plot_wLabel_orgAnnotation_expCondSep%s.pdf', expCondSepName), sep = '/')
     }
     ## -
     pdf(file = plotName1, width = 5.7, height = 6.7)
@@ -88,7 +140,7 @@ getClusterSummaryReplot <- function(resDir, newAnnotation) {
     }
     ## ---
     ## 2. re-make UMAP plot
-    newResDir          <- paste(resDir, sprintf('new_UMAP_plot_%s', expCondSep), sep = '/')
+    newResDir          <- paste(resDir, sprintf('new_UMAP_plot_%s', expCondSepName), sep = '/')
     if(!dir.exists(newResDir)) dir.create(newResDir)
     ## tsne plot
     umapCluster        <- DimPlot(seuratObjFinal, reduction = "umap", label = T, label.size = 6, repel = T) + labs(title = 'UMAP clustering', x = "UMAP 1", y = 'UMAP 2')
@@ -101,11 +153,11 @@ getClusterSummaryReplot <- function(resDir, newAnnotation) {
     if (newAnnotation) {
       plotName1 = paste(newResDir, 'UMAP_plot_noLabel_integrate_newAnnotation.pdf', sep = '/')
       plotName2 = paste(newResDir, 'UMAP_plot_wLabel_integrate_newAnnotation.pdf', sep = '/')
-      plotName3 = paste(newResDir, sprintf('UMAP_plot_wLabel_newAnnotation_expCondSep%s.pdf', expCondSep), sep = '/')
+      plotName3 = paste(newResDir, sprintf('UMAP_plot_wLabel_newAnnotation_expCondSep%s.pdf', expCondSepName), sep = '/')
     } else {
       plotName1 = paste(newResDir, 'UMAP_plot_noLabel_integrate_orgAnnotation.pdf', sep = '/')
       plotName2 = paste(newResDir, 'UMAP_plot_wLabel_integrate_orgAnnotation.pdf', sep = '/')
-      plotName3 = paste(newResDir, sprintf('UMAP_plot_wLabel_orgAnnotation_expCondSep%s.pdf', expCondSep), sep = '/')
+      plotName3 = paste(newResDir, sprintf('UMAP_plot_wLabel_orgAnnotation_expCondSep%s.pdf', expCondSepName), sep = '/')
     }
     ## -
     pdf(file = plotName1, width = 5.7, height = 8)
@@ -130,14 +182,15 @@ getClusterSummaryReplot <- function(resDir, newAnnotation) {
       print(tsneSplit + theme1wLegend + guides(colour = guide_legend(nrow=4, byrow=TRUE, override.aes = list(size=6))) )
       dev.off()
     }
+    print(sprintf('END step1: remake tSNE/UMAP plots'))
     ## -
   }
-  ## ---------------------------------------------------------------------------------------
-  ## 2. summarize cell no in each idetified clusters, if clleNo summary will change automately based on above whether to update on 'expCondSep'
+  ## -------------------------------------------------------------------------------------
+  ## 2. summarize cell no in each idetified clusters, if clleNo summary will change automately based on above whether to update on 'expCondSepName'
   if (clusterCellsNoSummary) {
-    DefaultAssay(seuratObjFinal)   <- "RNA"
+    Seurat::DefaultAssay(seuratObjFinal)   <- "RNA"
     ## ---
-    print(sprintf('Start step1: summarizing on identified cell no. in each cluster'))
+    print(sprintf('Start step2: summarizing on identified cell no. in each cluster'))
     ## 1. output cell no. for each identified cluster, and exp conditions within each cluster
     clusterCellNo                  <- as.data.frame(table(Idents(seuratObjFinal)))
     seuratObjFinal$clusterExpCond  <- paste(Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_')
@@ -145,8 +198,8 @@ getClusterSummaryReplot <- function(resDir, newAnnotation) {
     clusterCellExpNo$cluster       <- sapply(strsplit(as.character(clusterCellExpNo$Var1), split = '_'), '[[', 1)
     # clusterCellExpNo$exp           <- sapply(strsplit(as.character(clusterCellExpNo$Var1), split = '-'), '[[', 2)
     clusterCellExpNo$exp           <- sapply(strsplit(as.character(clusterCellExpNo$Var1), split = '_'), tail, 1)
-    library(reshape2)
-    library(xlsx)
+    # library(reshape2)
+    # library(xlsx)
     clusterCellExpNoWide           <- dcast(data = clusterCellExpNo, cluster ~ exp, value.var = 'Freq')
     clusterCellExpNoWide[is.na(clusterCellExpNoWide)] <- 0
     clusterCellExpNoWidePer        <- clusterCellExpNoWide
@@ -160,12 +213,12 @@ getClusterSummaryReplot <- function(resDir, newAnnotation) {
     colnames(clusterCellNoComb)    <- gsub(pattern = '.x', replacement = '', x = colnames(clusterCellNoComb))
     colnames(clusterCellNoComb)    <- gsub(pattern = '.y', replacement = '_Per', x = colnames(clusterCellNoComb))
     if (newAnnotation) {
-      cellnoFname                  <- paste(resDir, sprintf('cellNo_summary_newAnnotation_expCond_%s.txt', expCondSep), sep = '/')
+      cellnoFname                  <- paste(resDir, sprintf('cellNo_summary_newAnnotation_expCond_%s.txt', expCondSepName), sep = '/')
     } else {
-      cellnoFname                  <- paste(resDir, sprintf('cellNo_summary_orgClusterAnnotation_expCond_%s.txt', expCondSep), sep = '/')
+      cellnoFname                  <- paste(resDir, sprintf('cellNo_summary_orgClusterAnnotation_expCond_%s.txt', expCondSepName), sep = '/')
     }
     write.table(x = clusterCellNoComb, file = cellnoFname, quote = F, row.names = F, col.names = T, sep = '\t')
-    print(sprintf('END step1: summarizing on identified cell no. in each cluster'))
+    print(sprintf('END step2: summarizing on identified cell no. in each cluster'))
     ## -
   }
 }
