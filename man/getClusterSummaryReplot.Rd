@@ -21,7 +21,7 @@ getClusterSummaryReplot(
 
 \item{expCondSepName}{character string, user defined name either to be 'org' or any character string}
 
-\item{clusterCellsNoSummary}{if above 'expCondSepName' is defined not as 'org', provide the name to be changed}
+\item{expCondName2change}{if above 'expCondSepName' is defined not as 'org', provide the name to be changed}
 }
 \value{
 

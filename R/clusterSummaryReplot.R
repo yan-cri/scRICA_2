@@ -1,10 +1,3 @@
-## This script is used to 1) annotate/assign and merge identified clusters,
-## 2) subset certain types of cells to conduct subclustering
-## ---------------------------------------------------------------------------------------
-# library(Seurat)
-# library(ggplot2)
-# library(dplyr)
-##--------------------------------------------------------------------------------------##
 #' getClusterSummaryReplot() Function
 #' @details
 #' This function is used to annotate/assign and merge identified clusters,
@@ -13,7 +6,7 @@
 #' @param newAnnotation logical value, whether to provide manual annotation
 #' @param newAnnotationRscriptName if newAnnotation == T, this script is used to redefine the old clusters
 #' @param expCondSepName character string, user defined name either to be 'org' or any character string
-#' @param clusterCellsNoSummary if above 'expCondSepName' is defined not as 'org', provide the name to be changed
+#' @param expCondName2change if above 'expCondSepName' is defined not as 'org', provide the name to be changed
 #'
 #' @importFrom ggplot2 theme
 #' @importFrom ggplot2 guides
@@ -24,7 +17,6 @@
 #' @importFrom Seurat Idents
 #' @importFrom Seurat RenameIdents
 #' @importFrom Seurat DimPlot
-#' @importFrom reshape2 dcast
 #' @importFrom grDevices dev.off
 #' @importFrom grDevices pdf
 #' @importFrom utils write.table
@@ -153,11 +145,11 @@ getClusterSummaryReplot <- function(resDir, newAnnotation, newAnnotationRscriptN
     if (newAnnotation) {
       plotName1 = paste(newResDir, 'UMAP_plot_noLabel_integrate_newAnnotation.pdf', sep = '/')
       plotName2 = paste(newResDir, 'UMAP_plot_wLabel_integrate_newAnnotation.pdf', sep = '/')
-      plotName3 = paste(newResDir, sprintf('UMAP_plot_wLabel_newAnnotation_expCondSep%s.pdf', expCondSepName), sep = '/')
+      plotName3 = paste(newResDir, sprintf('UMAP_plot_wLabel_newAnnotation_expCondSep_%s.pdf', expCondSepName), sep = '/')
     } else {
       plotName1 = paste(newResDir, 'UMAP_plot_noLabel_integrate_orgAnnotation.pdf', sep = '/')
       plotName2 = paste(newResDir, 'UMAP_plot_wLabel_integrate_orgAnnotation.pdf', sep = '/')
-      plotName3 = paste(newResDir, sprintf('UMAP_plot_wLabel_orgAnnotation_expCondSep%s.pdf', expCondSepName), sep = '/')
+      plotName3 = paste(newResDir, sprintf('UMAP_plot_wLabel_orgAnnotation_expCondSep_%s.pdf', expCondSepName), sep = '/')
     }
     ## -
     pdf(file = plotName1, width = 5.7, height = 8)
@@ -200,7 +192,7 @@ getClusterSummaryReplot <- function(resDir, newAnnotation, newAnnotationRscriptN
     clusterCellExpNo$exp           <- sapply(strsplit(as.character(clusterCellExpNo$Var1), split = '_'), tail, 1)
     # library(reshape2)
     # library(xlsx)
-    clusterCellExpNoWide           <- dcast(data = clusterCellExpNo, cluster ~ exp, value.var = 'Freq')
+    clusterCellExpNoWide           <- reshape2::dcast(data = clusterCellExpNo, cluster ~ exp, value.var = 'Freq')
     clusterCellExpNoWide[is.na(clusterCellExpNoWide)] <- 0
     clusterCellExpNoWidePer        <- clusterCellExpNoWide
     clusterCellExpNoWideColSum     <- colSums(clusterCellExpNoWidePer %>% dplyr::select(-cluster))
