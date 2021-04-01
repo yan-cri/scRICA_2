@@ -13,6 +13,7 @@
 #'
 #' @importFrom SeuratObject UpdateSeuratObject
 #' @importFrom dplyr %>%
+#' @importFrom dplyr filter
 #' @importFrom DoubletDecon Main_Doublet_Decon
 #' @keywords findDoublets
 #' @export
@@ -150,8 +151,8 @@ findDoublets <- function(metadata, genomeSpecies, doubletDeconRhop, doubletDecon
     save(centroidsDoubletCells, file = file.path(resDir, sprintf("%s_centroids_doublet_cells_name.Rdata", filename) ) )
     ## -
     print('Start overlapping medoids and centroids doublet detection results')
-    olRes <- gplots::venn(list('medoids'  = rownames(doubletDeconResMedoids$DRS_doublet_table %>% filter(isADoublet == TRUE)),
-                               'centroid' = rownames(doubletDeconResCentroids$DRS_doublet_table %>% filter(isADoublet == TRUE)) ))
+    olRes <- gplots::venn(list('medoids'  = rownames(doubletDeconResMedoids$DRS_doublet_table %>% dplyr::filter(isADoublet == TRUE)),
+                               'centroid' = rownames(doubletDeconResCentroids$DRS_doublet_table %>% dplyr::filter(isADoublet == TRUE)) ))
     plot(olRes)
     ## -
     pdf(file = file.path(resDir, sprintf("%s_doubletDecon_mediod_centroid_vennComp.pdf", filename) ), width = 3, height = 4 )

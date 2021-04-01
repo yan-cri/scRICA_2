@@ -216,7 +216,7 @@ countReadin <- function(metadata, resDirName, genomeSpecies, minCells, minFeatur
       vlnFeaturePlot <- VlnPlot(seuratObj, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
       print(vlnFeaturePlot)
       dev.off()
-      print(sprintf('After filtering out high percentage contained mitochondrial genes, low and high gene feature expressed cells, cell number reduced from %s to %s.', dim(seuratObjBeforeFilter@meta.data)[1], dim(seuratObj@meta.data)[1] ))
+      print(sprintf('Processing sample %s (%s), After filtering out high percentage contained mitochondrial genes, low and high gene feature expressed cells, cell number reduced from %s to %s.', x, names(seuratObjList)[x], dim(seuratObjBeforeFilter@meta.data)[1], dim(seuratObj@meta.data)[1] ))
       noFilteredCells          <- data.frame(`filtering` = c('before', 'after'), `No cells` = c(dim(seuratObjBeforeFilter@meta.data)[1], dim(seuratObj@meta.data)[1]) )
       if (x == 1) {
         noFilteredCellsSampComb<- noFilteredCells
