@@ -12,7 +12,8 @@ getGoiFeatureplot(
   expCondName2change,
   goiFname,
   featurePlotMinExpCutoff,
-  featurePlotReductionMethod
+  featurePlotReductionMethod,
+  featurePlotFnamePrefix
 )
 }
 \arguments{
@@ -31,6 +32,8 @@ getGoiFeatureplot(
 \item{featurePlotMinExpCutoff}{featurePlot miniumn expression threshold}
 
 \item{featurePlotReductionMethod}{featurePlot reduction methods: options are 'tsne' or 'umap'}
+
+\item{featurePlotFnamePrefix}{featurePlot file name prefix}
 }
 \value{
 the dotplots of provided GOI(gene of interest) saved in '' inside the provided 'resDir'

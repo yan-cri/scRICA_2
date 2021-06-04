@@ -11,7 +11,9 @@ getGoiDotplot(
   expCondSepName,
   expCondName2change,
   goiFname,
+  cellclusterNameSort,
   dotPlotFnamePrefix,
+  dotPlotSampReorderLevels,
   dotPlotMinExpCutoff,
   dotPlotWidth,
   dotPlotHeight
@@ -30,7 +32,11 @@ getGoiDotplot(
 
 \item{goiFname}{full path of a file name, where a list of marker/features genes provided}
 
+\item{cellclusterNameSort}{whehter to sort by cell cluster names on y-axis}
+
 \item{dotPlotFnamePrefix}{dotPlot file name prefix}
+
+\item{dotPlotSampReorderLevels}{orders presented on y-axis from bottom to top}
 
 \item{dotPlotMinExpCutoff}{dotPlot miniumn expression threshold}
 

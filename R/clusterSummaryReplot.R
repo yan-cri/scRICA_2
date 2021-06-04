@@ -21,7 +21,8 @@
 #' @importFrom grDevices pdf
 #' @importFrom utils write.table
 #' @importFrom ggplot2 element_text
-#'
+#' @importFrom reshape2 melt
+#' @importFrom ggplot2 ggplot
 #'
 #' @keywords clusterSummary
 #' @examples clusterSummary()
@@ -29,9 +30,7 @@
 #' @return
 ## ---------------------------------------------------------------------------------------
 getClusterSummaryReplot <- function(resDir, newAnnotation, newAnnotationRscriptName, expCondSepName, expCondName2change) {
-  resDirName              <- strsplit(x = resDir, split = '/')[[1]][length(strsplit(x = resDir, split = '/')[[1]])]
-  # print(sprintf('TEST TETST  resDirName is %s', resDirName))
-  rdsFname                <- paste(resDir, sprintf("RDS_Dir/%s.rds", resDirName), sep = '/' )
+  rdsFname                <- paste(resDir, "RDS_Dir/analysis_results_integration_results.rds", sep = '/' )
   # print(sprintf('85858 rdsFname is %s', rdsFname))
   if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
   seuratObjFinal          <<- readRDS(file = as.character(rdsFname))
@@ -92,7 +91,7 @@ getClusterSummaryReplot <- function(resDir, newAnnotation, newAnnotationRscriptN
     if(!dir.exists(newResDir)) dir.create(newResDir)
     ## tsne plot
     tsneCluster           <- DimPlot(seuratObjFinal, reduction = "tsne", label = T, label.size = 6, repel = T) + labs(title = 'tSNE clustering', x = "tSNE 1", y = 'tSNE 2')
-    tsneClusterNolabel <- DimPlot(seuratObjFinal, reduction = "tsne", label = F, repel = T) + labs(title = 'tSNE clustering', x = "tSNE 1", y = 'tSNE 2')
+    tsneClusterNolabel    <- DimPlot(seuratObjFinal, reduction = "tsne", label = F, repel = T) + labs(title = 'tSNE clustering', x = "tSNE 1", y = 'tSNE 2')
     if (length(levels(as.factor(seuratObjFinal$expCond)))>1) {
       ## relevel the 'expCond' for split.by= ordering
       tsneSplit           <- DimPlot(seuratObjFinal, reduction = "tsne", label = T, label.size = 4, repel = T, split.by = 'expCond') + labs(title = 'tSNE clustering', x = "tSNE 1", y = 'tSNE 2')
@@ -182,7 +181,7 @@ getClusterSummaryReplot <- function(resDir, newAnnotation, newAnnotationRscriptN
   if (clusterCellsNoSummary) {
     Seurat::DefaultAssay(seuratObjFinal)   <- "RNA"
     ## ---
-    print(sprintf('Start step2: summarizing on identified cell no. in each cluster'))
+    print(sprintf('Start step2.1: summarizing on identified cell no. in each cluster'))
     ## 1. output cell no. for each identified cluster, and exp conditions within each cluster
     clusterCellNo                  <- as.data.frame(table(Idents(seuratObjFinal)))
     seuratObjFinal$clusterExpCond  <- paste(Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_')
@@ -210,7 +209,30 @@ getClusterSummaryReplot <- function(resDir, newAnnotation, newAnnotationRscriptN
       cellnoFname                  <- paste(resDir, sprintf('cellNo_summary_orgClusterAnnotation_expCond_%s.txt', expCondSepName), sep = '/')
     }
     write.table(x = clusterCellNoComb, file = cellnoFname, quote = F, row.names = F, col.names = T, sep = '\t')
-    print(sprintf('END step2: summarizing on identified cell no. in each cluster'))
+    print(sprintf('END step2.1: summarizing on identified cell no. in each cluster'))
+    ## -
+    print(sprintf('Start step2.2: plotting identified cell no. percentage in each cluster'))
+    # print(head(clusterCellExpNoWidePer))
+    # print(dim(clusterCellExpNoWidePer))
+    perData2plotLong               <- reshape2::melt(clusterCellExpNoWidePer, id.vars = c('cluster'))
+    if (newAnnotation) {
+      perData2plotLong$cluster     <- factor(perData2plotLong$cluster, levels = clusterLevelOrder )
+    }
+    plotSize <- c( round(dim(clusterCellExpNoWidePer)[1], digits = 0), round( (0.5*dim(clusterCellExpNoWidePer)[2]), digits = 0) )
+    pdf(file = gsub('.txt', '.pdf', cellnoFname), width = plotSize[1], height = plotSize[2] )
+    g1 <- ggplot2::ggplot(perData2plotLong, ggplot2::aes(x = value, y = factor(variable), fill = factor(cluster))) + ggplot2::geom_bar(stat="identity")
+    g1 <- g1 + ggplot2::labs(title='', x = '', y = '')
+    g1 <- g1 + ggplot2::labs(fill = '')
+    g1 <- g1 + theme(plot.title = element_text(color="black", size=20, face="bold.italic"),
+                     axis.title.x = element_text(color="black", size=16, face="bold"),
+                     axis.title.y = element_text(color="black", size=16, face="bold"))
+    g1 <- g1 + theme(axis.text.x = element_text(face="plain", color="black", size=20, angle=0),
+                     axis.text.y = element_text(face="plain", color="#000000", size=20, angle=0))
+    g1 <- g1 + theme(legend.title = element_text(color = "black", size = 18),
+                     legend.text = element_text(color = "black", size = 18) )
+    print(g1)
+    dev.off()
+    print(sprintf('END step2.2: plotting identified cell no. percentage in each cluster'))
     ## -
   }
 }

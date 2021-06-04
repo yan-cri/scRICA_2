@@ -8,7 +8,9 @@
 #' @param expCondSepName character string, user defined name either to be 'org' or any character string
 #' @param expCondName2change if above 'expCondSepName' is defined not as 'org', provide the name to be changed
 #' @param goiFname full path of a file name, where a list of marker/features genes provided
+#' @param cellclusterNameSort whehter to sort by cell cluster names on y-axis
 #' @param dotPlotFnamePrefix dotPlot file name prefix
+#' @param dotPlotSampReorderLevels orders presented on y-axis from bottom to top
 #' @param dotPlotMinExpCutoff dotPlot miniumn expression threshold
 #' @param dotPlotWidth dotPlot width
 #' @param dotPlotHeight dotPlot height
@@ -32,7 +34,8 @@
 #' @export
 #' @return the dotplots of provided GOI(gene of interest) saved in '' inside the provided 'resDir'
 ## ---------------------------------------------------------------------------------------
-getGoiDotplot <- function(resDir, newAnnotation, newAnnotationRscriptName, expCondSepName, expCondName2change, goiFname, dotPlotFnamePrefix, dotPlotMinExpCutoff, dotPlotWidth, dotPlotHeight ){
+getGoiDotplot <- function(resDir, newAnnotation, newAnnotationRscriptName, expCondSepName, expCondName2change, goiFname, cellclusterNameSort, dotPlotFnamePrefix, dotPlotSampReorderLevels, dotPlotMinExpCutoff, dotPlotWidth, dotPlotHeight ){
+  if (missing(cellclusterNameSort)) cellclusterNameSort <- as.logical('F')
   if (missing(expCondName2change)) expCondName2change <- NA
   if (expCondSepName == 'org' | expCondSepName == 'comb' & !is.na(expCondName2change)) print("'expCondName2change' will not be applied")
   ## ------
@@ -83,6 +86,10 @@ getGoiDotplot <- function(resDir, newAnnotation, newAnnotationRscriptName, expCo
   } else if (file_ext(basename(goiFname)) == 'txt') {
     markerGenesPrep       <- read.delim(file = as.character(goiFname), header = T, sep = '\t')
   }
+  print("----------------")
+  print(sprintf("A total of %s genes will be ploted", length(unique(markerGenesPrep$Gene))))
+  if (sum(duplicated(markerGenesPrep$Gene))>0) print(sprintf("%s genes are duplicated genes, they are: %s", sum(duplicated(markerGenesPrep$Gene)), paste(markerGenesPrep$Gene[duplicated(markerGenesPrep$Gene)], collapse = ', ' ) ))
+  print("----------------")
   ## ---
   if ("Gene" %in% colnames(markerGenesPrep)) {
     markerGenes           <- as.character(unique(markerGenesPrep$Gene))
@@ -103,7 +110,23 @@ getGoiDotplot <- function(resDir, newAnnotation, newAnnotationRscriptName, expCo
     # Idents(seuratObjFinal) <- factor(paste(seuratObjFinal$seurat_clusters, seuratObjFinal$expCond, sep = '_'), levels = unlist(lapply(levels(seuratObjFinal$seurat_clusters), function(x) paste(x, levels(factor(seuratObjFinal$expCond)), sep = '_')) ) )
     ## level name: cluster after expCond
     if (expCondSepName != 'comb') {
-      Idents(seuratObjFinal) <- factor(paste(Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels = unlist(lapply(levels(factor(seuratObjFinal$expCond)), function(x) paste(levels(Idents(seuratObjFinal)), x, sep = '_')) ) )
+      if (!missing(dotPlotSampReorderLevels)) {
+        if (cellclusterNameSort) {
+          Idents(seuratObjFinal) <- factor(paste(Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels = paste(rep(levels(Idents(seuratObjFinal)), each = length(levels(factor(seuratObjFinal$expCond))) ), levels(factor(seuratObjFinal$expCond, levels = dotPlotSampReorderLevels)), sep = '_') )
+        } else {
+          Idents(seuratObjFinal) <- factor(paste(Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels = unlist(lapply(levels(factor(seuratObjFinal$expCond, levels = dotPlotSampReorderLevels)), function(x) paste(levels(Idents(seuratObjFinal)), x, sep = '_')) ) )
+        }
+      } else {
+        if (cellclusterNameSort) {
+          Idents(seuratObjFinal) <- factor(paste(Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels = paste(rep(levels(Idents(seuratObjFinal)), each = length(levels(factor(seuratObjFinal$expCond))) ), levels(factor(seuratObjFinal$expCond)), sep = '_') )
+
+        } else {
+          Idents(seuratObjFinal) <- factor(paste(Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels = unlist(lapply(levels(factor(seuratObjFinal$expCond)), function(x) paste(levels(Idents(seuratObjFinal)), x, sep = '_')) ) )
+
+        }
+
+      }
+
     }
   }
   print(sprintf('Updated idents information with experimental condition are as below:'))
