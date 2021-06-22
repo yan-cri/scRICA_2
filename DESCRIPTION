@@ -9,13 +9,22 @@ Authors@R:
            comment = c(ORCID = "YOUR-ORCID-ID"))
 Description: What the package does (one paragraph).
 Imports:
-    Seurat (>= 4.0.0),
-    SeuratObject (>= 4.0.0),
+    Seurat (== 4.0.1),
+    SeuratObject (== 4.0.1),
+    SingleCellExperiment,
     utils, 
     plyr,
     dplyr,
     gplots,
     ggplot2,
+    xlsx,
+    cowplot,
+    ggbeeswarm,
+    ggthemes,
+    reshape2,
+    scater,
+    destiny,
+    slingshot,
     DoubletDecon,
     gridExtra
 Suggests:

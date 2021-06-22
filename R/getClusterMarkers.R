@@ -5,7 +5,7 @@
 # library(dplyr)
 # library(ggplot2)
 # library(gridExtra)
-##--------------------------------------------------------------------------------------##
+## -------------------------------------------------------------------------------------- ##
 #' getClusterMarkers() Function
 #' @details
 #' This function is used to integrate seurat objects with identified anchor via seurat method,
@@ -155,11 +155,11 @@ getClusterMarkers <- function(qcProcessedSeuratObjList, anchorIntegrate, resDirN
   ## 5. 1. Find all marker
   ## -
   print('Start: Step 5 finding positive regulated cluster marker genes')
-  allPosMarkers <- FindAllMarkers(seuratObjFinal, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+  allPosMarkers        <- FindAllMarkers(seuratObjFinal, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
   write.table(x = allPosMarkers, file = file.path(resDir, 'allCluster_pos_markers.txt'), quote = F, sep = '\t', row.names = T, col.names = NA)
   Sys.time()
   ## -
-  noClusterMarkers <- as.data.frame(table(allPosMarkers$cluster))
+  noClusterMarkers     <- as.data.frame(table(allPosMarkers$cluster))
   write.table(x = noClusterMarkers, file = file.path(resDir, 'allCluster_pos_markers_no.txt'), quote = F, sep = '\t', row.names = T, col.names = NA)
   print('END: Step 5.1 finding positive regulated cluster marker genes')
   print('---===---')

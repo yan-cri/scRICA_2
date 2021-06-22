@@ -4,27 +4,26 @@
 \alias{plotPseudotime}
 \title{plotPseudotime() Function}
 \usage{
-plotPseudotime(sceObj2plot, yCol, yLabel, colCol, colLabel, plotFnamePrefix)
+plotPseudotime(pseudoRes, xCol, xLabel, yCol, yLabel, colCol, colLabel)
 }
 \arguments{
-\item{sceObj2plot}{required, returned results from above fn calcFnPseudo()}
+\item{pseudoRes}{required, returned results from above fn calcFnPseudo()$pseudoRes}
 
-\item{yCol}{required, which column in the provided object needs to be visualized}
+\item{xCol}{required, which column in the provided object needs to be visualized as x-axis}
+
+\item{xLabel}{optional, x axis lable, by default = 'xCol'}
+
+\item{yCol}{required, which column in the provided object needs to be visualized as y-axis}
 
 \item{yLabel}{optional, y axis lable, by default = 'yCol'}
 
 \item{colCol}{required, which column in the provided object needs to be visualized via different colour}
 
 \item{colLabel}{optional, legend color lable, by default = 'colCol'}
-
-\item{plotFnamePrefix}{optional, returned 2 plots (correlation plots and 3 combined pseudotime plots) with this defined 'plotFnamePrefix'}
 }
 \value{
-2 plots (correlation plots and 3 combined pseudotime plots) with this defined 'plotFnamePrefix'
+a plot with corresponding specified x, y-axis used for plot
 \subsection{------------------------------------------------------------------------------------}{
-
-Note: PCA, diffusion map used ranked results as pseudotime,
-whereas slingshot used slingshot() returned results - column 'slingPseudotime_1'.
 }
 }
 \description{
