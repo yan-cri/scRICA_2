@@ -65,7 +65,8 @@ getClusterExpCondDe <- function(resDir, newAnnotation, newAnnotationRscriptName,
     seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
   }
   ## -------------------------------------------------------------------------------------
-  Seurat::DefaultAssay(seuratObjFinal)   <- "RNA"
+  # Seurat::DefaultAssay(seuratObjFinal)   <- "RNA"
+  Seurat::DefaultAssay(seuratObjFinal) <- "integrated"
   ## ---
   noClusters                             <- levels(Idents(seuratObjFinal))
   print(sprintf('Start step 1: identifing DEGs for each identified clusters based on sample name experimental conditions'))
