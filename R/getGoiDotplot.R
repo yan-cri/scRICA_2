@@ -34,6 +34,11 @@
 #' @export
 #' @return the dotplots of provided GOI(gene of interest) saved in '' inside the provided 'resDir'
 ## ---------------------------------------------------------------------------------------
+# library(ggplot2)
+# library(Seurat)
+# library(grDevices)
+# library(tools)
+# library(xlsx)
 getGoiDotplot <- function(resDir, newAnnotation, newAnnotationRscriptName, expCondSepName, expCondName2change, goiFname, cellclusterNameSort, dotPlotFnamePrefix, dotPlotSampReorderLevels, dotPlotMinExpCutoff, dotPlotWidth, dotPlotHeight ){
   if (missing(cellclusterNameSort)) cellclusterNameSort <- as.logical('F')
   if (missing(expCondName2change)) expCondName2change <- NA
@@ -86,13 +91,14 @@ getGoiDotplot <- function(resDir, newAnnotation, newAnnotationRscriptName, expCo
   } else if (file_ext(basename(goiFname)) == 'txt') {
     markerGenesPrep       <- read.delim(file = as.character(goiFname), header = T, sep = '\t')
   }
+  colnames(markerGenesPrep) <- tolower(colnames(markerGenesPrep))
   print("----------------")
-  print(sprintf("A total of %s genes will be ploted", length(unique(markerGenesPrep$Gene))))
-  if (sum(duplicated(markerGenesPrep$Gene))>0) print(sprintf("%s genes are duplicated genes, they are: %s", sum(duplicated(markerGenesPrep$Gene)), paste(markerGenesPrep$Gene[duplicated(markerGenesPrep$Gene)], collapse = ', ' ) ))
+  print(sprintf("A total of %s genes will be ploted", length(unique(markerGenesPrep$gene))))
+  if (sum(duplicated(markerGenesPrep$gene))>0) print(sprintf("%s genes are duplicated genes, they are: %s", sum(duplicated(markerGenesPrep$gene)), paste(markerGenesPrep$gene[duplicated(markerGenesPrep$gene)], collapse = ', ' ) ))
   print("----------------")
   ## ---
-  if ("Gene" %in% colnames(markerGenesPrep)) {
-    markerGenes           <- as.character(unique(markerGenesPrep$Gene))
+  if ("gene" %in% colnames(markerGenesPrep)) {
+    markerGenes           <- as.character(unique(markerGenesPrep$gene))
   } else {
     markerGenes           <- as.character(unique(markerGenesPrep[,1]))
   }
@@ -103,7 +109,8 @@ getGoiDotplot <- function(resDir, newAnnotation, newAnnotationRscriptName, expCo
   print(sprintf("A total of %s marker genes will be used for downstream dotplot at '%s'. ", length(markerGenes), basename(dotplotFname) ))
   ## ---
   ## 2. make dotplot with provided gene markers; dot plot of all selected marker genes presented on x-axis
-  DefaultAssay(seuratObjFinal)   <- "RNA"
+  # DefaultAssay(seuratObjFinal)   <- "RNA"
+  DefaultAssay(seuratObjFinal)   <- "integrated"
   ## adding expCond to the idents of identified clusters
   if (all( names(Idents(seuratObjFinal)) == names(seuratObjFinal$expCond) )) {
     ## level name: cluster in front of expCond

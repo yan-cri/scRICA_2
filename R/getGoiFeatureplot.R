@@ -112,7 +112,8 @@ getGoiFeatureplot <- function(resDir, newAnnotation, newAnnotationRscriptName, e
   ## ---
   ## ---
   ## 2. make featurePlot for each above selected marker/features
-  DefaultAssay(seuratObjFinal)   <- "RNA"
+  # Seurat::DefaultAssay(seuratObjFinal)   <- "RNA"
+  Seurat::DefaultAssay(seuratObjIntegrated) <- "integrated"
   # featurePlotMinExpCutoff        = 0.3
   # featurePlotReductionMethod     = 'umap'
   # # featurePlotReductionMethod     = 'tsne'
