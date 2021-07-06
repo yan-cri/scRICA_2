@@ -28,6 +28,7 @@
 #' @importFrom cowplot plot_grid
 #' @importFrom dplyr rename_at
 #' @importFrom dplyr %>%
+#' @importFrom dplyr mutate
 #'
 #' @keywords plotPseudotime
 #' @examples plotPseudotime()
@@ -51,7 +52,7 @@ plotPseudotime     <- function(pseudoRes, xCol, xLabel, yCol, yLabel, colCol, co
   if(missing(colLabel)) colLabel <- as.character(colCol)
   ## -
   ## rename defined x, y (yCluster) and col column into 'x', 'y' and 'col
-  df2plotOrg       <- as.data.frame(colData(pseudoRes))
+  df2plotOrg       <- as.data.frame(colData(pseudoRes$sceObj))
   # df2plotOrg       <- as.data.frame(res2@colData@listData[1:37]  )
   if (yCol == colCol) {
     df2plot        <- df2plotOrg %>% rename_at(match(xCol, colnames(df2plotOrg)), ~'x')
@@ -60,7 +61,7 @@ plotPseudotime     <- function(pseudoRes, xCol, xLabel, yCol, yLabel, colCol, co
   } else {
     df2plot        <- df2plotOrg %>% rename_at(match(xCol, colnames(df2plotOrg)), ~'x')
     df2plot        <- df2plot %>% rename_at(match(yCol, colnames(df2plotOrg)), ~'y')
-    df2plot        <- df2plot %>% rename_at(match(colCol, colnames(df2plot)), ~'col')
+    df2plot        <- df2plot %>% rename_at(match(colCol, colnames(df2plot)), ~'col') %>% mutate(col = as.character(col))
     p                <- ggplot(df2plot, aes(x = x, y = y, colour = col))
   }
   p                <- p + geom_quasirandom(groupOnX = FALSE)

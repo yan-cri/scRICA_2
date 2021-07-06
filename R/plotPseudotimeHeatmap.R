@@ -1,0 +1,67 @@
+## plotPseudotimeHeatmap(): used to genearate heatmap of GAM ranked genes on slinghsot pseudotime cells ##
+## Developed by Yan Li, June, 2021
+##--------------------------------------------------------------------------------------##
+#' plotPseudotimeHeatmap() Function
+#' @details
+#' This function is used to perform functional pseudotime analysis via PCA, Diffusion Map, and slingshot
+#' @param pseudoRes required, returned results from above fn calcFnPseudo()$pseudoRes$sceObj
+#' @param plotname if not provided, named as 'test.pdf'
+#'
+#' @importFrom SummarizedExperiment assays
+#' @importFrom gplots heatmap.2
+#' @importFrom grDevices pdf
+#' @importFrom grDevices dev.off
+#' @importFrom dplyr %>%
+#' @importFrom RColorBrewer brewer.pal
+#' @importFrom graphics par
+#'
+#' @keywords plotPseudotimeHeatmap
+#' @examples plotPseudotimeHeatmap()
+#' @export
+#'
+#' @return
+#' a plot with corresponding specified x, y-axis used for plot
+#'
+#' ## ------------------------------------------------------------------------------------ ##
+plotPseudotimeHeatmap   <- function(pseudoRes, plotname) {
+  ## ---
+  # library(RColorBrewer)
+  # library(dplyr)
+  # library(SingleCellExperiment)
+  if (missing(plotname)) plotname <- 'TEST.pdf'
+  ## -
+  slingshotPtOrder  <- order(pseudoRes$sceObj$slingPseudotime_1, na.last = NA)
+  heatdata          <- as.matrix(assays(pseudoRes$sceObj)$logcounts[pseudoRes$rankGene[1:100], slingshotPtOrder])
+  # heatdata2         <- as.matrix(assays(pseudoRes$sceObj)$counts[pseudoRes$rankGene[1:100], slingshotPtOrder])
+  heatclus          <- pseudoRes$sceObj$GMM[slingshotPtOrder]
+  # heatmap(log1p(heatdata2), Colv = NA, ColSideColors = brewer.pal(length(levels(factor(heatclus))),"Set1")[heatclus])
+
+  ## color options
+  palettes         <- ggthemes::ggthemes_data[["tableau"]][["color-palettes"]][["regular"]]
+  selectedcol      <- palettes$`Tableau 10`%>% pull(value)
+
+  pdf(file = sprintf('%s_ptGMM_GAMheatmap.pdf', plotname), width = 8, height = 6)
+  # heatmap(heatdata, Rowv = NA, Colv = NA, scale = 'row',
+  #               ColSideColors = brewer.pal(length(levels(factor(heatclus))),"Set1")[heatclus])
+  # heatmap(heatdata, Colv = NA, scale = 'row',
+  #         ColSideColors = brewer.pal(length(levels(factor(heatclus))),"Set1")[heatclus])
+  par(lwd=1.5)
+  heatmap.2(as.matrix(heatdata), Rowv=T, Colv=F, distfun=dist,
+            scale="row", hclustfun =hclust, dendrogram="row",
+            # srtCol = 45, adjCol=c(1, 0.6),
+            cexCol=0.1, labCol = NULL,
+            # col=colorpanel(100, "#191970", "#FFF68F", "#EE7621"),
+            key.title= NA, key.xlab = 'scaled log counts',
+            key=TRUE, symkey=FALSE, keysize = 1,
+            key.par = list(cex.lab=1, cex.axis = 1),
+            density.info="none", trace="none", cexRow=1,
+            # margins= marginsVals,
+            ColSideColors= selectedcol[1:length(levels(factor(heatclus)))][heatclus],
+            # ColSideColors= RColorBrewer::brewer.pal(length(levels(factor(heatclus))),"Set1")[heatclus]
+            # ,lhei = heatmaplheiVals, lwid = heatmaplwidVals
+            )
+
+  dev.off()
+  ## ---
+}
+## -----------END-----------END-----------END-----------END-----------END-------------- ##

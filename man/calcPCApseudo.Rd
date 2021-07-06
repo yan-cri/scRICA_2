@@ -4,12 +4,17 @@
 \alias{calcPCApseudo}
 \title{calcPCApseudo() Function}
 \usage{
-calcPCApseudo(obj, slingshotclusterLabels, resSave, resFnamePrefix)
+calcPCApseudo(
+  obj,
+  slingshotclusterLabels = NULL,
+  resSave = "F",
+  resFnamePrefix = "TEST"
+)
 }
 \arguments{
 \item{obj}{required, either a seurat or SingleCellExperiment object}
 
-\item{slingshotclusterLabels}{optional, default no cluster used for slingshot}
+\item{slingshotclusterLabels}{default no cluster used for slingshot, 3 options: NULL, GMM, seurat_clusters}
 
 \item{resSave}{optional, default is F}
 

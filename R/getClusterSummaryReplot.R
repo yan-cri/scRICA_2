@@ -12,6 +12,7 @@
 #' @importFrom ggplot2 guides
 #' @importFrom ggplot2 guide_legend
 #' @importFrom ggplot2 labs
+#' @importFrom ggplot2 scale_fill_manual
 #' @importFrom Seurat NoLegend
 #' @importFrom Seurat DefaultAssay
 #' @importFrom Seurat Idents
@@ -29,7 +30,7 @@
 #' @export
 #' @return
 ## ---------------------------------------------------------------------------------------
-getClusterSummaryReplot <- function(resDir, newAnnotation, newAnnotationRscriptName, expCondSepName, expCondName2change) {
+getClusterSummaryReplot <- function(resDir, newAnnotation, newAnnotationRscriptName, expCondSepName, expCondName2change, clusterLevelReorder = T) {
   rdsFname                <- paste(resDir, "RDS_Dir/analysis_results_integration_results.rds", sep = '/' )
   # print(sprintf('85858 rdsFname is %s', rdsFname))
   if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
@@ -86,15 +87,27 @@ getClusterSummaryReplot <- function(resDir, newAnnotation, newAnnotationRscriptN
   ## -------------------------------------------------------------------------------------
   ## 1. re-make tSNE plot
   if (clusteringPlotRemake) {
+    if (clusterLevelReorder) {
+      Idents(seuratObjFinal) <- factor(Idents(seuratObjFinal), levels = fpClusterOrder )
+    }
+    ## color options
+    ggplotColours <- function(n = 6, h = c(0, 360) + 15){
+      if ((diff(h) %% 360) < 1) h[2] <- h[2] - 360/n
+      hcl(h = (seq(h[1], h[2], length = n)), c = 100, l = 65)
+    }
+    ## -
+    # selectedCol  <- DiscretePalette(n = length(levels(Idents(seuratObjFinal))), palette = 'alphabet')
+    selectedCol        <- ggplotColours(n=length(levels(Idents(seuratObjFinal))))
+    ## ---
     print(sprintf('Start step1: remake tSNE/UMAP plots'))
     newResDir             <- paste(resDir, sprintf('new_tSNE_plot_%s', expCondSepName), sep = '/')
     if(!dir.exists(newResDir)) dir.create(newResDir)
     ## tsne plot
-    tsneCluster           <- DimPlot(seuratObjFinal, reduction = "tsne", label = T, label.size = 6, repel = T) + labs(title = 'tSNE clustering', x = "tSNE 1", y = 'tSNE 2')
-    tsneClusterNolabel    <- DimPlot(seuratObjFinal, reduction = "tsne", label = F, repel = T) + labs(title = 'tSNE clustering', x = "tSNE 1", y = 'tSNE 2')
+    tsneCluster           <- DimPlot(seuratObjFinal, reduction = "tsne", cols = selectedCol, label = T, label.size = 6, repel = T) + labs(title = 'tSNE clustering', x = "tSNE 1", y = 'tSNE 2')
+    tsneClusterNolabel    <- DimPlot(seuratObjFinal, reduction = "tsne", cols = selectedCol, label = F, repel = T) + labs(title = 'tSNE clustering', x = "tSNE 1", y = 'tSNE 2')
     if (length(levels(as.factor(seuratObjFinal$expCond)))>1) {
       ## relevel the 'expCond' for split.by= ordering
-      tsneSplit           <- DimPlot(seuratObjFinal, reduction = "tsne", label = T, label.size = 4, repel = T, split.by = 'expCond') + labs(title = 'tSNE clustering', x = "tSNE 1", y = 'tSNE 2')
+      tsneSplit           <- DimPlot(seuratObjFinal, reduction = "tsne", cols = selectedCol, label = T, label.size = 4, repel = T, split.by = 'expCond') + labs(title = 'tSNE clustering', x = "tSNE 1", y = 'tSNE 2')
     }
     ## -
     if (newAnnotation) {
@@ -133,12 +146,12 @@ getClusterSummaryReplot <- function(resDir, newAnnotation, newAnnotationRscriptN
     ## 2. re-make UMAP plot
     newResDir          <- paste(resDir, sprintf('new_UMAP_plot_%s', expCondSepName), sep = '/')
     if(!dir.exists(newResDir)) dir.create(newResDir)
-    ## tsne plot
-    umapCluster        <- DimPlot(seuratObjFinal, reduction = "umap", label = T, label.size = 6, repel = T) + labs(title = 'UMAP clustering', x = "UMAP 1", y = 'UMAP 2')
-    umapClusterNolabel <- DimPlot(seuratObjFinal, reduction = "umap", label = F, repel = T) + labs(title = 'UMAP clustering', x = "UMAP 1", y = 'UMAP 2')
+    ## umap plot
+    umapCluster        <- DimPlot(seuratObjFinal, reduction = "umap", cols = selectedCol, label = T, label.size = 6, repel = T) + labs(title = 'UMAP clustering', x = "UMAP 1", y = 'UMAP 2')
+    umapClusterNolabel <- DimPlot(seuratObjFinal, reduction = "umap", cols = selectedCol, label = F, repel = T) + labs(title = 'UMAP clustering', x = "UMAP 1", y = 'UMAP 2')
     if ( length(levels(as.factor(seuratObjFinal$expCond))) > 1 ) {
       ## relevel the 'expCond' for split.by= ordering
-      tsneSplit          <- DimPlot(seuratObjFinal, reduction = "umap", label = T, label.size = 4, repel = T, split.by = 'expCond') + labs(title = 'UMAP clustering', x = "UMAP 1", y = 'UMAP 2')
+      tsneSplit          <- DimPlot(seuratObjFinal, reduction = "umap", cols = selectedCol, label = T, label.size = 4, repel = T, split.by = 'expCond') + labs(title = 'UMAP clustering', x = "UMAP 1", y = 'UMAP 2')
     }
     ## -
     if (newAnnotation) {
@@ -216,11 +229,18 @@ getClusterSummaryReplot <- function(resDir, newAnnotation, newAnnotationRscriptN
     # print(dim(clusterCellExpNoWidePer))
     perData2plotLong               <- reshape2::melt(clusterCellExpNoWidePer, id.vars = c('cluster'))
     if (newAnnotation) {
-      perData2plotLong$cluster     <- factor(perData2plotLong$cluster, levels = clusterLevelOrder )
+      perData2plotLong$cluster     <- factor(perData2plotLong$cluster, levels = perClusterOrder )
     }
-    plotSize <- c( round(dim(clusterCellExpNoWidePer)[1], digits = 0), round( (0.5*dim(clusterCellExpNoWidePer)[2]), digits = 0) )
+    selectedCol2 <- selectedCol[match( perClusterOrder, fpClusterOrder)]
+    # print(sprintf('dimention of clusterCellExpNoWidePer is %s, %s', dim(clusterCellExpNoWidePer)[1], dim(clusterCellExpNoWidePer)[2] ))
+    if (dim(clusterCellExpNoWidePer)[2] > 2) {
+      plotSize <- c( round(dim(clusterCellExpNoWidePer)[1], digits = 0), round( (0.5*dim(clusterCellExpNoWidePer)[2]), digits = 0) )
+    } else {
+      plotSize <- c( round(dim(clusterCellExpNoWidePer)[1], digits = 0), round( (0.8*dim(clusterCellExpNoWidePer)[2]), digits = 0) )
+    }
     pdf(file = gsub('.txt', '.pdf', cellnoFname), width = plotSize[1], height = plotSize[2] )
-    g1 <- ggplot2::ggplot(perData2plotLong, ggplot2::aes(x = value, y = factor(variable), fill = factor(cluster))) + ggplot2::geom_bar(stat="identity")
+    g1 <- ggplot2::ggplot(perData2plotLong, ggplot2::aes(x = value, y = factor(variable), fill = factor(cluster) )) + ggplot2::geom_bar(stat="identity")
+    g1 <- g1 + ggplot2::scale_fill_manual(values=selectedCol2)
     g1 <- g1 + ggplot2::labs(title='', x = '', y = '')
     g1 <- g1 + ggplot2::labs(fill = '')
     g1 <- g1 + theme(plot.title = element_text(color="black", size=20, face="bold.italic"),
@@ -230,6 +250,9 @@ getClusterSummaryReplot <- function(resDir, newAnnotation, newAnnotationRscriptN
                      axis.text.y = element_text(face="plain", color="#000000", size=20, angle=0))
     g1 <- g1 + theme(legend.title = element_text(color = "black", size = 18),
                      legend.text = element_text(color = "black", size = 18) )
+    if (dim(clusterCellExpNoWidePer)[1] > 10) {
+      g1 <- g1 + guides(fill=guide_legend(ncol=2))
+    }
     print(g1)
     dev.off()
     print(sprintf('END step2.2: plotting identified cell no. percentage in each cluster'))
