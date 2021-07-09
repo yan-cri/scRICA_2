@@ -10,7 +10,8 @@ getClusterSummaryReplot(
   newAnnotationRscriptName,
   expCondSepName,
   expCondName2change,
-  clusterLevelReorder = T
+  clusterLevelReorder = T,
+  expCondNameReorder = NULL
 )
 }
 \arguments{
@@ -23,6 +24,8 @@ getClusterSummaryReplot(
 \item{expCondSepName}{character string, user defined name either to be 'org' or any character string}
 
 \item{expCondName2change}{if above 'expCondSepName' is defined not as 'org', provide the name to be changed}
+
+\item{expCondNameReorder}{whether to change the experimental conditions order in summarized feature plots and percentage bar plots}
 }
 \value{
 

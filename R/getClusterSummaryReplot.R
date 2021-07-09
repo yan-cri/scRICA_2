@@ -7,6 +7,7 @@
 #' @param newAnnotationRscriptName if newAnnotation == T, this script is used to redefine the old clusters
 #' @param expCondSepName character string, user defined name either to be 'org' or any character string
 #' @param expCondName2change if above 'expCondSepName' is defined not as 'org', provide the name to be changed
+#' @param expCondNameReorder whether to change the experimental conditions order in summarized feature plots and percentage bar plots
 #'
 #' @importFrom ggplot2 theme
 #' @importFrom ggplot2 guides
@@ -30,7 +31,7 @@
 #' @export
 #' @return
 ## ---------------------------------------------------------------------------------------
-getClusterSummaryReplot <- function(resDir, newAnnotation, newAnnotationRscriptName, expCondSepName, expCondName2change, clusterLevelReorder = T) {
+getClusterSummaryReplot <- function(resDir, newAnnotation, newAnnotationRscriptName, expCondSepName, expCondName2change, clusterLevelReorder = T, expCondNameReorder = NULL) {
   rdsFname                <- paste(resDir, "RDS_Dir/analysis_results_integration_results.rds", sep = '/' )
   # print(sprintf('85858 rdsFname is %s', rdsFname))
   if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
@@ -84,6 +85,8 @@ getClusterSummaryReplot <- function(resDir, newAnnotation, newAnnotationRscriptN
     seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
   }
   if (!dir.exists(resDir)) dir.create(resDir)
+  ## ---
+  if (!is.null(expCondNameReorder)) seuratObjFinal$expCond <- factor(seuratObjFinal$expCond, levels = expCondNameReorder )
   ## -------------------------------------------------------------------------------------
   ## 1. re-make tSNE plot
   if (clusteringPlotRemake) {
@@ -231,14 +234,31 @@ getClusterSummaryReplot <- function(resDir, newAnnotation, newAnnotationRscriptN
     if (newAnnotation) {
       perData2plotLong$cluster     <- factor(perData2plotLong$cluster, levels = perClusterOrder )
     }
+    ## ---------
+    if (!is.null(expCondNameReorder)){
+      perData2plotLong$variable    <- factor(perData2plotLong$variable, levels = rev(expCondNameReorder) )
+    }
+    ## ---------
     selectedCol2 <- selectedCol[match( perClusterOrder, fpClusterOrder)]
     # print(sprintf('dimention of clusterCellExpNoWidePer is %s, %s', dim(clusterCellExpNoWidePer)[1], dim(clusterCellExpNoWidePer)[2] ))
     if (dim(clusterCellExpNoWidePer)[2] > 2) {
+      plotSizeHeight               <- round( (0.5*dim(clusterCellExpNoWidePer)[2]), digits = 0)
       plotSize <- c( round(dim(clusterCellExpNoWidePer)[1], digits = 0), round( (0.5*dim(clusterCellExpNoWidePer)[2]), digits = 0) )
     } else {
+      plotSizeHeight               <- round( (0.8*dim(clusterCellExpNoWidePer)[2]), digits = 0)
       plotSize <- c( round(dim(clusterCellExpNoWidePer)[1], digits = 0), round( (0.8*dim(clusterCellExpNoWidePer)[2]), digits = 0) )
     }
-    pdf(file = gsub('.txt', '.pdf', cellnoFname), width = plotSize[1], height = plotSize[2] )
+    ## -
+    if (dim(clusterCellExpNoWidePer)[1] < 11) {
+      plotSizeWidth                <- round(dim(clusterCellExpNoWidePer)[1], digits = 0)
+    } else if (dim(clusterCellExpNoWidePer)[1] > 10 & dim(clusterCellExpNoWidePer)[1] < 17 ) {
+      plotSizeWidth                <- round(0.7*dim(clusterCellExpNoWidePer)[1], digits = 0)
+    }  else if (dim(clusterCellExpNoWidePer)[1] > 16) {
+      plotSizeWidth                <- round(0.5*dim(clusterCellExpNoWidePer)[1], digits = 0)
+    }
+    ## ---------
+    plotSize <- c( plotSizeWidth, plotSizeHeight )
+    pdf(file = gsub('.txt', '.pdf', cellnoFname), width = plotSizeWidth, height = plotSizeHeight )
     g1 <- ggplot2::ggplot(perData2plotLong, ggplot2::aes(x = value, y = factor(variable), fill = factor(cluster) )) + ggplot2::geom_bar(stat="identity")
     g1 <- g1 + ggplot2::scale_fill_manual(values=selectedCol2)
     g1 <- g1 + ggplot2::labs(title='', x = '', y = '')
