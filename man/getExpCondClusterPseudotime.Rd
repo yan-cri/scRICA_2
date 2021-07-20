@@ -7,10 +7,9 @@
 getExpCondClusterPseudotime(
   resDir = NULL,
   rdsFname = NULL,
-  newAnnotation = as.logical("F"),
+  newAnnotation = "F",
   newAnnotationRscriptName = NULL,
-  expCondName = NULL,
-  expCondName2change = NULL,
+  expCondCheck = NULL,
   expCond = NULL,
   cellcluster = NULL
 )

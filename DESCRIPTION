@@ -9,8 +9,8 @@ Authors@R:
            comment = c(ORCID = "YOUR-ORCID-ID"))
 Description: What the package does (one paragraph).
 Imports:
-    Seurat (== 4.0.1),
-    SeuratObject (== 4.0.1),
+    Seurat,
+    SeuratObject,
     SingleCellExperiment,
     utils, 
     plyr,

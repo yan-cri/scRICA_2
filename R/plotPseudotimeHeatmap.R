@@ -23,13 +23,14 @@
 #' a plot with corresponding specified x, y-axis used for plot
 #'
 #' ## ------------------------------------------------------------------------------------ ##
-plotPseudotimeHeatmap   <- function(pseudoRes, plotname) {
+plotPseudotimeHeatmap   <- function(pseudoRes, plotname = 'TEST') {
   ## ---
   # library(RColorBrewer)
   # library(dplyr)
   # library(SingleCellExperiment)
-  if (missing(plotname)) plotname <- 'TEST.pdf'
-  ## -
+  ## ---
+  if (missing(pseudoRes)) stop("Please provide pseudotime analysis results in 'pseudoRes' for plotPseudotimeHeatmap() to make heatmap plots")
+  ## ---
   slingshotPtOrder  <- order(pseudoRes$sceObj$slingPseudotime_1, na.last = NA)
   heatdata          <- as.matrix(assays(pseudoRes$sceObj)$logcounts[pseudoRes$rankGene[1:100], slingshotPtOrder])
   # heatdata2         <- as.matrix(assays(pseudoRes$sceObj)$counts[pseudoRes$rankGene[1:100], slingshotPtOrder])

@@ -24,6 +24,9 @@
 #'
 #' ## ------------------------------------------------------------------------------------ ##
 plotPseudotimeLineages    <- function(pseudoRes, plotname = 'TEST') {
+  ## ---
+  if (missing(pseudoRes)) stop("Please provide pseudotime analysis results in 'pseudoRes' for plotPseudotimeLineages() to make slingshot pseudotime lineage plots")
+  ## ---
   df2plotOrg       <- as.data.frame(colData(pseudoRes$sceObj)) %>% dplyr::select(c('PCApc1', 'PCApc2'))
   df2plot          <- df2plotOrg  %>% dplyr::rename(PC1 = PCApc1) %>% dplyr::rename(PC2 = PCApc2) %>% as.data.frame()
   ## color options

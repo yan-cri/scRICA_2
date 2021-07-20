@@ -5,18 +5,20 @@
 \title{getGoiDotplot() Function}
 \usage{
 getGoiDotplot(
-  resDir,
-  newAnnotation,
-  newAnnotationRscriptName,
-  expCondSepName,
-  expCondName2change,
+  resDir = NULL,
+  rdsFname = NULL,
+  newAnnotation = F,
+  newAnnotationRscriptName = NULL,
   goiFname,
-  cellclusterNameSort,
-  dotPlotFnamePrefix,
-  dotPlotSampReorderLevels,
-  dotPlotMinExpCutoff,
-  dotPlotWidth,
-  dotPlotHeight
+  geneCellTypeOrder = NULL,
+  expCondCheck = "sample",
+  expCondSepName = NULL,
+  expCondName2change = NULL,
+  expCondReorderLevels = NULL,
+  dotPlotFnamePrefix = "goiDotplots",
+  dotPlotMinExpCutoff = 0.3,
+  dotPlotWidth = NULL,
+  dotPlotHeight = NULL
 )
 }
 \arguments{
@@ -26,17 +28,15 @@ getGoiDotplot(
 
 \item{newAnnotationRscriptName}{if newAnnotation == T, this script is used to redefine the old clusters}
 
+\item{goiFname}{full path of a file name, where a list of marker/features genes provided}
+
 \item{expCondSepName}{character string, user defined name either to be 'org' or any character string}
 
 \item{expCondName2change}{if above 'expCondSepName' is defined not as 'org', provide the name to be changed}
 
-\item{goiFname}{full path of a file name, where a list of marker/features genes provided}
-
-\item{cellclusterNameSort}{whehter to sort by cell cluster names on y-axis}
+\item{expCondReorderLevels}{orders presented on y-axis from bottom to top}
 
 \item{dotPlotFnamePrefix}{dotPlot file name prefix}
-
-\item{dotPlotSampReorderLevels}{orders presented on y-axis from bottom to top}
 
 \item{dotPlotMinExpCutoff}{dotPlot miniumn expression threshold}
 

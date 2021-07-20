@@ -5,9 +5,8 @@
 #' @param resDir full path of integration results analysis returned in getClusterMarkers()
 #' @param newAnnotation logical value, whether to provide manual annotation
 #' @param newAnnotationRscriptName if newAnnotation == T, this script is used to redefine the old clusters
-#' @param expCondSepName character string, user defined name either to be 'org' or any character string
-#' @param expCondName2change if above 'expCondSepName' is defined not as 'org', provide the name to be changed
-#' @param expCondNameReorder whether to change the experimental conditions order in summarized feature plots and percentage bar plots
+#' @param expCondCheck character string, user defined name either to be 'org' or any character string
+#' @param expCondNameOrder whether to change the experimental conditions order in summarized feature plots and percentage bar plots
 #'
 #' @importFrom ggplot2 theme
 #' @importFrom ggplot2 guides
@@ -31,9 +30,21 @@
 #' @export
 #' @return
 ## ---------------------------------------------------------------------------------------
-getClusterSummaryReplot <- function(resDir, newAnnotation, newAnnotationRscriptName, expCondSepName, expCondName2change, clusterLevelReorder = T, expCondNameReorder = NULL) {
-  rdsFname                <- paste(resDir, "RDS_Dir/analysis_results_integration_results.rds", sep = '/' )
-  # print(sprintf('85858 rdsFname is %s', rdsFname))
+getClusterSummaryReplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, expCondCheck='sample', expCondSepName = NULL, fpClusterOrder = NULL, perClusterOrder = NULL, expCondNameOrder = NULL) {
+  ## ---
+  newAnnotation           <- as.logical(newAnnotation)
+  if (newAnnotation & is.null(newAnnotationRscriptName)) print("Option 'newAnnotation' is on, please provide corresponding option 'newAnnotationRscriptName'.")
+  ## ---
+  if (is.null(resDir) & !is.null(rdsFname)) {
+    rdsFname              <- rdsFname
+    resDir                <- getwd()
+  } else if (!is.null(resDir) & is.null(rdsFname)) {
+    rdsFname              <- sprintf('%s/RDS_Dir/%s.rds', resDir, basename(resDir))
+    resDir                <- resDir
+  } else {
+    stop("Error: please provide either option 'resDir' or 'rdsFname'. ")
+  }
+  ## ---
   if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
   seuratObjFinal          <<- readRDS(file = as.character(rdsFname))
   print('Done for RDS readin')
@@ -76,34 +87,63 @@ getClusterSummaryReplot <- function(resDir, newAnnotation, newAnnotationRscriptN
                                    legend.position="right",
                                    legend.text = element_text(size = 14) )
   ## -------------------------------------------------------------------------------------
-  ## update 'seuratObjFinal@meta.data$expCond' and create corresponding updated 'resDir' for new tSNE/UMAP plots to save
-  resDir                  <- paste(resDir, sprintf('expCond_%s', expCondSepName), sep = '/')
-  ## ---------------------------------------------------------------------------------------
-  if (expCondSepName == 'org') {
+  if (expCondCheck == 'sample') {
     seuratObjFinal        <- seuratObjFinal
-  } else {
-    seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
+  } else if (expCondCheck == 'expCond1') {
+    if (!'expCond1' %in% colnames(seuratObjFinal@meta.data)){
+      stop("Error: 'expCond1' has not been included in the original integration analysis.")
+    } else {
+      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond1
+    }
+  } else if (expCondCheck == 'expCond2') {
+    if (!'expCond1' %in% colnames(seuratObjFinal@meta.data)){
+      stop("Error: 'expCond1' has not been included in the original integration analysis.")
+    } else {
+      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond2
+    }
   }
-  if (!dir.exists(resDir)) dir.create(resDir)
   ## ---
-  if (!is.null(expCondNameReorder)) seuratObjFinal$expCond <- factor(seuratObjFinal$expCond, levels = expCondNameReorder )
+  if (expCondCheck == 'sample') {
+    if (is.null(expCondSepName)) {
+      expCondSepName        <- 'expCond_sample'
+    } else {
+      expCondSepName        <- expCondSepName
+    }
+  } else {
+    if (is.null(expCondSepName)) {
+      expCondSepName        <- as.character(expCondCheck)
+    } else {
+      expCondSepName        <- expCondSepName
+    }
+  }
+  ## -------------------------------------------------------------------------------------
+  ## update 'seuratObjFinal@meta.data$expCond' and create corresponding updated 'resDir' for new tSNE/UMAP plots to save
+  resDir                <- sprintf('%s/expCond_%s', resDir, expCondSepName)
+  if (!dir.exists(resDir)) dir.create(resDir)
+  ## ---------------------------------------------------------------------------------------
+  if (!is.null(expCondNameOrder)) {
+    if (all((expCondNameOrder %in% levels(factor(seuratObjFinal$expCond))))) {
+      seuratObjFinal$expCond  <- factor(seuratObjFinal$expCond, levels = expCondNameOrder )
+    } else {
+      stop("Error: please provide corresponding option 'expCondNameOrder' consistent with updated experimental conditions using option 'expCondCheck'. ")
+    }
+  }
   ## -------------------------------------------------------------------------------------
   ## 1. re-make tSNE plot
   if (clusteringPlotRemake) {
-    if (clusterLevelReorder) {
-      Idents(seuratObjFinal) <- factor(Idents(seuratObjFinal), levels = fpClusterOrder )
-    }
-    ## color options
-    ggplotColours <- function(n = 6, h = c(0, 360) + 15){
-      if ((diff(h) %% 360) < 1) h[2] <- h[2] - 360/n
-      hcl(h = (seq(h[1], h[2], length = n)), c = 100, l = 65)
-    }
-    ## -
+    # if (clusterLevelReorder) {
+    #   Idents(seuratObjFinal) <- factor(Idents(seuratObjFinal), levels = fpClusterOrder )
+    # }
+    ## ---
+    if (is.null(fpClusterOrder)) fpClusterOrder <- levels(factor(Idents(seuratObjFinal)))
+    Idents(seuratObjFinal) <- factor(Idents(seuratObjFinal), levels = fpClusterOrder )
+    ## ---
     # selectedCol  <- DiscretePalette(n = length(levels(Idents(seuratObjFinal))), palette = 'alphabet')
     selectedCol        <- ggplotColours(n=length(levels(Idents(seuratObjFinal))))
+    print('***************************************************')
     ## ---
     print(sprintf('Start step1: remake tSNE/UMAP plots'))
-    newResDir             <- paste(resDir, sprintf('new_tSNE_plot_%s', expCondSepName), sep = '/')
+    newResDir             <- paste(resDir, sprintf('new_tSNE_plot_expCond_%s', expCondSepName), sep = '/')
     if(!dir.exists(newResDir)) dir.create(newResDir)
     ## tsne plot
     tsneCluster           <- DimPlot(seuratObjFinal, reduction = "tsne", cols = selectedCol, label = T, label.size = 6, repel = T) + labs(title = 'tSNE clustering', x = "tSNE 1", y = 'tSNE 2')
@@ -116,11 +156,11 @@ getClusterSummaryReplot <- function(resDir, newAnnotation, newAnnotationRscriptN
     if (newAnnotation) {
       plotName1 = paste(newResDir, 'tsne_plot_noLabel_integrate_newAnnotation.pdf', sep = '/')
       plotName2 = paste(newResDir, 'tsne_plot_wLabel_integrate_newAnnotation.pdf', sep = '/')
-      plotName3 = paste(newResDir, sprintf('tsne_plot_wLabel_newAnnotation_expCondSep%s.pdf', expCondSepName), sep = '/')
+      plotName3 = paste(newResDir, sprintf('tsne_plot_wLabel_newAnnotation_expCond_%s.pdf', expCondSepName), sep = '/')
     } else {
       plotName1 = paste(newResDir, 'tsne_plot_noLabel_integrate_orgAnnotation.pdf', sep = '/')
       plotName2 = paste(newResDir, 'tsne_plot_wLabel_integrate_orgAnnotation.pdf', sep = '/')
-      plotName3 = paste(newResDir, sprintf('tsne_plot_wLabel_orgAnnotation_expCondSep%s.pdf', expCondSepName), sep = '/')
+      plotName3 = paste(newResDir, sprintf('tsne_plot_wLabel_orgAnnotation_expCond_%s.pdf', expCondSepName), sep = '/')
     }
     ## -
     pdf(file = plotName1, width = 5.7, height = 6.7)
@@ -147,7 +187,7 @@ getClusterSummaryReplot <- function(resDir, newAnnotation, newAnnotationRscriptN
     }
     ## ---
     ## 2. re-make UMAP plot
-    newResDir          <- paste(resDir, sprintf('new_UMAP_plot_%s', expCondSepName), sep = '/')
+    newResDir          <- paste(resDir, sprintf('new_UMAP_plot_expCond_%s', expCondSepName), sep = '/')
     if(!dir.exists(newResDir)) dir.create(newResDir)
     ## umap plot
     umapCluster        <- DimPlot(seuratObjFinal, reduction = "umap", cols = selectedCol, label = T, label.size = 6, repel = T) + labs(title = 'UMAP clustering', x = "UMAP 1", y = 'UMAP 2')
@@ -160,11 +200,11 @@ getClusterSummaryReplot <- function(resDir, newAnnotation, newAnnotationRscriptN
     if (newAnnotation) {
       plotName1 = paste(newResDir, 'UMAP_plot_noLabel_integrate_newAnnotation.pdf', sep = '/')
       plotName2 = paste(newResDir, 'UMAP_plot_wLabel_integrate_newAnnotation.pdf', sep = '/')
-      plotName3 = paste(newResDir, sprintf('UMAP_plot_wLabel_newAnnotation_expCondSep_%s.pdf', expCondSepName), sep = '/')
+      plotName3 = paste(newResDir, sprintf('UMAP_plot_wLabel_newAnnotation_expCond_%s.pdf', expCondSepName), sep = '/')
     } else {
       plotName1 = paste(newResDir, 'UMAP_plot_noLabel_integrate_orgAnnotation.pdf', sep = '/')
       plotName2 = paste(newResDir, 'UMAP_plot_wLabel_integrate_orgAnnotation.pdf', sep = '/')
-      plotName3 = paste(newResDir, sprintf('UMAP_plot_wLabel_orgAnnotation_expCondSep_%s.pdf', expCondSepName), sep = '/')
+      plotName3 = paste(newResDir, sprintf('UMAP_plot_wLabel_orgAnnotation_expCond_%s.pdf', expCondSepName), sep = '/')
     }
     ## -
     pdf(file = plotName1, width = 5.7, height = 8)
@@ -231,12 +271,17 @@ getClusterSummaryReplot <- function(resDir, newAnnotation, newAnnotationRscriptN
     # print(head(clusterCellExpNoWidePer))
     # print(dim(clusterCellExpNoWidePer))
     perData2plotLong               <- reshape2::melt(clusterCellExpNoWidePer, id.vars = c('cluster'))
-    if (newAnnotation) {
-      perData2plotLong$cluster     <- factor(perData2plotLong$cluster, levels = perClusterOrder )
-    }
     ## ---------
-    if (!is.null(expCondNameReorder)){
-      perData2plotLong$variable    <- factor(perData2plotLong$variable, levels = rev(expCondNameReorder) )
+    ## updating annotated cell clusters levels order
+    if (is.null(perClusterOrder))  perClusterOrder <- levels(factor(perData2plotLong$cluster))
+    # if (newAnnotation) {
+    #   perData2plotLong$cluster     <- factor(perData2plotLong$cluster, levels = perClusterOrder )
+    # }
+    perData2plotLong$cluster     <- factor(perData2plotLong$cluster, levels = perClusterOrder )
+    ## ---------
+    ## updating 'expCond' levels order
+    if (!is.null(expCondNameOrder)){
+      perData2plotLong$variable    <- factor(perData2plotLong$variable, levels = rev(expCondNameOrder) )
     }
     ## ---------
     selectedCol2 <- selectedCol[match( perClusterOrder, fpClusterOrder)]
@@ -280,4 +325,9 @@ getClusterSummaryReplot <- function(resDir, newAnnotation, newAnnotationRscriptN
   }
 }
 
+## color options
+ggplotColours <- function(n = 6, h = c(0, 360) + 15){
+  if ((diff(h) %% 360) < 1) h[2] <- h[2] - 360/n
+  hcl(h = (seq(h[1], h[2], length = n)), c = 100, l = 65)
+}
 ## ---------------------------------------------------------------------------------------

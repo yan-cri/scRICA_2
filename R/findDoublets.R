@@ -33,7 +33,12 @@
 # library(gplots)
 # Sys.setenv('R_MAX_VSIZE'=32000000000)
 ##----------------------------------------------------------------------------------------
-findDoublets <- function(metadata, genomeSpecies, doubletDeconRhop, doubletDeconPMF, doubletDeconNoCore, resFilename) {
+findDoublets <- function(metadata, genomeSpecies=NULL, doubletDeconRhop=0.5, doubletDeconPMF=F, doubletDeconNoCore=-1, resFilename=NULL) {
+  ## ---
+  if (is.null(genomeSpecies)) genomeSpecies <- 'human'
+  if (is.null(resFilename)) resFilename <- 'doublets_results'
+  doubletDeconRhop               <- as.numeric(doubletDeconRhop)
+  doubletDeconPMF                <- as.logical(doubletDeconPMF)
   ## ---
   cellrangerResList              <- meata2list(metadata = metadata)
   ## ---

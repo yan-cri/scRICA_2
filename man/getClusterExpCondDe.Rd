@@ -5,15 +5,15 @@
 \title{getClusterExpCondDe() Function}
 \usage{
 getClusterExpCondDe(
-  resDir,
-  newAnnotation,
-  newAnnotationRscriptName,
-  expCondSepName,
-  expCondName2change,
+  resDir = NULL,
+  rdsFname = NULL,
+  newAnnotation = F,
+  newAnnotationRscriptName = NULL,
+  expCondCheck = "sample",
   compGroup,
-  deMethod,
-  pAdjValCutoff,
-  topNo
+  deMethod = "wilcox",
+  pAdjValCutoff = 0.05,
+  topNo = 10
 )
 }
 \arguments{
@@ -23,10 +23,6 @@ getClusterExpCondDe(
 
 \item{newAnnotationRscriptName}{if newAnnotation == T, this script is used to redefine the old clusters}
 
-\item{expCondSepName}{character string, user defined name either to be 'org' or any character string}
-
-\item{expCondName2change}{if above 'expCondSepName' is defined not as 'org', provide the name to be changed}
-
 \item{compGroup}{group names used for comparisions, e.g. 'A/F', 'A', 'F'}
 
 \item{deMethod}{DE test method, options are 'wilcox', 't', 'negbinom', 'poisson', 'MAST', 'DESeq2'}
@@ -34,6 +30,10 @@ getClusterExpCondDe(
 \item{pAdjValCutoff}{adjusted p-value cutoff of significant DEGs}
 
 \item{topNo}{output this number of top up and down significant DEGs in each identified/annotated clusters}
+
+\item{expCondSepName}{character string, user defined name either to be 'org' or any character string}
+
+\item{expCondName2change}{if above 'expCondSepName' is defined not as 'org', provide the name to be changed}
 }
 \value{
 a list item including 3 elements:

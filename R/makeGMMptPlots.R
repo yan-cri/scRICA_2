@@ -35,6 +35,9 @@
 #'
 #' ## ------------------------------------------------------------------------------------ ##
 makeGMMptPlots <- function(pseudoRes, plotname = 'TEST') {
+  ## ---
+  if (missing(pseudoRes)) stop("Please provide pseudotime analysis results in 'pseudoRes' for makeGMMptPlots() to make GMM pseudotime plots")
+  ## ---
   gmmPlotTheme       <- theme(plot.title = element_text(size = 16, hjust = 0.5),
                               axis.title = element_text(size = 20),
                               axis.text = element_text(size = 25),

@@ -34,7 +34,10 @@
 #' 2 plots (correlation plots and 3 combined pseudotime plots) with this specified cluster name in input 'pseudoRes$clusterName'
 #'
 #' ## ------------------------------------------------------------------------------------ ##
-makeIdentPlots <- function(pseudoRes, plotname) {
+makeIdentPlots <- function(pseudoRes, plotname = 'TEST') {
+  ## ---
+  if (missing(pseudoRes)) stop("Please provide pseudotime analysis results in 'pseudoRes' for makeIdentPlots() to make pseudotime PC/DC plots")
+  ## ---
   ## Add a warning notice, to be done
   plotTheme       <- theme(plot.title = element_text(size = 16, hjust = 0.5),
                               axis.title = element_text(size = 20),

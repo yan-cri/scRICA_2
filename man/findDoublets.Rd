@@ -6,11 +6,11 @@
 \usage{
 findDoublets(
   metadata,
-  genomeSpecies,
-  doubletDeconRhop,
-  doubletDeconPMF,
-  doubletDeconNoCore,
-  resFilename
+  genomeSpecies = NULL,
+  doubletDeconRhop = 0.5,
+  doubletDeconPMF = F,
+  doubletDeconNoCore = -1,
+  resFilename = NULL
 )
 }
 \arguments{

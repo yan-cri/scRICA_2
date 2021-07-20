@@ -4,7 +4,7 @@
 \alias{makeIdentPlots}
 \title{makeIdentPlots() Function}
 \usage{
-makeIdentPlots(pseudoRes, plotname)
+makeIdentPlots(pseudoRes, plotname = "TEST")
 }
 \arguments{
 \item{pseudoRes}{required, results from fn getClusterPseudo()}

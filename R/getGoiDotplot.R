@@ -8,9 +8,8 @@
 #' @param expCondSepName character string, user defined name either to be 'org' or any character string
 #' @param expCondName2change if above 'expCondSepName' is defined not as 'org', provide the name to be changed
 #' @param goiFname full path of a file name, where a list of marker/features genes provided
-#' @param cellclusterNameSort whehter to sort by cell cluster names on y-axis
 #' @param dotPlotFnamePrefix dotPlot file name prefix
-#' @param dotPlotSampReorderLevels orders presented on y-axis from bottom to top
+#' @param expCondReorderLevels orders presented on y-axis from bottom to top
 #' @param dotPlotMinExpCutoff dotPlot miniumn expression threshold
 #' @param dotPlotWidth dotPlot width
 #' @param dotPlotHeight dotPlot height
@@ -19,7 +18,11 @@
 #' @importFrom ggplot2 guides
 #' @importFrom ggplot2 guide_legend
 #' @importFrom ggplot2 element_text
+#' @importFrom ggplot2 element_blank
 #' @importFrom ggplot2 labs
+#' @importFrom ggplot2 theme_void
+#' @importFrom ggplot2 geom_bar
+#' @importFrom ggplot2 ggsave
 #' @importFrom Seurat NoLegend
 #' @importFrom Seurat DefaultAssay
 #' @importFrom grDevices dev.off
@@ -28,6 +31,9 @@
 #' @importFrom tools file_ext
 #' @importFrom utils read.delim
 #' @importFrom xlsx read.xlsx
+#' @importFrom cowplot plot_grid
+#' @importFrom cowplot get_legend
+#' @importFrom grid unit
 #'
 #' @keywords GoiDotplot
 #' @examples getGoiDotplot()
@@ -39,24 +45,30 @@
 # library(grDevices)
 # library(tools)
 # library(xlsx)
-getGoiDotplot <- function(resDir, newAnnotation, newAnnotationRscriptName, expCondSepName, expCondName2change, goiFname, cellclusterNameSort, dotPlotFnamePrefix, dotPlotSampReorderLevels, dotPlotMinExpCutoff, dotPlotWidth, dotPlotHeight ){
-  if (missing(cellclusterNameSort)) cellclusterNameSort <- as.logical('F')
-  if (missing(expCondName2change)) expCondName2change <- NA
-  if (expCondSepName == 'org' | expCondSepName == 'comb' & !is.na(expCondName2change)) print("'expCondName2change' will not be applied")
-  ## ------
-  resDirName              <- strsplit(x = resDir, split = '/')[[1]][length(strsplit(x = resDir, split = '/')[[1]])]
-  # print(sprintf('TEST TETST  resDirName is %s', resDirName))
-  rdsFname                <- paste(resDir, sprintf("RDS_Dir/%s.rds", resDirName), sep = '/' )
-  # print(sprintf('85858 rdsFname is %s', rdsFname))
+getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, goiFname, geneCellTypeOrder=NULL, expCondCheck='sample', expCondSepName = NULL, expCondName2change=NULL, expCondReorderLevels=NULL, dotPlotFnamePrefix='goiDotplots', dotPlotMinExpCutoff=0.3, dotPlotWidth=NULL, dotPlotHeight=NULL ){
+  ## ---
+  newAnnotation           <- as.logical(newAnnotation)
+  if (newAnnotation & is.null(newAnnotationRscriptName)) print("Option 'newAnnotation' is on, please provide corresponding option 'newAnnotationRscriptName'.")
+  ## ---
+  if (is.null(resDir) & !is.null(rdsFname)) {
+    rdsFname              <- rdsFname
+    resDir                <- getwd()
+  } else if (!is.null(resDir) & is.null(rdsFname)) {
+    rdsFname              <- sprintf('%s/RDS_Dir/%s.rds', resDir, basename(resDir))
+    resDir                <- resDir
+  } else {
+    stop("Error: please provide either option 'resDir' or 'rdsFname'. ")
+  }
+  ## ---
   if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
   seuratObjFinal          <<- readRDS(file = as.character(rdsFname))
   print('Done for RDS readin')
   ## ------
   ## update results directory if new annotation is used
   if (newAnnotation) {
-    resDir <- paste(resDir, 'results_wNewAnnotation', sep = '/')
+    resDir                <- paste(resDir, 'results_wNewAnnotation', sep = '/')
   } else {
-    resDir <- paste(resDir, 'results_wOrgClusterAnnotation', sep = '/')
+    resDir                <- paste(resDir, 'results_wOrgClusterAnnotation', sep = '/')
   }
   if (!dir.exists(resDir)) dir.create(resDir)
   ## -------------------------------------------------------------------------------------
@@ -66,15 +78,42 @@ getGoiDotplot <- function(resDir, newAnnotation, newAnnotationRscriptName, expCo
     source(as.character(newAnnotationRscriptName))
   }
   ## -------------------------------------------------------------------------------------
-  ## update 'seuratObjFinal@meta.data$expCond' and create corresponding 'plotResDir' for dotplot to save
-  print(sprintf("expCondSep is '%s'", expCondSepName))
-  plotResDir             <- paste(resDir, sprintf('dotplot_selected_markers_ExpCond_%s', expCondSepName), sep = '/')
-  if (expCondSepName == 'org') {
-    seuratObjFinal                     <- seuratObjFinal
-  } else if (expCondSepName == 'comb') {
-    seuratObjFinal@meta.data$expCond   <- Idents(seuratObjFinal)
+  if (expCondCheck == 'sample') {
+    if (is.null(expCondSepName)) {
+      expCondSepName        <- 'expCond_sample'
+    } else {
+      expCondSepName        <- expCondSepName
+    }
   } else {
-    seuratObjFinal@meta.data$expCond   <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
+    if (is.null(expCondSepName)) {
+      expCondSepName        <- as.character(expCondCheck)
+    } else {
+      expCondSepName        <- expCondSepName
+    }
+  }
+  ## -------------------------------------------------------------------------------------
+  ## update 'seuratObjFinal@meta.data$expCond' and create corresponding 'plotResDir' for feature-plot to save
+  plotResDir            <- paste(resDir, sprintf('dotplot_selected_markers_expCond_%s', expCondSepName), sep = '/')
+  if (!dir.exists(plotResDir)) dir.create(plotResDir)
+  ## ------
+  if (expCondCheck == 'sample') {
+    seuratObjFinal                     <- seuratObjFinal
+  } else if (expCondCheck == 'comb') {
+    seuratObjFinal@meta.data$expCond   <- Idents(seuratObjFinal)
+  } else if (expCondCheck == 'expCond1') {
+    if (!'expCond1' %in% colnames(seuratObjFinal@meta.data)){
+      print("Error: 'expCond1' has not been included in the original integration analysis.")
+      seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
+    } else {
+      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond1
+    }
+  } else if (expCondCheck == 'expCond2') {
+    if (!'expCond2' %in% colnames(seuratObjFinal@meta.data)){
+      print("Error: 'expCond2' has not been included in the original integration analysis.")
+      seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
+    } else {
+      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond2
+    }
   }
   # print('97979799')
   # print(table(seuratObjFinal@meta.data$expCond))
@@ -82,70 +121,145 @@ getGoiDotplot <- function(resDir, newAnnotation, newAnnotationRscriptName, expCo
   if (!dir.exists(plotResDir)) dir.create(plotResDir)
   print(sprintf('GOI dot plots will be saved in %s', plotResDir))
   ## ------
-  ## 1. define/input selected markers/features
-  ## below 'topUpDEmarkers' were obtained based on file 'paste(resDir, 'clusterDeMarkers_adjSig_up_wNewAnnotation.xlsx', sep = '/')'
-  ## below 'topDownDEmarkers' were obtained based on file 'paste(resDir, 'clusterDeMarkers_adjSig_down_wNewAnnotation.xlsx', sep = '/')'
   print(table(Idents(seuratObjFinal)))
+  ## ------
+  ## using column 'gene' as marker genes, if column 'celltype' exist, will be used to categorize the genes
   if (file_ext(basename(goiFname)) == 'xlsx') {
-    markerGenesPrep       <- read.xlsx(file = as.character(goiFname), sheetIndex = 1, header = T)
+    markerGenesPrep         <- read.xlsx(file = as.character(goiFname), sheetIndex = 1, header = T)
   } else if (file_ext(basename(goiFname)) == 'txt') {
-    markerGenesPrep       <- read.delim(file = as.character(goiFname), header = T, sep = '\t')
+    markerGenesPrep         <- read.delim(file = as.character(goiFname), header = T, sep = '\t')
   }
   colnames(markerGenesPrep) <- tolower(colnames(markerGenesPrep))
+  # print(head(markerGenesPrep))
   print("----------------")
-  print(sprintf("A total of %s genes will be ploted", length(unique(markerGenesPrep$gene))))
   if (sum(duplicated(markerGenesPrep$gene))>0) print(sprintf("%s genes are duplicated genes, they are: %s", sum(duplicated(markerGenesPrep$gene)), paste(markerGenesPrep$gene[duplicated(markerGenesPrep$gene)], collapse = ', ' ) ))
+  markerGenesPrep           <- markerGenesPrep[!duplicated(markerGenesPrep$gene),]
+  print(sprintf("A total of %s genes will be serched for GOI dot-plot", length(unique(markerGenesPrep$gene))))
   print("----------------")
-  ## ---
+  ## marker gene for dot plot is based on either 'gene' column or 1st column
   if ("gene" %in% colnames(markerGenesPrep)) {
     markerGenes           <- as.character(unique(markerGenesPrep$gene))
   } else {
     markerGenes           <- as.character(unique(markerGenesPrep[,1]))
   }
-  ## ---
+  ## -
+  if ('celltype' %in% colnames(markerGenesPrep) ){
+    markerGenesCat        <- as.factor(markerGenesPrep$celltype)
+  } else {
+    markerGenesCat        <- NULL
+  }
+  ## -
+  if (!is.null(markerGenesCat)){
+    markerGenesDf         <- data.frame('gene' = markerGenes, 'celltype'=markerGenesCat)
+    if (!is.null(geneCellTypeOrder)) {
+      markerGenesDf$celltype <- factor(markerGenesDf$celltype, levels = geneCellTypeOrder)
+      markerGenesDf          <- markerGenesDf[order(markerGenesDf$celltype),]
+    }
+  }
+  ## Note: if column 'celltype' does not exist, markerGenesCat=NULL, NO 'markerGenesDf' exist
+  ## -------------------------------------------------------------------------------------
   # dotplotFname           <- paste(plotResDir, 'selected_markerGenesV2_dotplot.pdf', sep = '/')
-  dotplotFname           <- file.path(plotResDir, sprintf('%s_markerGenes_dotplot_expCondSep_%s.pdf', dotPlotFnamePrefix, expCondSepName))
+  dotplotFname           <- file.path(plotResDir, sprintf('%s_markerGenes_dotplot_expCond_%s.pdf', dotPlotFnamePrefix, expCondSepName))
   ## -
   print(sprintf("A total of %s marker genes will be used for downstream dotplot at '%s'. ", length(markerGenes), basename(dotplotFname) ))
   ## ---
   ## 2. make dotplot with provided gene markers; dot plot of all selected marker genes presented on x-axis
-  # DefaultAssay(seuratObjFinal)   <- "RNA"
-  DefaultAssay(seuratObjFinal)   <- "integrated"
+  DefaultAssay(seuratObjFinal)   <- "RNA" ## suggested by seurat tutorial at 'https://satijalab.org/seurat/articles/integration_introduction.html' using RNA slot for feature plot and dot plot and downstream analysis
+  # DefaultAssay(seuratObjFinal)   <- "integrated"
   ## adding expCond to the idents of identified clusters
   if (all( names(Idents(seuratObjFinal)) == names(seuratObjFinal$expCond) )) {
-    ## level name: cluster in front of expCond
-    # Idents(seuratObjFinal) <- factor(paste(seuratObjFinal$seurat_clusters, seuratObjFinal$expCond, sep = '_'), levels = unlist(lapply(levels(seuratObjFinal$seurat_clusters), function(x) paste(x, levels(factor(seuratObjFinal$expCond)), sep = '_')) ) )
-    ## level name: cluster after expCond
-    if (expCondSepName != 'comb') {
-      if (!missing(dotPlotSampReorderLevels)) {
-        if (cellclusterNameSort) {
-          Idents(seuratObjFinal) <- factor(paste(Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels = paste(rep(levels(Idents(seuratObjFinal)), each = length(levels(factor(seuratObjFinal$expCond))) ), levels(factor(seuratObjFinal$expCond, levels = dotPlotSampReorderLevels)), sep = '_') )
-        } else {
-          Idents(seuratObjFinal) <- factor(paste(Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels = unlist(lapply(levels(factor(seuratObjFinal$expCond, levels = dotPlotSampReorderLevels)), function(x) paste(levels(Idents(seuratObjFinal)), x, sep = '_')) ) )
-        }
-      } else {
-        if (cellclusterNameSort) {
-          Idents(seuratObjFinal) <- factor(paste(Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels = paste(rep(levels(Idents(seuratObjFinal)), each = length(levels(factor(seuratObjFinal$expCond))) ), levels(factor(seuratObjFinal$expCond)), sep = '_') )
-
-        } else {
-          Idents(seuratObjFinal) <- factor(paste(Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels = unlist(lapply(levels(factor(seuratObjFinal$expCond)), function(x) paste(levels(Idents(seuratObjFinal)), x, sep = '_')) ) )
-
-        }
-
-      }
-
+    ## re-define Idents(seuratObjFinal) with level name: cluster + expCond if expCondCheck != 'comb'
+    ## ---
+    if (is.null(expCondReorderLevels)) {
+      expCondReorderLevels          <- levels(factor(seuratObjFinal@meta.data$expCond))
     }
+    if ( !all(expCondReorderLevels %in% levels(factor(seuratObjFinal$expCond))) ) stop("Please provide correct corresponding 'expCondReorderLevels' to sort y-axis dot plot")
+    if (expCondCheck != 'comb') {
+      Idents(seuratObjFinal)        <- factor( paste(Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'),
+                                               levels = paste(rep(levels(Idents(seuratObjFinal)), each = length(levels(factor(seuratObjFinal$expCond))) ), levels(factor(seuratObjFinal$expCond, levels = expCondReorderLevels)), sep = '_') )
+    } else {
+      Idents(seuratObjFinal)        <- factor(Idents(seuratObjFinal), levels = expCondReorderLevels)
+    }
+
+    # if (!is.null(expCondReorderLevels)) {
+    #   if (cellclusterNameSort) {
+        # if ( !all(expCondReorderLevels %in% levels(factor(seuratObjFinal$expCond))) ) stop("Please provide correct corresponding 'expCondReorderLevels' to sort y-axis dot plot")
+        # Idents(seuratObjFinal) <- factor(paste(Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels = paste(rep(levels(Idents(seuratObjFinal)), each = length(levels(factor(seuratObjFinal$expCond))) ), levels(factor(seuratObjFinal$expCond, levels = expCondReorderLevels)), sep = '_') )
+    #   } else {
+        # Idents(seuratObjFinal) <- factor(paste(Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels = unlist(lapply(levels(factor(seuratObjFinal$expCond, levels = expCondReorderLevels)), function(x) paste(levels(Idents(seuratObjFinal)), x, sep = '_')) ) )
+    #   }
+    # } else {
+    #   if (cellclusterNameSort) {
+    #     Idents(seuratObjFinal) <- factor(paste(Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels = paste(rep(levels(Idents(seuratObjFinal)), each = length(levels(factor(seuratObjFinal$expCond))) ), levels(factor(seuratObjFinal$expCond)), sep = '_') )
+    #   } else {
+    #     Idents(seuratObjFinal) <- factor(paste(Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels = unlist(lapply(levels(factor(seuratObjFinal$expCond)), function(x) paste(levels(Idents(seuratObjFinal)), x, sep = '_')) ) )
+    #   }
+    # }
+    ## ---
   }
   print(sprintf('Updated idents information with experimental condition are as below:'))
   print(table(Idents(seuratObjFinal) ))
   print('"-=-=-=-=-=')
+  ## -----------------------------------------------------------------------------
+  ## Currently DotPlot() x-axis is based on DotPlot()$data$features.plot levels after dropping off unused levels by droplevels()
+  if (is.null(markerGenesCat)) {
+    g1                <- DotPlot(seuratObjFinal, features = markerGenes, cols = c('#D3D3D3', '#CC0000'), col.min = dotPlotMinExpCutoff, scale = T, scale.by = 'size', dot.min = 0.01 ) + RotatedAxis()
+    # print(DotPlot(seuratObjFinal, features = markerGenes, cols = c('#D3D3D3', '#CC0000'), col.min = 0.3, scale = T, scale.by = 'size', dot.min = 0.01, idents = levels(Idents(seuratObjFinal))[-c(7,14)] ) + RotatedAxis())
+    # print(DotPlot(seuratObjFinal, features = markerGenes, cols = c('#D3D3D3', '#CC0000'), col.min = dotPlotMinExpCutoff, scale = T, scale.by = 'size', dot.min = 0.01 ) + RotatedAxis())
+    # print(DotPlot(seuratObjFinal, features = markerGenes, col.min = 0.3 ) + RotatedAxis())
+    # print(DotPlot(seuratObjFinal, features = markerGenes ) + RotatedAxis())
+
+  } else {
+    g1                <- DotPlot(seuratObjFinal, features = markerGenesDf$gene, cols = c('#D3D3D3', '#CC0000'), col.min = dotPlotMinExpCutoff, scale = T, scale.by = 'size', dot.min = 0.01 ) + RotatedAxis()
+  }
+  # ggsave(filename = 'TEST1.pdf', plot = g1, width = 40, height = 15)
+  ## ------
+  print(sprintf('A total of %s genes displayed in GOI dot plot.', length(unique(g1$data$features.plot))))
   ## ---
-  pdf(file = dotplotFname, width = dotPlotWidth, height = dotPlotHeight )
-  # print(DotPlot(seuratObjFinal, features = markerGenes, cols = c('#D3D3D3', '#CC0000'), col.min = 0.3, scale = T, scale.by = 'size', dot.min = 0.01, idents = levels(Idents(seuratObjFinal))[-c(7,14)] ) + RotatedAxis())
-  ## for stem and proliferting cell to use
-  print(DotPlot(seuratObjFinal, features = markerGenes, cols = c('#D3D3D3', '#CC0000'), col.min = dotPlotMinExpCutoff, scale = T, scale.by = 'size', dot.min = 0.01 ) + RotatedAxis())
-  # print(DotPlot(seuratObjFinal, features = markerGenes, col.min = 0.3 ) + RotatedAxis())
-  # print(DotPlot(seuratObjFinal, features = markerGenes ) + RotatedAxis())
-  dev.off()
+  if (is.null(dotPlotWidth)) {
+    dotPlotWidth  = round(length(unique(g1$data$features.plot))*0.5)
+  }
+  if (is.null(dotPlotHeight)) {
+    if (length(levels(factor(Idents(seuratObjFinal) ))) < 15 ) {
+      dotPlotHeight = round(length( levels(factor(Idents(seuratObjFinal))))*0.6 )
+    } else if (length(levels(factor(Idents(seuratObjFinal) ))) > 14 &  length(levels(factor(Idents(seuratObjFinal) ))) < 25 ) {
+      dotPlotHeight = round(length( levels(factor(Idents(seuratObjFinal))))*0.4 )
+    } else {
+      dotPlotHeight = round(length( levels(factor(Idents(seuratObjFinal))))*0.25 )
+    }
+  }
+  ## ---
+  if (is.null(markerGenesCat)) {
+    pdf(file = dotplotFname, width = dotPlotWidth, height = dotPlotHeight )
+    print(g1)
+    dev.off()
+  } else {
+    ## 'markerGenesDf' exist with 2 columns 'gene' & 'celltype'
+    markerGenesDf2      <- markerGenesDf %>% dplyr::filter(gene %in% levels(droplevels(g1$data$features.plot)) )
+    markerGenesDf2$gene <- factor(markerGenesDf2$gene, levels = levels(droplevels(g1$data$features.plot)) )
+    ## below DiscretePalette() in Seurat with 4 color scheme options, color scheme display seen in https://kwstat.github.io/pals/
+    colschemeg2         <- Seurat::DiscretePalette(n = length(levels(markerGenesDf2$celltype)), palette = 'glasbey')
+    g2     <- ggplot2::ggplot(markerGenesDf2) + ggplot2::geom_bar(mapping = aes(x = gene, y = 1, fill = celltype), stat = "identity", width = 1)
+    g2     <- g2 + ggplot2::scale_fill_manual(values=colschemeg2)
+    # ggsave(filename = 'TEST11.pdf', plot = g2, width = 40, height = 2)
+    # g2     <- g2 + theme(panel.spacing.x = grid::unit(1, "mm"))
+    g2     <- g2 + ggplot2::theme_void() + theme(panel.spacing.x = grid::unit(1, "mm")) ##+ facet_grid(.~colorBar, scales = "free_x") ##testing to make sure gene name aligned
+    g2     <- g2 + theme(legend.text = element_text(color = "black", size = 20), legend.title = element_blank() )
+    g1     <- g1 + theme(legend.text = element_text(color = "black", size = 20), axis.text.x = element_text(color = "black", size = 24), axis.text.y = element_text(color = "black", size = 18), axis.title = element_blank() )
+    legend              <- cowplot::plot_grid(cowplot::get_legend(g2), cowplot::get_legend(g1), ncol = 1, align = 'h', axis = 'l')
+    g1woLegend          <- g1 + theme(legend.position = "none")
+    g2woLegend          <- g2 + theme(legend.position = "none")
+
+    if (length(levels(factor(Idents(seuratObjFinal) ))) < 151 ){
+      plot              <- cowplot::plot_grid(g2woLegend, g1woLegend, align = "v", ncol = 1, axis = 'lr', rel_heights = c(0.015*dotPlotHeight, 0.95*dotPlotHeight))
+    } else {
+      plot              <- cowplot::plot_grid(g2woLegend, g1woLegend, align = "v", ncol = 1, axis = 'lr', rel_heights = c(0.03*dotPlotHeight, 0.95*dotPlotHeight))
+    }
+    plotWlegend         <- cowplot::plot_grid(plot, legend, nrow = 1, align = 'h', axis = 'none', rel_widths = c(0.9*dotPlotWidth, 0.1*dotPlotWidth))
+    ggplot2::ggsave(filename = dotplotFname, plot = plotWlegend, width = dotPlotWidth, height = dotPlotHeight, limitsize = FALSE)
+  }
+
+
+
 }
 ## ---------------------------------------------------------------------------------------

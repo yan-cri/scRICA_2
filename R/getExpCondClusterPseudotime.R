@@ -20,19 +20,21 @@
 #' @return
 #' a SingleCellExperiment where 3 methods functional pseudotime analysis results are saved in colData
 ## ------------------------------------------------------------------------------------ ##
-getExpCondClusterPseudotime <- function(resDir=NULL, rdsFname=NULL, newAnnotation = as.logical('F'), newAnnotationRscriptName = NULL, expCondName = NULL, expCondName2change = NULL, expCond = NULL, cellcluster = NULL){
+getExpCondClusterPseudotime <- function(resDir=NULL, rdsFname=NULL, newAnnotation = 'F', newAnnotationRscriptName = NULL, expCondCheck = NULL, expCond = NULL, cellcluster = NULL){
+  ## ---
+  newAnnotation             <- as.logical(newAnnotation)
   if (newAnnotation & is.null(newAnnotationRscriptName)) stop("Please provide corresponding 'newAnnotationRscriptName', becasue 'newAnnotation' == True.")
   ## ---
-  if (is.null(resDir) & is.null(rdsFname)) stop('ERROR: please provide either resDir or rdsFname for the analysis ')
-  if (!is.null(resDir) & !is.null(rdsFname)) stop('ERROR: please provide only one RDS file in either resDir or rdsFname for the analysis ')
-  if( is.null(rdsFname) ) {
-    resDir                  <- resDir
-    rdsFname                <- paste(resDir, "RDS_Dir/analysis_results_integration_results.rds", sep = '/' )
+  if (is.null(resDir) & !is.null(rdsFname)) {
+    rdsFname              <- rdsFname
+    resDir                <- getwd()
+  } else if (!is.null(resDir) & is.null(rdsFname)) {
+    rdsFname              <- sprintf('%s/RDS_Dir/%s.rds', resDir, basename(resDir))
+    resDir                <- resDir
   } else {
-    rdsFname                <- rdsFname
-    resDir                  <- getwd()
+    stop("Error: please provide either option 'resDir' or 'rdsFname'. ")
   }
-  ## -
+  ## ---
   if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
   seuratObjFinal            <<- readRDS(file = as.character(rdsFname))
   print('Done for RDS readin')
@@ -46,13 +48,13 @@ getExpCondClusterPseudotime <- function(resDir=NULL, rdsFname=NULL, newAnnotatio
   }
   if (!dir.exists(resDir)) dir.create(resDir)
   ## -
-  if (is.null(expCondName)) {
-    expCondSepName <- 'org'
+  if (is.null(expCondCheck)) {
+    expCondSepName <- 'expCond_sample'
   } else{
-    expCondSepName <- as.character(expCondName)
+    expCondSepName <- as.character(expCondCheck)
   }
   ## -
-  resDir                <- paste(sprintf('%s/expCond_%s', resDir, expCondSepName ))
+  resDir                <- paste(sprintf('%s/%s', resDir, expCondSepName ))
   if (!dir.exists(resDir)) dir.create(resDir)
   print(sprintf('Pseudotime analysis results will be saved at %s', resDir))
   ## -------------------------------------------------------------------------------------
@@ -64,11 +66,26 @@ getExpCondClusterPseudotime <- function(resDir=NULL, rdsFname=NULL, newAnnotatio
   print(table(Seurat::Idents(seuratObjFinal)))
   print('*******************')
   ## --------------------------------------------
-  if (expCondSepName == 'org') {
+  if (expCondCheck == 'sample') {
     seuratObjFinal        <- seuratObjFinal
-  } else {
-    seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
+  } else if (expCondCheck == 'expCond1') {
+    if (!'expCond1' %in% colnames(seuratObjFinal@meta.data)){
+      stop("Error: 'expCond1' has not been included in the original integration analysis.")
+    } else {
+      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond1
+    }
+  } else if (expCondCheck == 'expCond2') {
+    if (!'expCond1' %in% colnames(seuratObjFinal@meta.data)){
+      stop("Error: 'expCond1' has not been included in the original integration analysis.")
+    } else {
+      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond2
+    }
   }
+  # if (expCondSepName == 'org') {
+  #   seuratObjFinal        <- seuratObjFinal
+  # } else {
+  #   seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
+  # }
   ## --------------------------------------------
   print(sprintf('Start preparing to conduct pseudotime analysis on all identfied unsupervise/annotated cell clusters on experimental condition %s', expCondSepName))
   print(sprintf("Current experimental condition levels cell clusters partition in 'seuratObjFinal' are as below:"))

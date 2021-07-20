@@ -1,0 +1,6 @@
+sample	expCond1	expCond2	path	doubletsRmMethod	doubletsResDir
+A3396	3396	A	/Library/Frameworks/R.framework/Versions/4.0/Resources/library/scRICA/extdata/3396A/	OL	/Users/yanli/Desktop/scRIC_development/scRICA/inst/extdata/doublets_res
+F3396	3396	F	/Library/Frameworks/R.framework/Versions/4.0/Resources/library/scRICA/extdata/3396F/	OL	/Users/yanli/Desktop/scRIC_development/scRICA/inst/extdata/doublets_res
+I3396	3396	I	/Library/Frameworks/R.framework/Versions/4.0/Resources/library/scRICA/extdata/3396I/	OL	/Users/yanli/Desktop/scRIC_development/scRICA/inst/extdata/doublets_res
+A3041	3041	A	/Library/Frameworks/R.framework/Versions/4.0/Resources/library/scRICA/extdata/3041A	none	
+I3041	3041	I	/Library/Frameworks/R.framework/Versions/4.0/Resources/library/scRICA/extdata/3041I	None	

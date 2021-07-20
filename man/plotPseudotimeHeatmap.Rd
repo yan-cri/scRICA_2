@@ -4,7 +4,7 @@
 \alias{plotPseudotimeHeatmap}
 \title{plotPseudotimeHeatmap() Function}
 \usage{
-plotPseudotimeHeatmap(pseudoRes, plotname)
+plotPseudotimeHeatmap(pseudoRes, plotname = "TEST")
 }
 \arguments{
 \item{pseudoRes}{required, returned results from above fn calcFnPseudo()$pseudoRes$sceObj}

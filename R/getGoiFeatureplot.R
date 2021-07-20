@@ -31,23 +31,30 @@
 #' @export
 #' @return the dotplots of provided GOI(gene of interest) saved in '' inside the provided 'resDir'
 ## ---------------------------------------------------------------------------------------
-getGoiFeatureplot <- function(resDir, newAnnotation, newAnnotationRscriptName, expCondSepName, expCondName2change, goiFname, featurePlotMinExpCutoff, featurePlotReductionMethod, featurePlotFnamePrefix ){
-  if (missing(expCondName2change)) expCondName2change <- NA
-  if (expCondSepName == 'org' | expCondSepName == 'comb' & !is.na(expCondName2change)) print("'expCondName2change' will not be applied")
-  ## ------
-  resDirName              <- strsplit(x = resDir, split = '/')[[1]][length(strsplit(x = resDir, split = '/')[[1]])]
-  # print(sprintf('TEST TETST  resDirName is %s', resDirName))
-  rdsFname                <- paste(resDir, sprintf("RDS_Dir/%s.rds", resDirName), sep = '/' )
-  # print(sprintf('85858 rdsFname is %s', rdsFname))
+getGoiFeatureplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnotationRscriptName=NULL,  expCondCheck='sample', expCondName2change=NULL, goiFname, featurePlotMinExpCutoff=0.3, featurePlotReductionMethod='umap', featurePlotFnamePrefix='goiFeaturePlot' ){
+  ## ---
+  newAnnotation           <- as.logical(newAnnotation)
+  if (newAnnotation & is.null(newAnnotationRscriptName)) print("Option 'newAnnotation' is on, please provide corresponding option 'newAnnotationRscriptName'.")
+  ## ---
+  if (is.null(resDir) & !is.null(rdsFname)) {
+    rdsFname              <- rdsFname
+    resDir                <- getwd()
+  } else if (!is.null(resDir) & is.null(rdsFname)) {
+    rdsFname              <- sprintf('%s/RDS_Dir/%s.rds', resDir, basename(resDir))
+    resDir                <- resDir
+  } else {
+    stop("Error: please provide either option 'resDir' or 'rdsFname'. ")
+  }
+  ## ---
   if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
   seuratObjFinal          <<- readRDS(file = as.character(rdsFname))
   print('Done for RDS readin')
   ## ------
   ## update results directory if new annotation is used
   if (newAnnotation) {
-    resDir <- paste(resDir, 'results_wNewAnnotation', sep = '/')
+    resDir                <- paste(resDir, 'results_wNewAnnotation', sep = '/')
   } else {
-    resDir <- paste(resDir, 'results_wOrgClusterAnnotation', sep = '/')
+    resDir                <- paste(resDir, 'results_wOrgClusterAnnotation', sep = '/')
   }
   if (!dir.exists(resDir)) dir.create(resDir)
   ## -------------------------------------------------------------------------------------
@@ -77,20 +84,38 @@ getGoiFeatureplot <- function(resDir, newAnnotation, newAnnotationRscriptName, e
                               legend.position="right",
                               legend.text = element_text(size = 14) )
   ## -------------------------------------------------------------------------------------
-  ## update 'seuratObjFinal@meta.data$expCond' and create corresponding 'plotResDir' for feature-plot to save
-  plotResDir            <- paste(resDir, sprintf('featurePlot_selected_markers_ExpCond_%s', expCondSepName), sep = '/')
-  if (expCondSepName == 'org') {
-    seuratObjFinal                     <- seuratObjFinal
-  } else if (expCondSepName == 'comb') {
-    seuratObjFinal@meta.data$expCond   <- Idents(seuratObjFinal)
+  if (expCondCheck == 'sample') {
+    expCondSepName        <- 'expCond_sample'
   } else {
-    seuratObjFinal@meta.data$expCond   <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
+    expCondSepName        <- as.character(expCondCheck)
   }
+  ## -------------------------------------------------------------------------------------
+  ## update 'seuratObjFinal@meta.data$expCond' and create corresponding 'plotResDir' for feature-plot to save
+  plotResDir            <- paste(resDir, sprintf('featurePlot_selected_markers_%s', expCondSepName), sep = '/')
   if (!dir.exists(plotResDir)) dir.create(plotResDir)
   ## ---
   plotResDir            <- paste(plotResDir, featurePlotFnamePrefix, sep = '/')
   if (!dir.exists(plotResDir)) dir.create(plotResDir)
   ## ------
+  if (expCondCheck == 'sample') {
+    seuratObjFinal        <- seuratObjFinal
+  } else if (expCondCheck == 'comb') {
+    seuratObjFinal@meta.data$expCond   <- Idents(seuratObjFinal)
+  } else if (expCondCheck == 'expCond1') {
+    if (!'expCond1' %in% colnames(seuratObjFinal@meta.data)){
+      print("Error: 'expCond1' has not been included in the original integration analysis.")
+      seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
+    } else {
+      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond1
+    }
+  } else if (expCondCheck == 'expCond2') {
+    if (!'expCond2' %in% colnames(seuratObjFinal@meta.data)){
+      print("Error: 'expCond2' has not been included in the original integration analysis.")
+      seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
+    } else {
+      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond2
+    }
+  }
   print('=====================================================')
   print(sprintf('START feature plot, the plots will be save at %s', plotResDir))
   print(table(Idents(seuratObjFinal)))
@@ -109,11 +134,11 @@ getGoiFeatureplot <- function(resDir, newAnnotation, newAnnotationRscriptName, e
   } else {
     markerGenes           <- as.character(unique(markerGenesPrep[,1]))
   }
-  ## ---
+  markerGenes = markerGenes[!is.na(markerGenes)]
   ## ---
   ## 2. make featurePlot for each above selected marker/features
-  # Seurat::DefaultAssay(seuratObjFinal)   <- "RNA"
-  Seurat::DefaultAssay(seuratObjIntegrated) <- "integrated"
+  Seurat::DefaultAssay(seuratObjFinal)   <- "RNA"
+  # Seurat::DefaultAssay(seuratObjFinal) <- "integrated"
   # featurePlotMinExpCutoff        = 0.3
   # featurePlotReductionMethod     = 'umap'
   # # featurePlotReductionMethod     = 'tsne'

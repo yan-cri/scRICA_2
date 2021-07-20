@@ -28,13 +28,30 @@
 #' 2. 'clusterDeResSummary'
 #' 3. 'clusterTopDeMarkers'
 ## ---------------------------------------------------------------------------------------
-getClusterExpCondDe <- function(resDir, newAnnotation, newAnnotationRscriptName, expCondSepName, expCondName2change, compGroup, deMethod, pAdjValCutoff, topNo) {
+getClusterExpCondDe <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, expCondCheck='sample', compGroup, deMethod = 'wilcox', pAdjValCutoff = 0.05, topNo = 10) {
   options(java.parameters = "-Xmx32000m")
-  rdsFname                <- paste(resDir, "RDS_Dir/analysis_results_integration_results.rds", sep = '/' )
-  # print(sprintf('85858 rdsFname is %s', rdsFname))
+  ## ---
+  if (missing(compGroup)) stop("Please provide option 'compGroup' to specify which 2 groups in your updated experimental condition levels with 'expCondCheck' for comparision.")
+  pAdjValCutoff           <- as.numeric(pAdjValCutoff)
+  topNo                   <- as.numeric(topNo)
+  deMethod                <- as.character(deMethod)
+  newAnnotation           <- as.logical(newAnnotation)
+  if (newAnnotation & is.null(newAnnotationRscriptName)) print("Option 'newAnnotation' is on, please provide corresponding option 'newAnnotationRscriptName'.")
+  ## ---
+  if (is.null(resDir) & !is.null(rdsFname)) {
+    rdsFname              <- rdsFname
+    resDir                <- getwd()
+  } else if (!is.null(resDir) & is.null(rdsFname)) {
+    rdsFname              <- sprintf('%s/RDS_Dir/%s.rds', resDir, basename(resDir))
+    resDir                <- resDir
+  } else {
+    stop("Error: please provide either option 'resDir' or 'rdsFname'. ")
+  }
+  ## ---
   if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
   seuratObjFinal          <<- readRDS(file = as.character(rdsFname))
   print('Done for RDS readin')
+  ## ------
   ## ------
   ## update results directory if new annotation is used
   if (newAnnotation) {
@@ -51,18 +68,33 @@ getClusterExpCondDe <- function(resDir, newAnnotation, newAnnotationRscriptName,
     source(as.character(newAnnotationRscriptName))
   }
   ## -------------------------------------------------------------------------------------
+  if (expCondCheck == 'sample') {
+    expCondSepName        <- 'expCond_sample'
+  } else {
+    expCondSepName        <- as.character(expCondCheck)
+  }
   ## update 'resDir' to ceate dir under 'result_wNewAnnotation' or 'results_wOrgClusterAnnotation'
-  resDir                  <- paste(sprintf('%s/DEG_expCond_%s_comp_%s', resDir, expCondSepName, deMethod))
+  resDir                  <- paste(sprintf('%s/DEG_%s_comp_%s', resDir, expCondSepName, deMethod))
   if (!dir.exists(resDir)) dir.create(resDir)
   ## -------------------------------------------------------------------------------------
   ## update 'seuratObjFinal@meta.data$expCond' and create corresponding updated 'resDir' for new tSNE/UMAP plots to save
-  resDir                  <- paste(resDir, sprintf('DEG_expCond_%s_comp_%s_%s', expCondSepName, gsub('/', '-', compGroup), deMethod ), sep = '/')
+  resDir                  <- paste(resDir, sprintf('DEG_%s_comp_%s_%s', expCondSepName, gsub('/', '-', compGroup), deMethod ), sep = '/')
   if (!dir.exists(resDir)) dir.create(resDir)
   ## -------------------------------------------------------------------------------------
-  if (expCondSepName == 'org') {
+  if (expCondCheck == 'sample') {
     seuratObjFinal        <- seuratObjFinal
-  } else {
-    seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
+  } else if (expCondCheck == 'expCond1') {
+    if (!'expCond1' %in% colnames(seuratObjFinal@meta.data)){
+      stop("Error: 'expCond1' has not been included in the original integration analysis.")
+    } else {
+      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond1
+    }
+  } else if (expCondCheck == 'expCond2') {
+    if (!'expCond1' %in% colnames(seuratObjFinal@meta.data)){
+      stop("Error: 'expCond1' has not been included in the original integration analysis.")
+    } else {
+      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond2
+    }
   }
   ## -------------------------------------------------------------------------------------
   # Seurat::DefaultAssay(seuratObjFinal)   <- "RNA"

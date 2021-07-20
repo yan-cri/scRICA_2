@@ -5,15 +5,16 @@
 \title{getGoiFeatureplot() Function}
 \usage{
 getGoiFeatureplot(
-  resDir,
-  newAnnotation,
-  newAnnotationRscriptName,
-  expCondSepName,
-  expCondName2change,
+  resDir = NULL,
+  rdsFname = NULL,
+  newAnnotation = F,
+  newAnnotationRscriptName = NULL,
+  expCondCheck = "sample",
+  expCondName2change = NULL,
   goiFname,
-  featurePlotMinExpCutoff,
-  featurePlotReductionMethod,
-  featurePlotFnamePrefix
+  featurePlotMinExpCutoff = 0.3,
+  featurePlotReductionMethod = "umap",
+  featurePlotFnamePrefix = "goiFeaturePlot"
 )
 }
 \arguments{
@@ -22,8 +23,6 @@ getGoiFeatureplot(
 \item{newAnnotation}{logical value, whether to provide manual annotation}
 
 \item{newAnnotationRscriptName}{if newAnnotation == T, this script is used to redefine the old clusters}
-
-\item{expCondSepName}{character string, user defined name either to be 'org' or any character string}
 
 \item{expCondName2change}{if above 'expCondSepName' is defined not as 'org', provide the name to be changed}
 
@@ -34,6 +33,8 @@ getGoiFeatureplot(
 \item{featurePlotReductionMethod}{featurePlot reduction methods: options are 'tsne' or 'umap'}
 
 \item{featurePlotFnamePrefix}{featurePlot file name prefix}
+
+\item{expCondSepName}{character string, user defined name either to be 'org' or any character string}
 }
 \value{
 the dotplots of provided GOI(gene of interest) saved in '' inside the provided 'resDir'

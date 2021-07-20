@@ -5,13 +5,15 @@
 \title{getClusterSummaryReplot() Function}
 \usage{
 getClusterSummaryReplot(
-  resDir,
-  newAnnotation,
-  newAnnotationRscriptName,
-  expCondSepName,
-  expCondName2change,
-  clusterLevelReorder = T,
-  expCondNameReorder = NULL
+  resDir = NULL,
+  rdsFname = NULL,
+  newAnnotation = F,
+  newAnnotationRscriptName = NULL,
+  expCondCheck = "sample",
+  expCondSepName = NULL,
+  fpClusterOrder = NULL,
+  perClusterOrder = NULL,
+  expCondNameOrder = NULL
 )
 }
 \arguments{
@@ -21,11 +23,9 @@ getClusterSummaryReplot(
 
 \item{newAnnotationRscriptName}{if newAnnotation == T, this script is used to redefine the old clusters}
 
-\item{expCondSepName}{character string, user defined name either to be 'org' or any character string}
+\item{expCondCheck}{character string, user defined name either to be 'org' or any character string}
 
-\item{expCondName2change}{if above 'expCondSepName' is defined not as 'org', provide the name to be changed}
-
-\item{expCondNameReorder}{whether to change the experimental conditions order in summarized feature plots and percentage bar plots}
+\item{expCondNameOrder}{whether to change the experimental conditions order in summarized feature plots and percentage bar plots}
 }
 \value{
 
