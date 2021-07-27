@@ -32,7 +32,17 @@ It is a R workflow package which can be used to perform scRNA-Seq downstream int
   * **`plotPseudotimeLineages()`**: make pseudotime trajectory lineage plots based on slingshot.
   * **`plotPseudotimeHeatmap()`**: make heat-map of identified genes differentially expressed on the pseudotime trajectory lineages from slingshot.
 
-### 2. Input metadata table file
+### 2. pacakge installation
+  * github installation
+```{r eval=FALSE, message=TRUE, warning=TRUE, include=FALSE, paged.print=TRUE}
+# devtools::install_github(repo = 'yan-cri/scRICA', build_vignettes = T, force = T)
+# library(scRICA)
+# browseVignettes(package = 'scRICA')
+```
+  * local download installation
+  
+
+### 3. Input metadata table file
 
 This workflow package has its own inherited structure, and requires an initial metadata table to initiate the entire scRNA-Seq workflow analyses. 4 columns are required in the metadata table, they are `sample`, `path`, `doubletsRmMethod` and `expCond1` for samples names, full path to sample's count matrix tables directory (cellranger analysis results), doublets detective methods with four options, and experimental condition levels respectively; up to 2 experimental conditions specified in column `expCond1` and `expCond2` can be explored with this package. If no doublets removal is needed for samples, please specify 'none' for that sample in the column `doubletsRmMethod`.
 
@@ -44,12 +54,22 @@ sample3_condA_cond3  | /FullPath/to/CountMatrix/ | condA | cond3 | OL/centroids/
 sample4_condB_cond1  | /FullPath/to/CountMatrix/ | condB | cond1 | OL/centroids/medoids/none 
 sample5_condB_cond2  | /FullPath/to/CountMatrix/ | condB | cond2 | OL/centroids/medoids/none 
 
-### 3. Analysis workflow implementations demonstration data 
+### 4. Analysis workflow implementations demonstration data 
 
 
-### 4. Analysis workflow implementations
+### 5. Analysis workflow implementations
 
-This package separate the scRNA-Seq integrative and comparative analysis into 3 step sections, including integrative analysis with QC assessment for doublets and mitochondrial content, comparative analysis from different experimental condition groups, and visualizations.
+This package separate the scRNA-Seq integrative and comparative analysis into 3 categories, including integrative analysis with QC assessment for doublets and mitochondrial content, comparative analysis from different experimental condition groups, and visualizations.
+
+#### 5.1 integrative analysis with QC assessment
+  *
+  
+#### 5.2 experimental condition comparative analysis
+  *
+  
+#### 5.3 visualizations
+  *
+  
 
 
 
@@ -57,7 +77,7 @@ The entire scRNA-Seq integrative and comparative analysis can be implemented wit
 
 We provided an ovarian caner study of 1 patient samples from 3 different Fallopian tissue types as this package demonstration data set, which can be accessible at package 'inst/extdata' folder with command `list.files(system.file('extdata', package = 'scRICA', mustWork = T))`. For the demonstration, we also include the corresponding metadata table for this experiment accessible at `system.file('extdata', 'metadata.txt', package = 'scRICA', mustWork = T)`. Please be aware column `path` information in this demonstration metadata table is based on the Mac system, if you are using other operating system, please make your own metadata table.
 
-#### 1. Step1: doublet cells detection: 
+  * Step1: doublet cells detection: 
 ```{r}
 metadata                <- read.delim2(file = system.file('extdata', 'metadata_mac.txt', package = 'scRICA', mustWork = T), header = T) 
 # doubletDeconResDir      <- findDoublets(metadata = metadata, 
@@ -68,7 +88,7 @@ metadata                <- read.delim2(file = system.file('extdata', 'metadata_m
 ```
 This step will conduct cells doublets detection and save the entire analysis results into the defined `resFilename` under current operating directory `getwd()`, it will return a full path of directory to indict where the results were saved at. 
 
-#### 2. Step2: quality control and integrative analysis
+  * Step2: quality control and integrative analysis
 
 This steps analysis will use 2 functions: `countReadin()` and `getClusterMarkers()`.
 
@@ -96,10 +116,10 @@ This function will conduct integrative analysis for all samples provided in the 
 ```
 In addition to integrative analysis for all samples, this function will also conduct the top expressed markers detection with respect to each cell clusters. The entire analysis results will be saved in the specified `resDirName`, the final integrated RDS file will be saved in `'RDS_Dir'` folder inside `resDirName` directory. If no `resDirName` is specified, a folder named as `integration_analysis_results` will be created to save this function's analysis results.
 
-#### 3. Step3: gene marker identfication
+  * Step3: gene marker identfication
 2 types of gene markers identification with respect to experimental conditions can be performed with corresponding functions `getClusterExpCondDe()` and `getClusterExpCondDe()`, where as specified above, `getExpCondClusterMarkers()` can identify top expressed gene markers for samples from different experimental conditions with respect to each identified or annotated clustering cell types; and `getClusterExpCondDe()` can identify differential expressed gene markers for samples from 2 different experimental conditions with respect to each identified or annotated clustering cell types.
 
-#### 4. Step4: clustering and gene marker visualizations
+ Step4: clustering and gene marker visualizations
 The integrative cell clustering analysis results can be visualized via function `getClusterSummaryReplot()`, and additional gene markers exploration can be done via function `getGoiDotplot()` and `getGoiFeatureplot()`.
 
 #### 5. Step5: pseudotime functional trajectory analysis and visualization
