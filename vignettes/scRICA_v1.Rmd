@@ -1,9 +1,20 @@
+---
+title: "scRICA: **s**ingle-**c**ell **R**NA-Seq **I**ntegrative **C**omparative **A**nalysis"
+output: rmarkdown::html_vignette
+date: "`r Sys.Date()`"
+author: "Yan Li, Michiko Rye, Qing Gong"
+vignette: >
+  %\VignetteIndexEntry{scRICA_v1}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
 # scRICA: **s**ingle-**c**ell **R**NA-Seq **I**ntegrative **C**omparative **A**nalysis 
 
-## What is scRICA
+### 1. What is scRICA
 It is a R workflow package which can be used to perform scRNA-Seq downstream integrative, comparative analyses and visualization. This package can process a batch of scRNA-Seq count matrix from different experimental conditions fro integration and comparative analysis efficiently and reproducible. The package functions can be categorized into: 1). analysis workflow functions and 2). visualization functions:
 
-#### 1. Workflow functions:
+#### 1.1 Workflow functions:
 
   * **`processQC()`**, process quality control (QC) assessment for all samples defined in a metadata table, including doublets identification with wrapped function **`findDoublets()`**, gene features stigmatization, and mitochondrial content filtering.
     + **`findDoublets()`**, this function is based on [DoubletDecon](https://github.com/EDePasquale/DoubletDecon) to perform either or both medoids and centroids deconvolution algorithms (https://www.cell.com/cell-reports/fulltext/S2211-1247(19)31286-0) defined in the metadata table for doublet cells detection.
@@ -12,7 +23,7 @@ It is a R workflow package which can be used to perform scRNA-Seq downstream int
   * **`getClusterExpCondDe()`**, identify differential expressed gene markers from 2 specified different experimental condition samples.
   * **`getExpCondClusterPseudotime()`**, perform pseudotime trajectory functional analysis on the specified experimental condition clustering cells with 3 different methods, including  principal components analysis (PCA) based on [Scater](https://bioconductor.org/packages/release/bioc/html/scater.html), Diffusion Maps based on [density](https://bioconductor.org/packages/release/bioc/html/destiny.html), and [slingshot](https://www.bioconductor.org/packages/release/bioc/html/slingshot.html).
 
-#### 2. Visualization functions:
+#### 1.2 Visualization functions:
 
   * **`getClusterSummaryReplot()`**: 1). summarize the number of cell in each identified or annotated clustering cell types; and 2). generate corresponding tSNE and UMAP plots on the specified experimental conditions.
   * **`getGoiDotplot()`**: generate dot-plots of provided marker genes on the specified experimental conditions.
@@ -21,9 +32,9 @@ It is a R workflow package which can be used to perform scRNA-Seq downstream int
   * **`plotPseudotimeLineages()`**: make pseudotime trajectory lineage plots based on slingshot.
   * **`plotPseudotimeHeatmap()`**: make heat-map of identified genes differentially expressed on the pseudotime trajectory lineages from slingshot.
 
-### Main input metadata table file
+### 2. Input metadata table file
 
-As a workflow package, this package has an inherited structure, this package only replies on an initial metadata table, where defines all samples names and corresponding count matrix results access locations as below:
+This workflow package has its own inherited structure, and requires an initial metadata table to initiate the entire scRNA-Seq workflow analyses. 4 columns are required in the metadata table, they are `sample`, `path`, `doubletsRmMethod` and `expCond1` for samples names, full path to sample's count matrix tables directory (cellranger analysis results), doublets detective methods with four options, and experimental condition levels respectively; up to 2 experimental conditions specified in column `expCond1` and `expCond2` can be explored with this package. If no doublets removal is needed for samples, please specify 'none' for that sample in the column `doubletsRmMethod`.
 
 sample  | path  | expCond1 | expCond2 | doubletsRmMethod
 ------------- | -------------  | -------------  | ------------- | ------------- 
@@ -33,9 +44,14 @@ sample3_condA_cond3  | /FullPath/to/CountMatrix/ | condA | cond3 | OL/centroids/
 sample4_condB_cond1  | /FullPath/to/CountMatrix/ | condB | cond1 | OL/centroids/medoids/none 
 sample5_condB_cond2  | /FullPath/to/CountMatrix/ | condB | cond2 | OL/centroids/medoids/none 
 
-where if the column `'doubletsRmMethod' = 'none'`, no doublets identifiecation will be performed.
+### 3. Analysis workflow implementations demonstration data 
 
-### Analysis workflow implementation example
+
+### 4. Analysis workflow implementations
+
+This package separate the scRNA-Seq integrative and comparative analysis into 3 step sections, including integrative analysis with QC assessment for doublets and mitochondrial content, comparative analysis from different experimental condition groups, and visualizations.
+
+
 
 The entire scRNA-Seq integrative and comparative analysis can be implemented with below workflow steps based on the input metadata table and other associated options for each step's analysis. User can skip doublet detection step starting from step2 to perform integration analysis directly by setting up metadata table column `'doubletsRmMethod'` as `none`, otherwise, start the analysis from step1 `findDoublets()` with first 2 columns of above metadata table information. 
 
@@ -92,6 +108,7 @@ Pseudotime functional trajectory analysis can be performed at different specifie
 
 ## Feedback
 If you have further questions or suggestions regarding this package, please contact Yan Li at yli22@bsd.uchicago.edu from the bioinformatics core at the Center for Research Bioinformatics (CRI), biological science division (BSD), University of Chicago.
+
 
 
 
