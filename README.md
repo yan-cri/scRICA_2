@@ -9,16 +9,21 @@ It is a R workflow package which can be used to perform scRNA-Seq downstream int
     ```
 devtools::install('Path/to/Downloaded/scRICA', build_vignettes = T)
 library(scRICA)
-browseVignettes(package = 'scRICA')
 ```
   
-
-
   * local download installation
-    Download package to your local computer via: ``git clone https://github.com/yan-cri/scRICA.git``
+    + Download package to your local computer to the local computer via git.
+    ```
+git clone https://github.com/yan-cri/scRICA.git
+```
+    + install downloaded scRICA package via:
     ```
 devtools::install('Path/to/Downloaded/scRICA', build_vignettes = T)
 library(scRICA)
+```
+  
+  * The package usage information can be seen from package vignettes via:
+    ```
 browseVignettes(package = 'scRICA')
 ```
 
