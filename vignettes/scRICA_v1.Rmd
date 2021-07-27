@@ -33,13 +33,22 @@ It is a R workflow package which can be used to perform scRNA-Seq downstream int
   * **`plotPseudotimeHeatmap()`**: make heat-map of identified genes differentially expressed on the pseudotime trajectory lineages from slingshot.
 
 ### 2. pacakge installation
+
   * github installation
-```{r eval=FALSE, message=TRUE, warning=TRUE, include=FALSE, paged.print=TRUE}
-# devtools::install_github(repo = 'yan-cri/scRICA', build_vignettes = T, force = T)
-# library(scRICA)
-# browseVignettes(package = 'scRICA')
+    ```
+devtools::install_github(repo = 'yan-cri/scRICA', build_vignettes = T, force = T)
+browseVignettes(package = 'scRICA')
+library(scRICA)
 ```
+
   * local download installation
+    Download package to your local computer via ``git clone https://github.com/yan-cri/scRICA.git``
+    ```
+devtools::install('Path/to/Downloaded/scRICA', build_vignettes = T)
+browseVignettes(package = 'scRICA')
+library(scRICA)
+```
+
   
 
 ### 3. Input metadata table file
@@ -55,15 +64,33 @@ sample4_condB_cond1  | /FullPath/to/CountMatrix/ | condB | cond1 | OL/centroids/
 sample5_condB_cond2  | /FullPath/to/CountMatrix/ | condB | cond2 | OL/centroids/medoids/none 
 
 ### 4. Analysis workflow implementations demonstration data 
-
+```{r echo=TRUE}
+metadata <- read.delim2(file = system.file('extdata', 'metadata_mac.txt', package = 'scRICA', mustWork = T), header = T) 
+metadata
+```
 
 ### 5. Analysis workflow implementations
 
 This package separate the scRNA-Seq integrative and comparative analysis into 3 categories, including integrative analysis with QC assessment for doublets and mitochondrial content, comparative analysis from different experimental condition groups, and visualizations.
 
 #### 5.1 integrative analysis with QC assessment
-  *
-  
+  * QC results without mitochondrial content filtering
+  ```
+  library(scRICA)
+  ?processQC  
+qcResult1 <- processQC(metadata = metadata, 
+                       resDirName = 'scRICA_test_result1', 
+                       genomeSpecies = 'human')
+```
+  * QC results with mitochondrial content filtering: turn on `mtFiltering` option and setup the mitochondrial content percentage cut-off values with option `mtPerCutoff`
+
+```
+qcResult2 <- processQC(metadata = metadata, 
+                       resDirName = 'scRICA_test_result2', 
+                       genomeSpecies = 'human', 
+                       mtFiltering = T, mtPerCutoff = 20)
+```
+
 #### 5.2 experimental condition comparative analysis
   *
   

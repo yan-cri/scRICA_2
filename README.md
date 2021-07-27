@@ -1,96 +1,28 @@
 # scRICA: **s**ingle-**c**ell **R**NA-Seq **I**ntegrative **C**omparative **A**nalysis 
 
-## What is scRICA
+### 1. What is scRICA
 It is a R workflow package which can be used to perform scRNA-Seq downstream integrative, comparative analyses and visualization. This package can process a batch of scRNA-Seq count matrix from different experimental conditions fro integration and comparative analysis efficiently and reproducible. The package functions can be categorized into: 1). analysis workflow functions and 2). visualization functions:
 
-#### 1. Workflow functions:
+### 2. pacakge installation and vignettes
 
-  * **`processQC()`**, process quality control (QC) assessment for all samples defined in a metadata table, including doublets identification with wrapped function **`findDoublets()`**, gene features stigmatization, and mitochondrial content filtering.
-    + **`findDoublets()`**, this function is based on [DoubletDecon](https://github.com/EDePasquale/DoubletDecon) to perform either or both medoids and centroids deconvolution algorithms (https://www.cell.com/cell-reports/fulltext/S2211-1247(19)31286-0) defined in the metadata table for doublet cells detection.
-  * **`getIntegrationClusterMarkers()`**, 1). perform integrative analysis based on cells passing the QC with function **`processQC()`**; 2). conduct cell clustering analyses to identify different clustering cell types; and 3). identify conserved gene markers from each identified cell clusters.
-  * **`getExpCondClusterMarkers()`**, identify top expressed gene markers conserved in samples from different experimental conditions.
-  * **`getClusterExpCondDe()`**, identify differential expressed gene markers from 2 specified different experimental condition samples.
-  * **`getExpCondClusterPseudotime()`**, perform pseudotime trajectory functional analysis on the specified experimental condition clustering cells with 3 different methods, including  principal components analysis (PCA) based on [Scater](https://bioconductor.org/packages/release/bioc/html/scater.html), Diffusion Maps based on [density](https://bioconductor.org/packages/release/bioc/html/destiny.html), and [slingshot](https://www.bioconductor.org/packages/release/bioc/html/slingshot.html).
-
-#### 2. Visualization functions:
-
-  * **`getClusterSummaryReplot()`**: 1). summarize the number of cell in each identified or annotated clustering cell types; and 2). generate corresponding tSNE and UMAP plots on the specified experimental conditions.
-  * **`getGoiDotplot()`**: generate dot-plots of provided marker genes on the specified experimental conditions.
-  * **`getGoiFeatureplot()`**: generate feature-plots of provided marker genes on the specified experimental conditions.
-  * **`plotPseudotime()`**: generate pseudotime functional trajectory plots from 3 different analysis methods.
-  * **`plotPseudotimeLineages()`**: make pseudotime trajectory lineage plots based on slingshot.
-  * **`plotPseudotimeHeatmap()`**: make heat-map of identified genes differentially expressed on the pseudotime trajectory lineages from slingshot.
-
-### Main input metadata table file
-
-As a workflow package, this package has an inherited structure, this package only replies on an initial metadata table, where defines all samples names and corresponding count matrix results access locations as below:
-
-sample  | path  | expCond1 | expCond2 | doubletsRmMethod
-------------- | -------------  | -------------  | ------------- | ------------- 
-sample1_condA_cond1  | /FullPath/to/CountMatrix/ | condA | cond1 | OL/centroids/medoids/none 
-sample2_condA_cond2  | /FullPath/to/CountMatrix/ | condA | cond2 | OL/centroids/medoids/none 
-sample3_condA_cond3  | /FullPath/to/CountMatrix/ | condA | cond3 | OL/centroids/medoids/none
-sample4_condB_cond1  | /FullPath/to/CountMatrix/ | condB | cond1 | OL/centroids/medoids/none 
-sample5_condB_cond2  | /FullPath/to/CountMatrix/ | condB | cond2 | OL/centroids/medoids/none 
-
-where if the column `'doubletsRmMethod' = 'none'`, no doublets identifiecation will be performed.
-
-### Analysis workflow implementation example
-
-The entire scRNA-Seq integrative and comparative analysis can be implemented with below workflow steps based on the input metadata table and other associated options for each step's analysis. User can skip doublet detection step starting from step2 to perform integration analysis directly by setting up metadata table column `'doubletsRmMethod'` as `none`, otherwise, start the analysis from step1 `findDoublets()` with first 2 columns of above metadata table information. 
-
-We provided an ovarian caner study of 1 patient samples from 3 different Fallopian tissue types as this package demonstration data set, which can be accessible at package 'inst/extdata' folder with command `list.files(system.file('extdata', package = 'scRICA', mustWork = T))`. For the demonstration, we also include the corresponding metadata table for this experiment accessible at `system.file('extdata', 'metadata.txt', package = 'scRICA', mustWork = T)`. Please be aware column `path` information in this demonstration metadata table is based on the Mac system, if you are using other operating system, please make your own metadata table.
-
-#### 1. Step1: doublet cells detection: 
-```{r}
-metadata                <- read.delim2(file = system.file('extdata', 'metadata_mac.txt', package = 'scRICA', mustWork = T), header = T) 
-# doubletDeconResDir      <- findDoublets(metadata = metadata, 
-#                                         genomeSpecies = 'human', 
-#                                         doubletDeconRhop =  0.5, 
-#                                         doubletDeconPMF = 'F', 
-#                                         resFilename = 'scRICA_test_doublets_checking')
+  * github installation
+    ```
+devtools::install('Path/to/Downloaded/scRICA', build_vignettes = T)
+library(scRICA)
+browseVignettes(package = 'scRICA')
 ```
-This step will conduct cells doublets detection and save the entire analysis results into the defined `resFilename` under current operating directory `getwd()`, it will return a full path of directory to indict where the results were saved at. 
+  
 
-#### 2. Step2: quality control and integrative analysis
 
-This steps analysis will use 2 functions: `countReadin()` and `getClusterMarkers()`.
-
-Based on the previous step's analysis, we need to update our metadata data by including column `doubletsRmMethod` and `doubletsResDir` as shown in above metadata table input file section, where `doubletsRmMethod` allow users to specify which doublet cells detection analysis method to be used for doublet cells filtering, 3 extra options are provided here, 'medoids', 'centroids', or 'OL' (doublet cells detected by both medoids and centroids deconvolution algorithms); `doubletsResDir` specify where the previous analysis results are located. The metadata table can be updated as below and used for this step's integrative analysis via function `countReadin()`.
-
-```{r}
-# metadataUpdate                  <- metadata
-# metadataUpdate$doubletsRmMethod <- rep('OL', length(metadataUpdate$sample))
-# metadataUpdate$doubletsResDir   <- rep(as.character(doubletDeconResDir), length(metadataUpdate$sample))
-# ## ---
-# seuratProcssedObjList           <- countReadin(metadata = metadataUpdate, 
-#                                                resDirName = 'scRICA_test', 
-#                                                genomeSpecies = 'human', 
-#                                                minCells = 3, minFeatures = 200, 
-                                               # mtFiltering = 'T', mtPerCutoff = 20)
+  * local download installation
+    Download package to your local computer via: ``git clone https://github.com/yan-cri/scRICA.git``
+    ```
+devtools::install('Path/to/Downloaded/scRICA', build_vignettes = T)
+library(scRICA)
+browseVignettes(package = 'scRICA')
 ```
 
-This function will conduct integrative analysis for all samples provided in the metadata table. If user would like to filter out the mitochondrial content, as shown here, please specify `mtFiltering = 'T'` together with the mitochondrial content filtering percentage with option `mtPerCutoff`. This function will 1) prepare a Seurat object by reading the count matrix from different samples specified in the metadata table into R, and 2) perform the quality control evaluations. 
-
-```{r}
-# seuratIntegratedRes             <- getClusterMarkers(qcProcessedSeuratObjList = seuratProcssedObjList$qcProcessObj, 
-#                                                      anchorIntegrate = T, 
-#                                                      resDirName = 'scRICA_test' )
-                                             
-```
-In addition to integrative analysis for all samples, this function will also conduct the top expressed markers detection with respect to each cell clusters. The entire analysis results will be saved in the specified `resDirName`, the final integrated RDS file will be saved in `'RDS_Dir'` folder inside `resDirName` directory. If no `resDirName` is specified, a folder named as `integration_analysis_results` will be created to save this function's analysis results.
-
-#### 3. Step3: gene marker identfication
-2 types of gene markers identification with respect to experimental conditions can be performed with corresponding functions `getClusterExpCondDe()` and `getClusterExpCondDe()`, where as specified above, `getExpCondClusterMarkers()` can identify top expressed gene markers for samples from different experimental conditions with respect to each identified or annotated clustering cell types; and `getClusterExpCondDe()` can identify differential expressed gene markers for samples from 2 different experimental conditions with respect to each identified or annotated clustering cell types.
-
-#### 4. Step4: clustering and gene marker visualizations
-The integrative cell clustering analysis results can be visualized via function `getClusterSummaryReplot()`, and additional gene markers exploration can be done via function `getGoiDotplot()` and `getGoiFeatureplot()`.
-
-#### 5. Step5: pseudotime functional trajectory analysis and visualization
-
-Pseudotime functional trajectory analysis can be performed at different specified experimental cell clusters via function `getClusterPseudo()`, and the corresponding visualization can be performed via function `plotObjPseudotime()`.
-
-## Feedback
+## 3. Feedback
 If you have further questions or suggestions regarding this package, please contact Yan Li at yli22@bsd.uchicago.edu from the bioinformatics core at the Center for Research Bioinformatics (CRI), biological science division (BSD), University of Chicago.
 
 
