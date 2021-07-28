@@ -7,7 +7,7 @@ It is a R workflow package which can be used to perform scRNA-Seq downstream int
 
   * github installation
 ```
-devtools::install('Path/to/Downloaded/scRICA', build_vignettes = T)
+devtools::install_github(repo = 'yan-cri/scRICA', build_vignettes = T, force = T)
 library(scRICA)
 ```
   
