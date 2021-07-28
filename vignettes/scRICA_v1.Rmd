@@ -51,7 +51,6 @@ library(scRICA)
 browseVignettes(package = 'scRICA')
 ```
   
-
 ### 3. Input metadata table file
 
 This workflow package has its own inherited structure, and requires an initial metadata table to initiate the entire scRNA-Seq workflow analyses. 4 columns are required in the metadata table, they are `sample`, `path`, `doubletsRmMethod` and `expCond1` for samples names, full path to sample's count matrix tables directory (cellranger analysis results), doublets detective methods with four options, and experimental condition levels respectively; up to 2 experimental conditions specified in column `expCond1` and `expCond2` can be explored with this package. If no doublets removal is needed for samples, please specify 'none' for that sample in the column `doubletsRmMethod`.
@@ -74,11 +73,11 @@ metadata
 
 This package separate the scRNA-Seq integrative and comparative analysis into 3 categories, including integrative analysis with QC assessment for doublets and mitochondrial content, comparative analysis from different experimental condition groups, and visualizations.
 
+
 #### 5.1 integrative analysis with QC assessment
   * QC results without mitochondrial content filtering
   ```
-  library(scRICA)
-  ?processQC  
+library(scRICA)
 qcResult1 <- processQC(metadata = metadata, 
                        resDirName = 'scRICA_test_result1', 
                        genomeSpecies = 'human')
@@ -86,10 +85,11 @@ qcResult1 <- processQC(metadata = metadata,
   * QC results with mitochondrial content filtering: turn on `mtFiltering` option and setup the mitochondrial content percentage cut-off values with option `mtPerCutoff`
 
 ```
-qcResult2 <- processQC(metadata = metadata, 
-                       resDirName = 'scRICA_test_result2', 
-                       genomeSpecies = 'human', 
-                       mtFiltering = T, mtPerCutoff = 20)
+library(scRICA)
+qcResult <- processQC(metadata = metadata, 
+                      resDirName = 'scRICA_test_result', 
+                      genomeSpecies = 'human', 
+                      mtFiltering = T, mtPerCutoff = 20)
 ```
 
 #### 5.2 experimental condition comparative analysis

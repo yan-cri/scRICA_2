@@ -15,31 +15,27 @@ processQC(
 )
 }
 \arguments{
-\item{metadata}{txt file with 4 columns,
-where sample specifiy the sample names,
-path specify full path to cellranger analysis results for that sample,
-doubletsRmMethods specify doublet removal methods,
-doubletsResDir specify the full path of saved doublet removal results.}
+\item{metadata}{required, metadata table}
 
-\item{resDirName}{optional, define folder/directory name where integration analysis results will be saved}
+\item{resDirName}{optional, define folder/directory name where integration analysis results will be saved, if not defined, results will be saved current directory in a folder named as 'scRICA_results'}
 
-\item{genomeSpecies}{To be added}
+\item{genomeSpecies}{optional, default = 'human', specify sample's genome species}
 
-\item{minCells}{optional, default = 3, used in creating seurat object to indicate the minumn detected number of cells to be included.}
+\item{minCells}{optional, default = 3, used in creating Seurat object to indicate the minimum detected number of cells to be included.}
 
-\item{minFeatures}{optional, default = 200, used in creating seurat object to indicate the minimum detected number of gene features (genes) of included cells.}
+\item{minFeatures}{optional, default = 200, used in creating Seurat object to indicate the minimum detected number of gene features (genes) of included cells.}
 
-\item{mtFiltering}{default = F, logical, whehter to filter mitochondrial content}
+\item{mtFiltering}{default = F, logical, whether to filter mitochondrial content}
 
 \item{mtPerCutoff}{optional, if mtFiltering = T, default = 20, indicating the percentage cut-off of mitochondrial content}
 }
 \value{
-a list item including 3 elements:
+the QC analysis results saved in defined 'resDir' under current working directory.
+Meanwhile, this will also return a list item including 3 elements:
 \enumerate{
-\item 'countReadInOjb': a list of orignial counts seurat objects
-\item 'qcProcessObj': a list of QC passed seurat objects, such as mitochondrial content removal
-\item 'resDir': full path of directory/folder name where the entire QC analysis results are saved, it includes
-TO BE ADDED.
+\item 'countReadInOjb': a list of Seurat objects of original counts matrix without QC filtering.
+\item 'qcProcessObj': a list of Seurat objects with QC passed, such as doublets removal and mitochondrial content removal.
+\item 'resDir': full path of the directory/folder name where the QC results are saved.
 }
 }
 \description{

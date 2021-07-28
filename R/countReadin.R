@@ -1,19 +1,16 @@
 ## processQC(): readin cellranger results into seurat object w/wo doublets removal##
 ## Developed by Yan Li, Jan, 2021
+## Edited by Michiko Ryu, April, 2021
 ##--------------------------------------------------------------------------------------##
 #' processQC() Function
 #' @details
 #' This function is used to readin cellranger results into seurat object by defining w/wo doublets removal
-#' @param metadata txt file with 4 columns,
-#'                 where sample specifiy the sample names,
-#'                 path specify full path to cellranger analysis results for that sample,
-#'                 doubletsRmMethods specify doublet removal methods,
-#'                 doubletsResDir specify the full path of saved doublet removal results.
-#' @param resDirName optional, define folder/directory name where integration analysis results will be saved
-#' @param genomeSpecies To be added
-#' @param minCells optional, default = 3, used in creating seurat object to indicate the minumn detected number of cells to be included.
-#' @param minFeatures optional, default = 200, used in creating seurat object to indicate the minimum detected number of gene features (genes) of included cells.
-#' @param mtFiltering default = F, logical, whehter to filter mitochondrial content
+#' @param metadata required, metadata table
+#' @param resDirName optional, define folder/directory name where integration analysis results will be saved, if not defined, results will be saved current directory in a folder named as 'scRICA_results'
+#' @param genomeSpecies optional, default = 'human', specify sample's genome species
+#' @param minCells optional, default = 3, used in creating Seurat object to indicate the minimum detected number of cells to be included.
+#' @param minFeatures optional, default = 200, used in creating Seurat object to indicate the minimum detected number of gene features (genes) of included cells.
+#' @param mtFiltering default = F, logical, whether to filter mitochondrial content
 #' @param mtPerCutoff optional, if mtFiltering = T, default = 20, indicating the percentage cut-off of mitochondrial content
 #'
 #' @importFrom Seurat Read10X
@@ -39,11 +36,11 @@
 #' @export
 #'
 #' @return
-#' a list item including 3 elements:
-#' 1. 'countReadInOjb': a list of orignial counts seurat objects
-#' 2. 'qcProcessObj': a list of QC passed seurat objects, such as mitochondrial content removal
-#' 3. 'resDir': full path of directory/folder name where the entire QC analysis results are saved, it includes
-#' TO BE ADDED.
+#' the QC analysis results saved in defined 'resDir' under current working directory.
+#' Meanwhile, this will also return a list item including 3 elements:
+#' 1. 'countReadInOjb': a list of Seurat objects of original counts matrix without QC filtering.
+#' 2. 'qcProcessObj': a list of Seurat objects with QC passed, such as doublets removal and mitochondrial content removal.
+#' 3. 'resDir': full path of the directory/folder name where the QC results are saved.
 ##----------------------------------------------------------------------------------------##
 # library(Seurat)
 # library(ggplot2)
@@ -75,16 +72,20 @@ processQC <- function(metadata, resDirName=NULL, genomeSpecies=NULL, minCells=3,
   mtPerCutoff                    <- as.numeric(mtPerCutoff)
   ## ---
   if ( 'expCond1' %in% colnames(metadata) & !'expCond2' %in% colnames(metadata)) {
-    print(sprintf('Only 1 experimental condition are provided with %s experimental factor levels for comparisions.', length(levels(factor(metadata$expCond1))) ))
+    print(sprintf('Only 1 experimental condition are provided with %s experimental factor levels for comparisons.', length(levels(factor(metadata$expCond1))) ))
   } else if ( 'expCond1' %in% colnames(metadata) & 'expCond2' %in% colnames(metadata) ) {
-    print(sprintf('2 experimental conditions are provided, experimental condition 1 has %s experimental factor levels, and experimental condition 2 has %s experimental factor levels for comparisions', length(levels(factor(metadata$expCond1))), length(levels(factor(metadata$expCond2))) ))
+    print(sprintf('2 experimental conditions are provided, experimental condition 1 has %s experimental factor levels, and experimental condition 2 has %s experimental factor levels for comparisons', length(levels(factor(metadata$expCond1))), length(levels(factor(metadata$expCond2))) ))
   } else if ( !'expCond1' %in% colnames(metadata) & !'expCond2' %in% colnames(metadata) ) {
     print(sprintf('No experimental condition factors are provided, the analysis will be conducted only based samples integration'))
   } else if ( !'expCond1' %in% colnames(metadata) & 'expCond2' %in% colnames(metadata)) {
-    print(sprintf('Only 1 experimental condition are provided with %s experimental factor levels for comparisions.', length(levels(factor(metadata$expCond2))) ))
+    print(sprintf('Only 1 experimental condition are provided with %s experimental factor levels for comparisons.', length(levels(factor(metadata$expCond2))) ))
   }
   ## ---
-  ## updating metadata to include doublets detection results
+  ## 0. create main directory for results to be save in
+  resDir                         <- paste(getwd(), resDirName, sep = '/')
+  if (!dir.exists(resDir)) dir.create(resDir)
+  ## -------
+  ## run findDoublet and update metadata to include doublets detection results
   if ( !'doubletsResDir' %in% colnames(metadata) ) {
     metadataOrg                  <- metadata
     metadataOrg$doubletsRmMethod <- gsub('[]|[ ]', 'none', metadataOrg$doubletsRmMethod)
@@ -95,9 +96,9 @@ processQC <- function(metadata, resDirName=NULL, genomeSpecies=NULL, minCells=3,
     } else {
       md4doublet                 <- metadataOrg %>% dplyr::filter(doubletsRmMethod != 'None' ) %>% dplyr::filter(doubletsRmMethod != 'none' ) %>% dplyr::filter(doubletsRmMethod != 'NONE' )
       print('===================================================================')
-      print('START: Doublets identfication analysis before processing to the next step.')
+      print('START: Doublets identification analysis before processing to the next step.')
       doubletsRes                <- findDoublets(metadata = md4doublet, genomeSpecies = genomeSpecies, resFilename = paste(resDirName, 'doublet_results', sep = '/') )
-      print('END: Doublets identfication, process to next step QC.')
+      print('END: Doublets identification, process to next step QC.')
       print('===================================================================')
       md4doublet$doubletsResDir  <- rep(as.character(doubletsRes), length(md4doublet$sample))
       doubletsMd                 <- md4doublet %>% dplyr::select(c('sample', 'doubletsResDir'))
@@ -105,7 +106,7 @@ processQC <- function(metadata, resDirName=NULL, genomeSpecies=NULL, minCells=3,
     }
   } else {
     print('===================================================================')
-    print('NO doublets identfication analysis is needed, because doublets identification either conducted or not needed.')
+    print('NO doublets identification analysis is needed, because doublets identification either conducted or not needed.')
     metadataOrg                  <- metadata
     metadataOrg$doubletsRmMethod <- gsub('[]|[ ]', 'none', metadataOrg$doubletsRmMethod)
     metadataOrg$doubletsRmMethod[is.na(metadataOrg$doubletsRmMethod)] <- 'none'
@@ -126,34 +127,27 @@ processQC <- function(metadata, resDirName=NULL, genomeSpecies=NULL, minCells=3,
   ## ---
   doubletsRmMethods              <- as.character(metadata$doubletsRmMethod)
   doubletsResDirs                <- as.character(metadata$doubletsResDir)
-  ## 0. create 'resDir' based on provided 'resDirName' under current workDir
-  resDir                         <- paste(getwd(), resDirName, sep = '/')
-  if (!dir.exists(resDir)) dir.create(resDir)
-  # ## intermediate RDS result dir
-  # rdsDir               <- paste(resDir, 'RDS_Dir', sep = '/')
-  # if (!dir.exists(rdsDir)) dir.create(rdsDir)
-  ## -------
-  ## 1. setup the original seurat object into a list for each item in the 'cellrangerResList'
+  ## 1. setup the original Seurat object into a list for each item in the 'cellrangerResList'
   # Sys.time()
   print(sprintf('Step 1: read in 10X data into Seurat object at %s', Sys.time()))
   seuratObjList                  <- list()
   for (x in 1:length(cellrangerResList)) {
     print('---===------------')
     print(sprintf("Processing sample %s: '%s'.", x, as.character(cellrangerResList[[x]])))
-    cellrangerCounts           <- Read10X(data.dir = cellrangerResList[[x]])
-    print(sprintf('Orignially it has %s cells and %s features originated from cellranger to import into seurat object', length(cellrangerCounts@Dimnames[[2]]), length(cellrangerCounts@Dimnames[[1]]) ))
+    cellrangerCounts           <- Seurat::Read10X(data.dir = cellrangerResList[[x]])
+    print(sprintf('Originally it has %s cells and %s features originated from cellranger to import into Seurat object', length(cellrangerCounts@Dimnames[[2]]), length(cellrangerCounts@Dimnames[[1]]) ))
     ## include feature detected in at least 'min.cells = 3', and include cells where at least 'min.features = 200' detected
-    seuratObjOrg               <- CreateSeuratObject(counts = cellrangerCounts,  project = names(cellrangerResList)[x], min.cells = as.numeric(minCells), min.features = as.numeric(minFeatures))
+    seuratObjOrg               <- Seurat::CreateSeuratObject(counts = cellrangerCounts,  project = names(cellrangerResList)[x], min.cells = as.numeric(minCells), min.features = as.numeric(minFeatures))
     ## add metadata feature2 into object, here is 'expCond' for metadata$sample
-    seuratObjOrg               <- AddMetaData(object = seuratObjOrg,  col.name = 'expCond', metadata = as.factor(metadata$sample[x]))
+    seuratObjOrg               <- Seurat::AddMetaData(object = seuratObjOrg,  col.name = 'expCond', metadata = as.factor(metadata$sample[x]))
     ## extra metadata columns in metadata columns 'expCond1' and 'expCond2' will be added respectively
     if ( 'expCond1' %in% colnames(metadata) & 'expCond2' %in% colnames(metadata) ) {
-      seuratObjOrg             <- AddMetaData(object = seuratObjOrg,  col.name = 'expCond1', metadata = as.factor(metadata$expCond1[x]))
-      seuratObjOrg             <- AddMetaData(object = seuratObjOrg,  col.name = 'expCond2', metadata = as.factor(metadata$expCond2[x]))
+      seuratObjOrg             <- Seurat::AddMetaData(object = seuratObjOrg,  col.name = 'expCond1', metadata = as.factor(metadata$expCond1[x]))
+      seuratObjOrg             <- Seurat::AddMetaData(object = seuratObjOrg,  col.name = 'expCond2', metadata = as.factor(metadata$expCond2[x]))
     } else if ( 'expCond1' %in% colnames(metadata) & !'expCond2' %in% colnames(metadata) ) {
-      seuratObjOrg             <- AddMetaData(object = seuratObjOrg,  col.name = 'expCond1', metadata = as.factor(metadata$expCond1[x]))
+      seuratObjOrg             <- Seurat::AddMetaData(object = seuratObjOrg,  col.name = 'expCond1', metadata = as.factor(metadata$expCond1[x]))
     } else if ( !'expCond1' %in% colnames(metadata) & 'expCond2' %in% colnames(metadata) ) {
-      seuratObjOrg             <- AddMetaData(object = seuratObjOrg,  col.name = 'expCond2', metadata = as.factor(metadata$expCond2[x]))
+      seuratObjOrg             <- Seurat::AddMetaData(object = seuratObjOrg,  col.name = 'expCond2', metadata = as.factor(metadata$expCond2[x]))
     }
     ## ---
     orgCellNoSummary           <- data.frame('cellrangeRcellNo' = dim(seuratObjOrg)[2], 'cellrangeRfeatureNo' = dim(seuratObjOrg)[1] )
@@ -163,8 +157,13 @@ processQC <- function(metadata, resDirName=NULL, genomeSpecies=NULL, minCells=3,
       orgCellNoSummarySampComb <- rbind(orgCellNoSummarySampComb, orgCellNoSummary)
     }
     ## ---
-    doubletsMethod             <- doubletsRmMethods[x]
-    if (doubletsMethod != 'none') {
+    doubletsMethod             <- tolower(doubletsRmMethods[x])
+    if (doubletsMethod == 'none') {
+      seuratObj                <- seuratObjOrg
+      print('No doublet removal is executed here')
+      print(seuratObjOrg)
+      print('---')
+    } else {
       if (is.na(doubletsResDirs[x])) stop('doubletsMethod is on, please provide corresponding full path to the saved doublets removal results')
       print(sprintf('%s doublet removal methods were implemented.', doubletsMethod))
       if (doubletsMethod == 'centroids') {
@@ -177,7 +176,7 @@ processQC <- function(metadata, resDirName=NULL, genomeSpecies=NULL, minCells=3,
         load(doubletFname[x])
         print(sprintf('%s doublets were estimated from %s sample', length(medoidsDoubletCells), names(cellrangerResList)[x] ))
         doubletCellsUpdate <- gsub(pattern = '[.]', replacement = '-', medoidsDoubletCells)
-      } else if (doubletsMethod == 'OL') {
+      } else if (doubletsMethod == 'ol') {
         doubletFname           <- paste(doubletsResDirs[x], '/', names(cellrangerResList), '_OL_doublet_cells_name.Rdata', sep = '')
         load(doubletFname[x])
         print(sprintf('%s doublets were estimated from %s sample', length(olDoubletCells), names(cellrangerResList)[x] ))
@@ -185,20 +184,16 @@ processQC <- function(metadata, resDirName=NULL, genomeSpecies=NULL, minCells=3,
       }
       doubletDf                <- data.frame(cells = rownames(seuratObjOrg@meta.data))
       doubletDf                <- doubletDf %>% dplyr::mutate(doublet = ifelse(rownames((seuratObjOrg@meta.data)) %in% doubletCellsUpdate, 'TRUE', 'FASLE') )
-      seuratObjOrg             <- AddMetaData(object = seuratObjOrg,  col.name = 'doublet', metadata = as.factor(doubletDf$doublet) )
+      seuratObjOrg             <- Seurat::AddMetaData(object = seuratObjOrg,  col.name = 'doublet', metadata = as.factor(doubletDf$doublet) )
       seuratObj                <- subset(seuratObjOrg, doublet == 'FASLE')
-      print('Orignal seurat object without doublet removal:')
+      print('Original Seurat object without doublet removal:')
       print(seuratObjOrg)
       print('---')
       print(sprintf('%s Doublets were removal, %s cells were left', length(doubletCellsUpdate), (dim(seuratObjOrg@meta.data)[1] - length(doubletCellsUpdate)) ))
       print('doublet removed object:')
       print(seuratObj)
       print('---')
-    } else {
-      seuratObj                <- seuratObjOrg
-      print('No doublet removal is executed here')
-      print(seuratObjOrg)
-      print('---')
+
     }
     seuratObjList[[x]]         <- seuratObj
   }
@@ -217,8 +212,8 @@ processQC <- function(metadata, resDirName=NULL, genomeSpecies=NULL, minCells=3,
   rownames(cellNoSummaryComb)  <- names(cellrangerResList)
   write.table(x = cellNoSummaryComb, file = file.path(resDir, 'org_doubletsRemoval_cellNoSummary.txt'), quote = F, row.names = T, col.names = NA, sep = '\t')
   ##--------------------------------------------------------------------------------------
-  ## 2. pre-processing: 1) check/filter the mitochodrial content, 2) normalization, 3) find variable features, and scaling
-  print('Step 2: check mitochodrial content & normalization')
+  ## 2. pre-processing: 1) check/filter the mitochondrial content, 2) normalization, 3) find variable features, and scaling
+  print('Step 2: check mitochondrial content & normalization')
   ## 2.1 create 'seuratObjListPlotsDir' for each item in processed 'seuratObjList' based on input 'cellrangerResList'
   qcPlotsDir                  <- paste(resDir, 'QC_plots', sep = '/')
   if (!dir.exists(qcPlotsDir)) dir.create(qcPlotsDir)
@@ -227,13 +222,13 @@ processQC <- function(metadata, resDirName=NULL, genomeSpecies=NULL, minCells=3,
   for (x in 1:length(seuratObjList)) {
     ## ---------
     seuratObj                 <- seuratObjList[[x]]
-    ## 1).1 calculating mitochodrial content
-    # print(sprintf('%s mitochodiral genes are processed', length(grep('^MT-', seuratObj@assays$RNA@data@Dimnames[[1]])) ))
+    ## 1).1 calculating mitochondrial content
+    # print(sprintf('%s mitochondrial genes are processed', length(grep('^MT-', seuratObj@assays$RNA@data@Dimnames[[1]])) ))
     # seuratObj[['percent.mt']] <- PercentageFeatureSet(object = seuratObj, pattern = '^MT-')
-    print(sprintf('%s mitochodiral genes are processed', length(grep(mtPatten(as.character(genomeSpecies)), seuratObj@assays$RNA@data@Dimnames[[1]])) ))
+    print(sprintf('%s mitochondrial genes are processed', length(grep(mtPatten(as.character(genomeSpecies)), seuratObj@assays$RNA@data@Dimnames[[1]])) ))
     seuratObj[['percent.mt']] <- PercentageFeatureSet(object = seuratObj, pattern = mtPatten(as.character(genomeSpecies)) )
     print(head(seuratObj@meta.data, 5))
-    ## calculating no. of cells with certain mitochodrial percentage
+    ## calculating no. of cells with certain mitochondrial percentage
     mtPer <- list()
     for(k in seq_along(1:4)){
       mtPer[[k]] <- sum(seuratObj@meta.data$percent.mt < 5*k) / length(seuratObj@meta.data$percent.mt)
@@ -248,7 +243,7 @@ processQC <- function(metadata, resDirName=NULL, genomeSpecies=NULL, minCells=3,
     }
     # print(mtPerTabSampComb)
     # write.table(x = mtPerTab, file = paste(resDir, '/ToDelete_MT_percentage_summary_', names(seuratObjList)[x], '.txt', sep = ''), quote = F, sep = '\t', row.names = F, col.names = T)
-    ## 1).2 plot mitochodrial content
+    ## 1).2 plot mitochondrial content
     pdf(file = paste(qcPlotsDir, '/featureScatter_', names(seuratObjList)[x], '.pdf', sep = ''), width = 10, height = 6)
     # VlnPlot(object = seuratObj, features = c('nFeature_RNA', 'nCount_RNA', 'percent.mt'), ncol = 3)
     plot1                     <- FeatureScatter(seuratObj, feature1 = "nCount_RNA", feature2 = "percent.mt")
@@ -265,9 +260,8 @@ processQC <- function(metadata, resDirName=NULL, genomeSpecies=NULL, minCells=3,
       ## Filtering is on, update 'seuratObj' with subsetted obj
       ## 1). 3 remove unwanted features and cells
       seuratObjBeforeFilter   <- seuratObj
-      # seuratObj              <- subset(seuratObjBeforeFilter, subset = nFeature_RNA > 200 & nFeature_RNA < 5000 & percent.mt < 10) ##resDir: *_wFiltering_nFeatures, note 10% setup might be too low
-      seuratObj               <- subset(seuratObjBeforeFilter, subset = nFeature_RNA > 200 & percent.mt < mtPerCutoff) ##resDir: *_wFiltering_mtContentOnly20_standardWorkflow
-      ## 1).2 plot mitochodrial content
+      seuratObj               <- subset(seuratObjBeforeFilter, subset = nFeature_RNA > 200 & percent.mt < mtPerCutoff)
+      ## 1).2 plot mitochondrial content
       pdf(file = paste(qcPlotsDir, '/featureScatter_', names(seuratObjList)[x], '_afterFiltering.pdf', sep = ''), width = 10, height = 6)
       # VlnPlot(object = seuratObj, features = c('nFeature_RNA', 'nCount_RNA', 'percent.mt'), ncol = 3)
       plot1 <- FeatureScatter(seuratObj, feature1 = "nCount_RNA", feature2 = "percent.mt")
@@ -312,7 +306,7 @@ processQC <- function(metadata, resDirName=NULL, genomeSpecies=NULL, minCells=3,
   colnames(noFilteredCellsSampComb)   <- c(colnames(noFilteredCellsSampComb)[1], names(seuratObjList))
   noFilteredCellsSampComb$Total       <- rowSums(noFilteredCellsSampComb[,-1])
   write.table(x = noFilteredCellsSampComb, file = file.path(resDir, 'No_filtered_cells_summary.txt'), quote = F, sep = '\t', row.names = F, col.names = T)
-  print('Step 2: END check mitochodrial content & normalization')
+  print('Step 2: END check mitochondrial content & normalization')
   print('---===---')
   ## ------
   return(list('countReadInOjb' = seuratObjList, 'qcProcessObj' = seuratQcProcessObjList, 'resDir' = resDir))
