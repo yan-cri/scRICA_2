@@ -1,4 +1,4 @@
-## getIntegrationClusterMarkers(): integrate seurat objects with identified anchor via seurat method   ##
+## getClusterMarkers(): integrate seurat objects with identified anchor via seurat method   ##
 ## Developed by Yan Li, Jan, 2021                                                         ##
 ##----------------------------------------------------------------------------------------##
 # library(Seurat)
@@ -6,13 +6,14 @@
 # library(ggplot2)
 # library(gridExtra)
 ## -------------------------------------------------------------------------------------- ##
-#' getIntegrationClusterMarkers() Function
+#' getClusterMarkers() Function
 #' @details
-#' This function is used to integrate seurat objects with identified anchor via seurat method,
+#' This function is used to integrate Seurat objects with identified anchor via Seurat method,
 #' followed with conducing cluster analysis, and identifying cluster markers
-#' @param qcProcessedResults returned 'qcProcessObj' or full results from countReadin() function.
-#' @param heatmapTopno TOBEADD
-#' @param resDirName optional, define folder/directory name where integration analysis results will be saved
+#' @param qcProcessedResults required, processQC() returned results or object 'qcProcessObj'.
+#' @param topN optional, default = 10, indicating the number of identified cluster gene markers
+#' @param resDirName optional, define folder/directory name where integration analysis results will be saved.
+#' If processQC() full results used for option 'qcProcessedResults', it will use the same 'resDirName' used in processQC()
 #'
 #' @importFrom ggplot2 theme
 #' @importFrom gridExtra grid.arrange
@@ -40,24 +41,26 @@
 #' @importFrom utils tail
 #' @importFrom utils write.table
 #'
-#' @keywords getIntegrationClusterMarkers, seuratIntegrate
-#' @examples getIntegrationClusterMarkers()
+#' @keywords getClusterMarkers, seuratIntegrate
+#' @examples getClusterMarkers()
 #' @export
 #' @return
-#' a list item including 3 elements:
-#' 1. 'integratedObj': finalized integrated seurat object;
-#' 2. 'posMarkers': identified positively expressed cluster markers;
-#' 3. 'resDir': full path of results directory, where includes TO BE ADDED.
+#' the entire integration analysis results in the defined 'resDirName' inherited from 'processQC()'.
+#' Additionaly, a list item including 3 elements:
+#' 1. 'integratedObj': integrated Seurat object;
+#' 2. 'posMarkers': identified positively expressed cluster gene markers;
+#' 3. 'resDir': full path of results directory, where the entire integration analysis results are saved.
+#'
 ##----------------------------------------------------------------------------------------
-getIntegrationClusterMarkers <- function(qcProcessedResults, resDirName = NULL, heatmapTopno = 10) {
+getClusterMarkers <- function(qcProcessedResults, resDirName = NULL, topN = 10) {
   ## ---
   anchorIntegrate               <- as.logical(T)
-  heatmapTopno                  <- as.numeric(heatmapTopno)
+  topN                          <- as.numeric(topN)
   if ('resDir' %in% names(qcProcessedResults) & 'countReadInOjb' %in% names(qcProcessedResults) ){
     qcProcessedSeuratObjList    <- qcProcessedResults$qcProcessObj
     resDir                      <- qcProcessedResults$resDir
-    if (!is.null(resDirName)) stop("Full countReadin() results provided in 'qcProcessedResults', no need for option 'resDirName', please remove it")
-    if (!dir.exists(resDir)) stop('Error: please make sure QC analysis has been processed correctly and successfully with function countReadin()')
+    if (!is.null(resDirName)) stop("Full processQC() results provided in 'qcProcessedResults', no need for option 'resDirName', please remove it")
+    if (!dir.exists(resDir)) stop('Error: please make sure QC analysis has been processed correctly and successfully with function processQC()')
   } else {
     qcProcessedSeuratObjList    <- qcProcessedResults
     if (is.null(resDirName)) resDirName = 'integration_results'
@@ -176,10 +179,10 @@ getIntegrationClusterMarkers <- function(qcProcessedResults, resDirName = NULL, 
   print('---===---')
   ## -
   print('Start: Step 4 making cluster marker genes heatmap plot')
-  top10                 <- allPosMarkers %>% group_by(cluster) %>% top_n(n = heatmapTopno, wt = avg_log2FC) %>% as.data.frame()
-  write.table(x = top10, file = file.path(sprintf('%s/allCluster_pos_markers_top%s.txt', resDir, heatmapTopno)), quote = F, sep = '\t', row.names = T, col.names = NA)
+  top10                 <- allPosMarkers %>% group_by(cluster) %>% top_n(n = topN, wt = avg_log2FC) %>% as.data.frame()
+  write.table(x = top10, file = file.path(sprintf('%s/allCluster_pos_markers_top%s.txt', resDir, topN)), quote = F, sep = '\t', row.names = T, col.names = NA)
   cluterTop10heatmap    <- DoHeatmap(seuratObjFinal, features = top10$gene) + NoLegend()
-  pdf(file = file.path(resDir, sprintf('cluster_heatmap_top%sPosMarkers.pdf', heatmapTopno)), width = 25, height = 20)
+  pdf(file = file.path(resDir, sprintf('cluster_heatmap_top%sPosMarkers.pdf', topN)), width = 25, height = 20)
   print(cluterTop10heatmap)
   dev.off()
   # top10                 <- allPosMarkers %>% group_by(cluster) %>% top_n(n = 10, wt = avg_log2FC) %>% as.data.frame()

@@ -23,8 +23,10 @@
 #' @importFrom ggplot2 theme_void
 #' @importFrom ggplot2 geom_bar
 #' @importFrom ggplot2 ggsave
+#' @importFrom Seurat Idents
 #' @importFrom Seurat NoLegend
-#' @importFrom Seurat DefaultAssay
+#' @importFrom Seurat RotatedAxis
+#' @importFrom SeuratObject DefaultAssay
 #' @importFrom grDevices dev.off
 #' @importFrom grDevices pdf
 #' @importFrom utils write.table
@@ -99,7 +101,7 @@ getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnota
   if (expCondCheck == 'sample') {
     seuratObjFinal                     <- seuratObjFinal
   } else if (expCondCheck == 'comb') {
-    seuratObjFinal@meta.data$expCond   <- Idents(seuratObjFinal)
+    seuratObjFinal@meta.data$expCond   <- Seurat::Idents(seuratObjFinal)
   } else if (expCondCheck == 'expCond1') {
     if (!'expCond1' %in% colnames(seuratObjFinal@meta.data)){
       print("Error: 'expCond1' has not been included in the original integration analysis.")
@@ -121,7 +123,7 @@ getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnota
   if (!dir.exists(plotResDir)) dir.create(plotResDir)
   print(sprintf('GOI dot plots will be saved in %s', plotResDir))
   ## ------
-  print(table(Idents(seuratObjFinal)))
+  print(table(Seurat::Idents(seuratObjFinal)))
   ## ------
   ## using column 'gene' as marker genes, if column 'celltype' exist, will be used to categorize the genes
   if (file_ext(basename(goiFname)) == 'xlsx') {
@@ -164,53 +166,53 @@ getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnota
   print(sprintf("A total of %s marker genes will be used for downstream dotplot at '%s'. ", length(markerGenes), basename(dotplotFname) ))
   ## ---
   ## 2. make dotplot with provided gene markers; dot plot of all selected marker genes presented on x-axis
-  DefaultAssay(seuratObjFinal)   <- "RNA" ## suggested by seurat tutorial at 'https://satijalab.org/seurat/articles/integration_introduction.html' using RNA slot for feature plot and dot plot and downstream analysis
-  # DefaultAssay(seuratObjFinal)   <- "integrated"
+  SeuratObject::DefaultAssay(seuratObjFinal)   <- "RNA" ## suggested by seurat tutorial at 'https://satijalab.org/seurat/articles/integration_introduction.html' using RNA slot for feature plot and dot plot and downstream analysis
+  # SeuratObject::DefaultAssay(seuratObjFinal)   <- "integrated"
   ## adding expCond to the idents of identified clusters
-  if (all( names(Idents(seuratObjFinal)) == names(seuratObjFinal$expCond) )) {
-    ## re-define Idents(seuratObjFinal) with level name: cluster + expCond if expCondCheck != 'comb'
+  if (all( names(Seurat::Idents(seuratObjFinal)) == names(seuratObjFinal$expCond) )) {
+    ## re-define Seurat::Idents(seuratObjFinal) with level name: cluster + expCond if expCondCheck != 'comb'
     ## ---
     if (is.null(expCondReorderLevels)) {
       expCondReorderLevels          <- levels(factor(seuratObjFinal@meta.data$expCond))
     }
     if ( !all(expCondReorderLevels %in% levels(factor(seuratObjFinal$expCond))) ) stop("Please provide correct corresponding 'expCondReorderLevels' to sort y-axis dot plot")
     if (expCondCheck != 'comb') {
-      Idents(seuratObjFinal)        <- factor( paste(Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'),
-                                               levels = paste(rep(levels(Idents(seuratObjFinal)), each = length(levels(factor(seuratObjFinal$expCond))) ), levels(factor(seuratObjFinal$expCond, levels = expCondReorderLevels)), sep = '_') )
+      Seurat::Idents(seuratObjFinal)        <- factor( paste(Seurat::Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'),
+                                               levels = paste(rep(levels(Seurat::Idents(seuratObjFinal)), each = length(levels(factor(seuratObjFinal$expCond))) ), levels(factor(seuratObjFinal$expCond, levels = expCondReorderLevels)), sep = '_') )
     } else {
-      Idents(seuratObjFinal)        <- factor(Idents(seuratObjFinal), levels = expCondReorderLevels)
+      Seurat::Idents(seuratObjFinal)        <- factor(Seurat::Idents(seuratObjFinal), levels = expCondReorderLevels)
     }
 
     # if (!is.null(expCondReorderLevels)) {
     #   if (cellclusterNameSort) {
         # if ( !all(expCondReorderLevels %in% levels(factor(seuratObjFinal$expCond))) ) stop("Please provide correct corresponding 'expCondReorderLevels' to sort y-axis dot plot")
-        # Idents(seuratObjFinal) <- factor(paste(Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels = paste(rep(levels(Idents(seuratObjFinal)), each = length(levels(factor(seuratObjFinal$expCond))) ), levels(factor(seuratObjFinal$expCond, levels = expCondReorderLevels)), sep = '_') )
+        # Seurat::Idents(seuratObjFinal) <- factor(paste(Seurat::Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels = paste(rep(levels(Seurat::Idents(seuratObjFinal)), each = length(levels(factor(seuratObjFinal$expCond))) ), levels(factor(seuratObjFinal$expCond, levels = expCondReorderLevels)), sep = '_') )
     #   } else {
-        # Idents(seuratObjFinal) <- factor(paste(Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels = unlist(lapply(levels(factor(seuratObjFinal$expCond, levels = expCondReorderLevels)), function(x) paste(levels(Idents(seuratObjFinal)), x, sep = '_')) ) )
+        # Seurat::Idents(seuratObjFinal) <- factor(paste(Seurat::Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels = unlist(lapply(levels(factor(seuratObjFinal$expCond, levels = expCondReorderLevels)), function(x) paste(levels(Seurat::Idents(seuratObjFinal)), x, sep = '_')) ) )
     #   }
     # } else {
     #   if (cellclusterNameSort) {
-    #     Idents(seuratObjFinal) <- factor(paste(Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels = paste(rep(levels(Idents(seuratObjFinal)), each = length(levels(factor(seuratObjFinal$expCond))) ), levels(factor(seuratObjFinal$expCond)), sep = '_') )
+    #     Seurat::Idents(seuratObjFinal) <- factor(paste(Seurat::Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels = paste(rep(levels(Seurat::Idents(seuratObjFinal)), each = length(levels(factor(seuratObjFinal$expCond))) ), levels(factor(seuratObjFinal$expCond)), sep = '_') )
     #   } else {
-    #     Idents(seuratObjFinal) <- factor(paste(Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels = unlist(lapply(levels(factor(seuratObjFinal$expCond)), function(x) paste(levels(Idents(seuratObjFinal)), x, sep = '_')) ) )
+    #     Seurat::Idents(seuratObjFinal) <- factor(paste(Seurat::Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels = unlist(lapply(levels(factor(seuratObjFinal$expCond)), function(x) paste(levels(Seurat::Idents(seuratObjFinal)), x, sep = '_')) ) )
     #   }
     # }
     ## ---
   }
   print(sprintf('Updated idents information with experimental condition are as below:'))
-  print(table(Idents(seuratObjFinal) ))
+  print(table(Seurat::Idents(seuratObjFinal) ))
   print('"-=-=-=-=-=')
   ## -----------------------------------------------------------------------------
-  ## Currently DotPlot() x-axis is based on DotPlot()$data$features.plot levels after dropping off unused levels by droplevels()
+  ## Currently Seurat::DotPlot() x-axis is based on Seurat::DotPlot()$data$features.plot levels after dropping off unused levels by droplevels()
   if (is.null(markerGenesCat)) {
-    g1                <- DotPlot(seuratObjFinal, features = markerGenes, cols = c('#D3D3D3', '#CC0000'), col.min = dotPlotMinExpCutoff, scale = T, scale.by = 'size', dot.min = 0.01 ) + RotatedAxis()
-    # print(DotPlot(seuratObjFinal, features = markerGenes, cols = c('#D3D3D3', '#CC0000'), col.min = 0.3, scale = T, scale.by = 'size', dot.min = 0.01, idents = levels(Idents(seuratObjFinal))[-c(7,14)] ) + RotatedAxis())
-    # print(DotPlot(seuratObjFinal, features = markerGenes, cols = c('#D3D3D3', '#CC0000'), col.min = dotPlotMinExpCutoff, scale = T, scale.by = 'size', dot.min = 0.01 ) + RotatedAxis())
-    # print(DotPlot(seuratObjFinal, features = markerGenes, col.min = 0.3 ) + RotatedAxis())
-    # print(DotPlot(seuratObjFinal, features = markerGenes ) + RotatedAxis())
+    g1                <- Seurat::DotPlot(seuratObjFinal, features = markerGenes, cols = c('#D3D3D3', '#CC0000'), col.min = dotPlotMinExpCutoff, scale = T, scale.by = 'size', dot.min = 0.01 ) + Seurat::RotatedAxis()
+    # print(Seurat::DotPlot(seuratObjFinal, features = markerGenes, cols = c('#D3D3D3', '#CC0000'), col.min = 0.3, scale = T, scale.by = 'size', dot.min = 0.01, idents = levels(Seurat::Idents(seuratObjFinal))[-c(7,14)] ) + Seurat::RotatedAxis())
+    # print(Seurat::DotPlot(seuratObjFinal, features = markerGenes, cols = c('#D3D3D3', '#CC0000'), col.min = dotPlotMinExpCutoff, scale = T, scale.by = 'size', dot.min = 0.01 ) + Seurat::RotatedAxis())
+    # print(Seurat::DotPlot(seuratObjFinal, features = markerGenes, col.min = 0.3 ) + Seurat::RotatedAxis())
+    # print(Seurat::DotPlot(seuratObjFinal, features = markerGenes ) + Seurat::RotatedAxis())
 
   } else {
-    g1                <- DotPlot(seuratObjFinal, features = markerGenesDf$gene, cols = c('#D3D3D3', '#CC0000'), col.min = dotPlotMinExpCutoff, scale = T, scale.by = 'size', dot.min = 0.01 ) + RotatedAxis()
+    g1                <- Seurat::DotPlot(seuratObjFinal, features = markerGenesDf$gene, cols = c('#D3D3D3', '#CC0000'), col.min = dotPlotMinExpCutoff, scale = T, scale.by = 'size', dot.min = 0.01 ) + Seurat::RotatedAxis()
   }
   # ggsave(filename = 'TEST1.pdf', plot = g1, width = 40, height = 15)
   ## ------
@@ -220,12 +222,12 @@ getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnota
     dotPlotWidth  = round(length(unique(g1$data$features.plot))*0.5)
   }
   if (is.null(dotPlotHeight)) {
-    if (length(levels(factor(Idents(seuratObjFinal) ))) < 15 ) {
-      dotPlotHeight = round(length( levels(factor(Idents(seuratObjFinal))))*0.6 )
-    } else if (length(levels(factor(Idents(seuratObjFinal) ))) > 14 &  length(levels(factor(Idents(seuratObjFinal) ))) < 25 ) {
-      dotPlotHeight = round(length( levels(factor(Idents(seuratObjFinal))))*0.4 )
+    if (length(levels(factor(Seurat::Idents(seuratObjFinal) ))) < 15 ) {
+      dotPlotHeight = round(length( levels(factor(Seurat::Idents(seuratObjFinal))))*0.6 )
+    } else if (length(levels(factor(Seurat::Idents(seuratObjFinal) ))) > 14 &  length(levels(factor(Seurat::Idents(seuratObjFinal) ))) < 25 ) {
+      dotPlotHeight = round(length( levels(factor(Seurat::Idents(seuratObjFinal))))*0.4 )
     } else {
-      dotPlotHeight = round(length( levels(factor(Idents(seuratObjFinal))))*0.25 )
+      dotPlotHeight = round(length( levels(factor(Seurat::Idents(seuratObjFinal))))*0.25 )
     }
   }
   ## ---
@@ -250,7 +252,7 @@ getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnota
     g1woLegend          <- g1 + theme(legend.position = "none")
     g2woLegend          <- g2 + theme(legend.position = "none")
 
-    if (length(levels(factor(Idents(seuratObjFinal) ))) < 151 ){
+    if (length(levels(factor(Seurat::Idents(seuratObjFinal) ))) < 151 ){
       plot              <- cowplot::plot_grid(g2woLegend, g1woLegend, align = "v", ncol = 1, axis = 'lr', rel_heights = c(0.015*dotPlotHeight, 0.95*dotPlotHeight))
     } else {
       plot              <- cowplot::plot_grid(g2woLegend, g1woLegend, align = "v", ncol = 1, axis = 'lr', rel_heights = c(0.03*dotPlotHeight, 0.95*dotPlotHeight))

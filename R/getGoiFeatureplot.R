@@ -19,6 +19,8 @@
 #' @importFrom ggplot2 labs
 #' @importFrom Seurat NoLegend
 #' @importFrom Seurat DefaultAssay
+#' @importFrom Seurat FeaturePlot
+#' @importFrom Seurat FetchData
 #' @importFrom grDevices dev.off
 #' @importFrom grDevices pdf
 #' @importFrom utils write.table
@@ -153,23 +155,23 @@ getGoiFeatureplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAn
     # if (seuratObjFinal@active.assay == 'RNA' & markerGenes[i] %in% rownames(seuratObjFinal@assays$RNA@data)) {
     if ( markerGenes[i] %in% rownames(seuratObjFinal@assays$RNA@data) ) {
       ## if max gene expression value >
-      if ( max(FetchData(seuratObjFinal, markerGenes[i]))<featurePlotMinExpCutoff ) {
+      if ( max(Seurat::FetchData(seuratObjFinal, markerGenes[i]))<featurePlotMinExpCutoff ) {
         print(sprintf("maximun %s expression values is less than overall defined 'featurePlotMinExpCutoff'=%s, no feature plot is generated", markerGenes[i], featurePlotMinExpCutoff))
       } else {
         if (expCondSepName == 'comb') {
           # -
-          maxExpVals      <- summary(FetchData(seuratObjFinal, markerGenes[i]))
+          maxExpVals      <- summary(Seurat::FetchData(seuratObjFinal, markerGenes[i]))
           print(sprintf('summary expression values for gene marker %s at combined expCond are as below: ', markerGenes[i] ))
           print(maxExpVals)
           print('-=-=-=')
           ## -
-          expValSummary[i,] <- sapply(strsplit(summary(FetchData(seuratObjFinal, markerGenes[i])), split = ':'), '[[', 2)
+          expValSummary[i,] <- sapply(strsplit(summary(Seurat::FetchData(seuratObjFinal, markerGenes[i])), split = ':'), '[[', 2)
           ## -
-          featurePlot     <- FeaturePlot(object = seuratObjFinal, features = markerGenes[i], reduction = featurePlotReductionMethod,
-                                         order = T, label = T, pt.size = 0.5, ncol = 1, label.size = 5,
-                                         # split.by = 'expCond',
-                                         cols = c('#D3D3D3', '#CC0000'),
-                                         min.cutoff = featurePlotMinExpCutoff )
+          featurePlot     <- Seurat::FeaturePlot(object = seuratObjFinal, features = markerGenes[i], reduction = featurePlotReductionMethod,
+                                                 order = T, label = T, pt.size = 0.5, ncol = 1, label.size = 5,
+                                                 # split.by = 'expCond',
+                                                 cols = c('#D3D3D3', '#CC0000'),
+                                                 min.cutoff = featurePlotMinExpCutoff )
           pdf(file = file.path(sprintf('%s/%s_featurePlot_%s_expCondComb.pdf', plotResDir, featurePlotReductionMethod, markerGenes[i])), width = 5.5, height = 6)
           print(featurePlot+theme1wLegend)
           dev.off()
@@ -179,7 +181,7 @@ getGoiFeatureplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAn
           ## separate feature plots by updated expCond except for expCondSepName == 'comb'
           expCondLevels        <- levels(as.factor(seuratObjFinal@meta.data$expCond))
           seuratSubset         <- list()
-          for (l in 1:length(expCondLevels)) seuratSubset[[l]] <- FetchData(subset(seuratObjFinal, subset = expCond == as.character(expCondLevels[l])), markerGenes[i])
+          for (l in 1:length(expCondLevels)) seuratSubset[[l]] <- Seurat::FetchData(subset(seuratObjFinal, subset = expCond == as.character(expCondLevels[l])), markerGenes[i])
           names(seuratSubset)  <- expCondLevels
           maxExpVals           <- sapply(seuratSubset, function(x) round(max(x), digits = 2))
           print(sprintf('max expression values for gene marker %s at %s levels expCond are as below: ', markerGenes[i], length(expCondLevels) ))
@@ -207,11 +209,11 @@ getGoiFeatureplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAn
           expCondLevelsUpdate  <- levels(as.factor(seuratObjFinalUpdate@meta.data$expCond))
           if (length(expCondLevelsUpdate) < length(expCondLevels)) print(sprintf('%s expCond (%s) is/are removed due to low expression value for gene marker %s', length(which(maxExpVals < featurePlotMinExpCutoff)), paste(as.character(expCondLevels[which(maxExpVals < featurePlotMinExpCutoff)]), collapse = ', '), markerGenes[i]))
           ## -
-          featurePlotExpSplit  <- FeaturePlot(object = seuratObjFinalUpdate, features = markerGenes[i], reduction = featurePlotReductionMethod,
-                                              order = T, label = T, pt.size = 0.5, ncol = 1, label.size = 5,
-                                              split.by = 'expCond',
-                                              cols = c('#D3D3D3', '#CC0000'),
-                                              min.cutoff = featurePlotMinExpCutoff )
+          featurePlotExpSplit  <- Seurat::FeaturePlot(object = seuratObjFinalUpdate, features = markerGenes[i], reduction = featurePlotReductionMethod,
+                                                      order = T, label = T, pt.size = 0.5, ncol = 1, label.size = 5,
+                                                      split.by = 'expCond',
+                                                      cols = c('#D3D3D3', '#CC0000'),
+                                                      min.cutoff = featurePlotMinExpCutoff )
           pdf(file = file.path(sprintf('%s/%s_featurePlot_%s_expCond%s.pdf', plotResDir, featurePlotReductionMethod, markerGenes[i], expCondSepName)), width = 5.5*length(expCondLevelsUpdate), height = 6)
           print(featurePlotExpSplit+theme1wLegend)
           dev.off()
@@ -228,7 +230,7 @@ getGoiFeatureplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAn
   }
   ## ---
   if (expCondSepName == 'comb') {
-    colnames(expValSummary) <- sapply(strsplit(summary(FetchData(seuratObjFinal, markerGenes[i])), split = ':'), '[[', 1)
+    colnames(expValSummary) <- sapply(strsplit(summary(Seurat::FetchData(seuratObjFinal, markerGenes[i])), split = ':'), '[[', 1)
     rownames(expValSummary) <- markerGenes
     print(head(expValSummary))
     write.table(x = expValSummary, file = file.path(sprintf('%s/%s_expValSummary_expCond%s.txt', plotResDir, featurePlotReductionMethod, expCondSepName)), quote = F, col.names = NA, row.names = T, sep = '\t' )

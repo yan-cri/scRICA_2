@@ -81,22 +81,99 @@ This package separate the scRNA-Seq integrative and comparative analysis into 3 
 library(scRICA)
 qcResult1 <- processQC(metadata = metadata, resDirName = 'scRICA_test_result1', genomeSpecies = 'human')
 ```
-    
     + QC assessment without mitochondrial content filtering: turn on `mtFiltering` option and setup the mitochondrial content percentage cut-off values with option `mtPerCutoff`
       ```
 library(scRICA)
 qcResult <- processQC(metadata = metadata, resDirName = 'scRICA_test_result', genomeSpecies = 'human', mtFiltering = T, mtPerCutoff = 20)
 ```
-  * Integration
-  ```
-results <- getIntegrationClusterMarkers(qcProcessedResults = qcResult)
+    The analyses results will be saved in the defined 'resDirName' option under the current working directory shown as below data structure, where includes 2 directories and 3 text files. 
+    
+      ```{r echo=FALSE}
+source('/Users/yanli/Desktop/scRIC_development/scRICA_fnPseudotime_exploration/twee.R')
+twee(path = '/Users/yanli/Desktop/scRIC_development/scRICA_test_result1/', level = 2)
 ```
 
-#### 5.2 markers genes explorations
-  * Adding annotataion
-  ```   
-                                             
+      + Directory 'doublet_results' include the doublets detection results;
+      + Directory 'QC_plots' contains all quality assessement results with respect to each sample in the metadata table;
+      + Text file 'MT_percentage_summary.txt' presents a summary of mitochondrial content persentage for all samples;
+      + Text file 'org_doubletsRemoval_cellNoSummary.txt' shows a summary of number of cells before and after doublets removal;
+      + Text file 'No_filtered_cells_summary.txt' presents number of cells before and after mitochondrial content filtering, if otpion ` mtFiltering = T`.
+    
+  * Integration analyses
+    ```
+results <- getClusterMarkers(qcProcessedResults = qcResult)
 ```
+
+    The integration results will be saved in the same dirctory defined in the `processQC()` execution. In addition to the previous `processQC()`, we can see that the integration analysis results are shown as below data structure.
+
+    ```{r  echo = FALSE}
+twee(path = '/Users/yanli/Desktop/scRIC_development/scRICA_test_result/', level = 1)
+```
+  
+      + Integration analysis results are saved in RDS file inside directory 'RDS_Dir';
+    + Two types of clustering results are saved in file name starting with 'tsne*' and 'umap*' respectively;
+    + 'allCluster_pos_markers.txt' includes the identified gene markers with resepct to each cell cluster;
+    + 'allCluster_pos_markers_no.txt' summarize the number of identified gene markers in each cell cluster;
+    + 'allCluster_pos_markers_top10.txt' presents the top N (defined in the option `topN` of `getClusterMarkers()`) identified gene markers with resepct to each cell cluster;
+    + 'cluster_heatmap_top10PosMarkers.pdf' shows a heatmap of the top N (defined in the option `topN` of `getClusterMarkers()`) identified gene markers from each cell cluster.
+
+  * Integrated results summarization and visualization
+    
+    The integrated analyses result can be summarized on the different experimental conditions with function `getClusterSummaryReplot()` shown as below, where user can define which experimental conditions to be summarized. If user would like to add cluster cells annotation, this can be doen by turn on the option `newAnnotation = T` and provide correpsonding Rscript name with option `newAnnotationRscriptName` wher the corresponding cluster cells annotations are defined.
+
+      ```
+getClusterSummaryReplot(resDir = results$resDir, newAnnotation = F, expCondCheck = 'sample', expCondSepName = 'sample_org')
+```
+    
+    The option `expCondCheck` of `sample`, `expCond1`, or `expCond2` summarized the identified clusters cell numbers with respect to each sample defined in the metadata table column `sample`, experimental condition levels defined in the metadata table column `expCond1` or `expCond2` respectively. The summarized results are saved inside the directory 'results_wOrgClusterAnnotation' or 'results_wOrgClusterAnnotation' under the directory name of option `resDir`.
+    
+        ```{r  echo = FALSE}
+twee(path = '/Users/yanli/Desktop/scRIC_development/scRICA_test_result/results_wOrgClusterAnnotation/expCond_expCond1_org')
+```
+
+      ```
+getClusterSummaryReplot(resDir = results$resDir, newAnnotation = F, expCondCheck = 'expCond1', expCondSepName = 'expCond1_org' )
+getClusterSummaryReplot(resDir = results$resDir, newAnnotation = F, expCondCheck = 'expCond2', expCondSepName = 'expCond2_org' )
+```
+
+    ```{r  echo = FALSE}
+twee(path = '/Users/yanli/Desktop/scRIC_development/scRICA_test_result/results_wOrgClusterAnnotation2', level = 1)
+```
+    
+
+#### 5.2 markers genes explorations
+  
+  * dot plot exploration
+  
+    ```   
+getGoiDotplot(resDir = results$resDir, goiFname = 'scRICA/misc/marker_genes.xlsx', expCondCheck = 'expCond1', expCondSepName = 'expCond1_org')
+```
+
+    ```{r  echo = FALSE}
+twee(path = '/Users/yanli/Desktop/scRIC_development/scRICA_test_result/results_wOrgClusterAnnotation3', level = 1)
+```
+
+    ```{r  echo = FALSE}
+twee(path = '/Users/yanli/Desktop/scRIC_development/scRICA_test_result/results_wOrgClusterAnnotation4', level = 2)
+```
+
+  * feature plot exploration
+    ```   
+getGoiFeatureplot(resDir = results$resDir, goiFname = 'scRICA/misc/marker_genes.xlsx', expCondCheck  = 'expCond1')
+```
+
+    ```{r  echo = FALSE}
+twee(path = '/Users/yanli/Desktop/scRIC_development/scRICA_test_result/results_wOrgClusterAnnotation5', level = 1)
+```
+
+    ```   
+getGoiFeatureplot(resDir = results$resDir, goiFname = 'scRICA/misc/marker_genes_set2.xlsx', expCondCheck  = 'expCond1', featurePlotFnamePrefix='goiFeaturePlot_set2')
+```
+
+    ```{r  echo = FALSE}
+twee(path = '/Users/yanli/Desktop/scRIC_development/scRICA_test_result/results_wOrgClusterAnnotation6', level = 2)
+```
+
   
 #### 5.3 experimental condition comparative analysis
   *

@@ -73,7 +73,7 @@ getClusterSummaryReplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F,
                                    axis.title = element_text(size = 20),
                                    axis.text = element_text(size = 25),
                                    legend.position="bottom",
-                                   legend.text = element_text(size = 14) ) + NoLegend()
+                                   legend.text = element_text(size = 14) ) + Seurat::NoLegend()
   theme1wLegend           <- theme(plot.title = element_text(size = 16, hjust = 0.5),
                                    # legend.key.size = unit(0.7, "cm"),
                                    axis.title = element_text(size = 15),
@@ -131,15 +131,11 @@ getClusterSummaryReplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F,
   ## -------------------------------------------------------------------------------------
   ## 1. re-make tSNE plot
   if (clusteringPlotRemake) {
-    # if (clusterLevelReorder) {
-    #   Idents(seuratObjFinal) <- factor(Idents(seuratObjFinal), levels = fpClusterOrder )
-    # }
+    if (is.null(fpClusterOrder)) fpClusterOrder <- levels(factor(Seurat::Idents(seuratObjFinal)))
+    Seurat::Idents(seuratObjFinal) <- factor(Seurat::Idents(seuratObjFinal), levels = fpClusterOrder )
     ## ---
-    if (is.null(fpClusterOrder)) fpClusterOrder <- levels(factor(Idents(seuratObjFinal)))
-    Idents(seuratObjFinal) <- factor(Idents(seuratObjFinal), levels = fpClusterOrder )
-    ## ---
-    # selectedCol  <- DiscretePalette(n = length(levels(Idents(seuratObjFinal))), palette = 'alphabet')
-    selectedCol        <- ggplotColours(n=length(levels(Idents(seuratObjFinal))))
+    # selectedCol  <- DiscretePalette(n = length(levels(Seurat::Idents(seuratObjFinal))), palette = 'alphabet')
+    selectedCol        <- ggplotColours(n=length(levels(Seurat::Idents(seuratObjFinal))))
     print('***************************************************')
     ## ---
     print(sprintf('Start step1: remake tSNE/UMAP plots'))
@@ -239,8 +235,8 @@ getClusterSummaryReplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F,
     ## ---
     print(sprintf('Start step2.1: summarizing on identified cell no. in each cluster'))
     ## 1. output cell no. for each identified cluster, and exp conditions within each cluster
-    clusterCellNo                  <- as.data.frame(table(Idents(seuratObjFinal)))
-    seuratObjFinal$clusterExpCond  <- paste(Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_')
+    clusterCellNo                  <- as.data.frame(table(Seurat::Idents(seuratObjFinal)))
+    seuratObjFinal$clusterExpCond  <- paste(Seurat::Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_')
     clusterCellExpNo               <- as.data.frame(table(seuratObjFinal@meta.data$clusterExpCond))
     clusterCellExpNo$cluster       <- sapply(strsplit(as.character(clusterCellExpNo$Var1), split = '_'), '[[', 1)
     # clusterCellExpNo$exp           <- sapply(strsplit(as.character(clusterCellExpNo$Var1), split = '-'), '[[', 2)
