@@ -1,4 +1,4 @@
-## getClusterMarkers(): integrate seurat objects with identified anchor via seurat method   ##
+## getClusterMarkers(): integrate Seurat objects with identified anchor via seurat method   ##
 ## Developed by Yan Li, Jan, 2021                                                         ##
 ##----------------------------------------------------------------------------------------##
 # library(Seurat)
@@ -9,8 +9,8 @@
 #' getClusterMarkers() Function
 #' @details
 #' This function is used to integrate Seurat objects with identified anchor via Seurat method,
-#' followed with conducing cluster analysis, and identifying cluster markers
-#' @param qcProcessedResults required, processQC() returned results or object 'qcProcessObj'.
+#' followed with clustering analysis, and cluster markers identification.
+#' @param qcProcessedResults required, processQC() returned full result list or object 'qcProcessObj'.
 #' @param topN optional, default = 10, indicating the number of identified cluster gene markers
 #' @param resDirName optional, define folder/directory name where integration analysis results will be saved.
 #' If processQC() full results used for option 'qcProcessedResults', it will use the same 'resDirName' used in processQC()
@@ -46,7 +46,7 @@
 #' @export
 #' @return
 #' the entire integration analysis results in the defined 'resDirName' inherited from 'processQC()'.
-#' Additionaly, a list item including 3 elements:
+#' Additionally, a list item including 3 elements:
 #' 1. 'integratedObj': integrated Seurat object;
 #' 2. 'posMarkers': identified positively expressed cluster gene markers;
 #' 3. 'resDir': full path of results directory, where the entire integration analysis results are saved.
@@ -72,7 +72,7 @@ getClusterMarkers <- function(qcProcessedResults, resDirName = NULL, topN = 10) 
   ## intermediate RDS result dir
   rdsDir                        <- paste(resDir, 'RDS_Dir', sep = '/')
   if (!dir.exists(rdsDir)) dir.create(rdsDir)
-  ## setup cutome theme for plotting
+  ## setup custom theme for plotting
   theme1noLegend       <- theme(plot.title = element_text(size = 16, hjust = 0.5),
                                 # legend.key.size = unit(0.7, "cm"),
                                 axis.title = element_text(size = 20),
@@ -91,12 +91,12 @@ getClusterMarkers <- function(qcProcessedResults, resDirName = NULL, topN = 10) 
   # if (length(qcProcessedSeuratObjList) == 1 & anchorIntegrate == as.logical(T)) stop("ERROR: only 1 item in input 'qcProcessedSeuratObjList', no integration can be performed ")
   if (length(qcProcessedSeuratObjList) == 1) {
     ## ---
-    print("No integration is needed, only 1 seurat object is provided.")
+    print("No integration is needed, only 1 Seurat object is provided.")
     print(sprintf('Start: Step 2 tSNE and UMP clustering at %s.', Sys.time()))
     seuratObjIntegrated         <-  qcProcessedSeuratObjList[[1]]
   } else {
     ## 3. Integration
-    ## 3.1 Finding anchors, by default runing CCA
+    ## 3.1 Finding anchors, by default running CCA
     print(sprintf('Step 1: Process data integration at %s', Sys.time()))
     print(sprintf('%s samples will be integrated', length(qcProcessedSeuratObjList)))
     anchors                     <- FindIntegrationAnchors(object.list = qcProcessedSeuratObjList)
@@ -106,7 +106,7 @@ getClusterMarkers <- function(qcProcessedResults, resDirName = NULL, topN = 10) 
     print('---===---===---===---===---===---')
     ## ---
     print(sprintf('Start: Step 2 tSNE and UMP clustering at %s.', Sys.time()))
-    ## 4. dimentional reduction with PCA, KNN/clusters, tsne/umap
+    ## 4. dimensional reduction with PCA, KNN/clusters, tsne/umap
     ## 4.1 scale top 2000 identified variable features with default liner model in 'model.use' option
     ##     The results of this are stored in seuratObjFinal[["RNA"]]@scale.data for sep & seuratObjFinal[["integrated"]]@scale.data for integrated data
     Seurat::DefaultAssay(seuratObjIntegrated) <- "integrated"

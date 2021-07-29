@@ -36,13 +36,13 @@ getGoiDotplot(
 
 \item{expCondReorderLevels}{orders presented on y-axis from bottom to top}
 
-\item{dotPlotFnamePrefix}{dotPlot file name prefix}
+\item{dotPlotFnamePrefix}{dot Plot file name prefix}
 
-\item{dotPlotMinExpCutoff}{dotPlot miniumn expression threshold}
+\item{dotPlotMinExpCutoff}{dot Plot minimum expression threshold}
 
-\item{dotPlotWidth}{dotPlot width}
+\item{dotPlotWidth}{dot Plot width}
 
-\item{dotPlotHeight}{dotPlot height}
+\item{dotPlotHeight}{dot Plot height}
 }
 \value{
 the dotplots of provided GOI(gene of interest) saved in '' inside the provided 'resDir'

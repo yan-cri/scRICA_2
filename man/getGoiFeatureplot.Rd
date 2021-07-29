@@ -28,11 +28,11 @@ getGoiFeatureplot(
 
 \item{goiFname}{full path of a file name, where a list of marker/features genes provided}
 
-\item{featurePlotMinExpCutoff}{featurePlot miniumn expression threshold}
+\item{featurePlotMinExpCutoff}{feature plot minimum expression threshold}
 
-\item{featurePlotReductionMethod}{featurePlot reduction methods: options are 'tsne' or 'umap'}
+\item{featurePlotReductionMethod}{feature plot reduction methods: options are 'tsne' or 'umap'}
 
-\item{featurePlotFnamePrefix}{featurePlot file name prefix}
+\item{featurePlotFnamePrefix}{feature plot file name prefix}
 
 \item{expCondSepName}{character string, user defined name either to be 'org' or any character string}
 }

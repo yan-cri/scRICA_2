@@ -8,9 +8,9 @@
 #' @param expCondSepName character string, user defined name either to be 'org' or any character string
 #' @param expCondName2change if above 'expCondSepName' is defined not as 'org', provide the name to be changed
 #' @param goiFname full path of a file name, where a list of marker/features genes provided
-#' @param featurePlotMinExpCutoff featurePlot miniumn expression threshold
-#' @param featurePlotReductionMethod featurePlot reduction methods: options are 'tsne' or 'umap'
-#' @param featurePlotFnamePrefix featurePlot file name prefix
+#' @param featurePlotMinExpCutoff feature plot minimum expression threshold
+#' @param featurePlotReductionMethod feature plot reduction methods: options are 'tsne' or 'umap'
+#' @param featurePlotFnamePrefix feature plot file name prefix
 #'
 #' @importFrom ggplot2 theme
 #' @importFrom ggplot2 guides
@@ -50,7 +50,7 @@ getGoiFeatureplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAn
   ## ---
   if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
   seuratObjFinal          <<- readRDS(file = as.character(rdsFname))
-  print('Done for RDS readin')
+  print('Done for RDS read in')
   ## ------
   ## update results directory if new annotation is used
   if (newAnnotation) {
@@ -66,7 +66,7 @@ getGoiFeatureplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAn
     source(as.character(newAnnotationRscriptName))
   }
   ## -------------------------------------------------------------------------------------
-  # setup cutome theme for plotting
+  # setup custom theme for plotting
   theme1noLegend <- theme(plot.title = element_text(size = 16, hjust = 0.5),
                           # legend.key.size = unit(0.7, "cm"),
                           axis.title = element_text(size = 20),
@@ -127,7 +127,7 @@ getGoiFeatureplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAn
     markerGenesPrep       <- read.delim(file = as.character(goiFname), header = T, sep = '\t')
   }
   print("----------------")
-  print(sprintf("A total of %s genes will be ploted", length(unique(markerGenesPrep$Gene))))
+  print(sprintf("A total of %s genes will be plotted", length(unique(markerGenesPrep$Gene))))
   if (sum(duplicated(markerGenesPrep$Gene))>0) print(sprintf("%s genes are duplicated genes, they are: %s", sum(duplicated(markerGenesPrep$Gene)), paste(markerGenesPrep$Gene[duplicated(markerGenesPrep$Gene)], collapse = ', ' ) ))
   print("----------------")
   ## ---
@@ -151,12 +151,12 @@ getGoiFeatureplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAn
   }
   ## ---
   for (i in 1:length(markerGenes)) {
-    print(sprintf('%s. START featureplot for gene marker %s', i, markerGenes[i]))
+    print(sprintf('%s. START feature plot for gene marker %s', i, markerGenes[i]))
     # if (seuratObjFinal@active.assay == 'RNA' & markerGenes[i] %in% rownames(seuratObjFinal@assays$RNA@data)) {
     if ( markerGenes[i] %in% rownames(seuratObjFinal@assays$RNA@data) ) {
       ## if max gene expression value >
       if ( max(Seurat::FetchData(seuratObjFinal, markerGenes[i]))<featurePlotMinExpCutoff ) {
-        print(sprintf("maximun %s expression values is less than overall defined 'featurePlotMinExpCutoff'=%s, no feature plot is generated", markerGenes[i], featurePlotMinExpCutoff))
+        print(sprintf("maximum %s expression values is less than overall defined 'featurePlotMinExpCutoff'=%s, no feature plot is generated", markerGenes[i], featurePlotMinExpCutoff))
       } else {
         if (expCondSepName == 'comb') {
           # -

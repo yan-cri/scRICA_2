@@ -7,7 +7,7 @@
 getClusterMarkers(qcProcessedResults, resDirName = NULL, topN = 10)
 }
 \arguments{
-\item{qcProcessedResults}{required, processQC() returned results or object 'qcProcessObj'.}
+\item{qcProcessedResults}{required, processQC() returned full result list or object 'qcProcessObj'.}
 
 \item{resDirName}{optional, define folder/directory name where integration analysis results will be saved.
 If processQC() full results used for option 'qcProcessedResults', it will use the same 'resDirName' used in processQC()}
@@ -16,7 +16,7 @@ If processQC() full results used for option 'qcProcessedResults', it will use th
 }
 \value{
 the entire integration analysis results in the defined 'resDirName' inherited from 'processQC()'.
-Additionaly, a list item including 3 elements:
+Additionally, a list item including 3 elements:
 \enumerate{
 \item 'integratedObj': integrated Seurat object;
 \item 'posMarkers': identified positively expressed cluster gene markers;
@@ -28,7 +28,7 @@ getClusterMarkers() Function
 }
 \details{
 This function is used to integrate Seurat objects with identified anchor via Seurat method,
-followed with conducing cluster analysis, and identifying cluster markers
+followed with clustering analysis, and cluster markers identification.
 }
 \examples{
 getClusterMarkers()

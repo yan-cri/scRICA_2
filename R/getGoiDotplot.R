@@ -8,11 +8,11 @@
 #' @param expCondSepName character string, user defined name either to be 'org' or any character string
 #' @param expCondName2change if above 'expCondSepName' is defined not as 'org', provide the name to be changed
 #' @param goiFname full path of a file name, where a list of marker/features genes provided
-#' @param dotPlotFnamePrefix dotPlot file name prefix
+#' @param dotPlotFnamePrefix dot Plot file name prefix
 #' @param expCondReorderLevels orders presented on y-axis from bottom to top
-#' @param dotPlotMinExpCutoff dotPlot miniumn expression threshold
-#' @param dotPlotWidth dotPlot width
-#' @param dotPlotHeight dotPlot height
+#' @param dotPlotMinExpCutoff dot Plot minimum expression threshold
+#' @param dotPlotWidth dot Plot width
+#' @param dotPlotHeight dot Plot height
 #'
 #' @importFrom ggplot2 theme
 #' @importFrom ggplot2 guides
@@ -64,7 +64,7 @@ getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnota
   ## ---
   if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
   seuratObjFinal          <<- readRDS(file = as.character(rdsFname))
-  print('Done for RDS readin')
+  print('Done for RDS read in')
   ## ------
   ## update results directory if new annotation is used
   if (newAnnotation) {
@@ -136,7 +136,7 @@ getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnota
   print("----------------")
   if (sum(duplicated(markerGenesPrep$gene))>0) print(sprintf("%s genes are duplicated genes, they are: %s", sum(duplicated(markerGenesPrep$gene)), paste(markerGenesPrep$gene[duplicated(markerGenesPrep$gene)], collapse = ', ' ) ))
   markerGenesPrep           <- markerGenesPrep[!duplicated(markerGenesPrep$gene),]
-  print(sprintf("A total of %s genes will be serched for GOI dot-plot", length(unique(markerGenesPrep$gene))))
+  print(sprintf("A total of %s genes will be searched for GOI dot-plot", length(unique(markerGenesPrep$gene))))
   print("----------------")
   ## marker gene for dot plot is based on either 'gene' column or 1st column
   if ("gene" %in% colnames(markerGenesPrep)) {
@@ -166,7 +166,7 @@ getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnota
   print(sprintf("A total of %s marker genes will be used for downstream dotplot at '%s'. ", length(markerGenes), basename(dotplotFname) ))
   ## ---
   ## 2. make dotplot with provided gene markers; dot plot of all selected marker genes presented on x-axis
-  SeuratObject::DefaultAssay(seuratObjFinal)   <- "RNA" ## suggested by seurat tutorial at 'https://satijalab.org/seurat/articles/integration_introduction.html' using RNA slot for feature plot and dot plot and downstream analysis
+  SeuratObject::DefaultAssay(seuratObjFinal)   <- "RNA" ## suggested by Seurat tutorial at 'https://satijalab.org/seurat/articles/integration_introduction.html' using RNA slot for feature plot and dot plot and downstream analysis
   # SeuratObject::DefaultAssay(seuratObjFinal)   <- "integrated"
   ## adding expCond to the idents of identified clusters
   if (all( names(Seurat::Idents(seuratObjFinal)) == names(seuratObjFinal$expCond) )) {
@@ -178,17 +178,17 @@ getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnota
     if ( !all(expCondReorderLevels %in% levels(factor(seuratObjFinal$expCond))) ) stop("Please provide correct corresponding 'expCondReorderLevels' to sort y-axis dot plot")
     if (expCondCheck != 'comb') {
       Seurat::Idents(seuratObjFinal)        <- factor( paste(Seurat::Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'),
-                                               levels = paste(rep(levels(Seurat::Idents(seuratObjFinal)), each = length(levels(factor(seuratObjFinal$expCond))) ), levels(factor(seuratObjFinal$expCond, levels = expCondReorderLevels)), sep = '_') )
+                                                       levels = paste(rep(levels(Seurat::Idents(seuratObjFinal)), each = length(levels(factor(seuratObjFinal$expCond))) ), levels(factor(seuratObjFinal$expCond, levels = expCondReorderLevels)), sep = '_') )
     } else {
       Seurat::Idents(seuratObjFinal)        <- factor(Seurat::Idents(seuratObjFinal), levels = expCondReorderLevels)
     }
 
     # if (!is.null(expCondReorderLevels)) {
     #   if (cellclusterNameSort) {
-        # if ( !all(expCondReorderLevels %in% levels(factor(seuratObjFinal$expCond))) ) stop("Please provide correct corresponding 'expCondReorderLevels' to sort y-axis dot plot")
-        # Seurat::Idents(seuratObjFinal) <- factor(paste(Seurat::Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels = paste(rep(levels(Seurat::Idents(seuratObjFinal)), each = length(levels(factor(seuratObjFinal$expCond))) ), levels(factor(seuratObjFinal$expCond, levels = expCondReorderLevels)), sep = '_') )
+    # if ( !all(expCondReorderLevels %in% levels(factor(seuratObjFinal$expCond))) ) stop("Please provide correct corresponding 'expCondReorderLevels' to sort y-axis dot plot")
+    # Seurat::Idents(seuratObjFinal) <- factor(paste(Seurat::Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels = paste(rep(levels(Seurat::Idents(seuratObjFinal)), each = length(levels(factor(seuratObjFinal$expCond))) ), levels(factor(seuratObjFinal$expCond, levels = expCondReorderLevels)), sep = '_') )
     #   } else {
-        # Seurat::Idents(seuratObjFinal) <- factor(paste(Seurat::Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels = unlist(lapply(levels(factor(seuratObjFinal$expCond, levels = expCondReorderLevels)), function(x) paste(levels(Seurat::Idents(seuratObjFinal)), x, sep = '_')) ) )
+    # Seurat::Idents(seuratObjFinal) <- factor(paste(Seurat::Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels = unlist(lapply(levels(factor(seuratObjFinal$expCond, levels = expCondReorderLevels)), function(x) paste(levels(Seurat::Idents(seuratObjFinal)), x, sep = '_')) ) )
     #   }
     # } else {
     #   if (cellclusterNameSort) {
@@ -260,8 +260,5 @@ getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnota
     plotWlegend         <- cowplot::plot_grid(plot, legend, nrow = 1, align = 'h', axis = 'none', rel_widths = c(0.9*dotPlotWidth, 0.1*dotPlotWidth))
     ggplot2::ggsave(filename = dotplotFname, plot = plotWlegend, width = dotPlotWidth, height = dotPlotHeight, limitsize = FALSE)
   }
-
-
-
 }
 ## ---------------------------------------------------------------------------------------
