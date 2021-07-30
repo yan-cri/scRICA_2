@@ -1,4 +1,4 @@
-## getClusterMarkers(): integrate Seurat objects with identified anchor via seurat method   ##
+## getClusterMarkers(): integrate Seurat objects with identified anchor via Seurat method   ##
 ## Developed by Yan Li, Jan, 2021                                                         ##
 ##----------------------------------------------------------------------------------------##
 # library(Seurat)
