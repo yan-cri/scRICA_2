@@ -10,6 +10,8 @@ getClusterExpCondDe(
   newAnnotation = F,
   newAnnotationRscriptName = NULL,
   expCondCheck = "sample",
+  expCondSepName = NULL,
+  expCondName2change = NULL,
   compGroup,
   deMethod = "wilcox",
   pAdjValCutoff = 0.05,
@@ -17,23 +19,27 @@ getClusterExpCondDe(
 )
 }
 \arguments{
-\item{resDir}{full path of integration results analysis returned in getClusterMarkers()}
+\item{resDir}{full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.}
 
-\item{newAnnotation}{logical value, whether to provide manual annotation}
+\item{rdsFname}{User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.}
 
-\item{newAnnotationRscriptName}{if newAnnotation == T, this script is used to redefine the old clusters}
+\item{newAnnotation}{logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.}
 
-\item{compGroup}{group names used for comparisions, e.g. 'A/F', 'A', 'F'}
+\item{newAnnotationRscriptName}{if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.}
 
-\item{deMethod}{DE test method, options are 'wilcox', 't', 'negbinom', 'poisson', 'MAST', 'DESeq2'}
+\item{expCondCheck}{3 options: 'sample', 'expCond1', or 'expCond2' to specify which experimental conditions to be explored with this function.}
 
-\item{pAdjValCutoff}{adjusted p-value cutoff of significant DEGs}
+\item{expCondSepName}{part of file name string to specify the analysis results folder name.}
 
-\item{topNo}{output this number of top up and down significant DEGs in each identified/annotated clusters}
+\item{expCondName2change}{character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.}
 
-\item{expCondSepName}{character string, user defined name either to be 'org' or any character string}
+\item{compGroup}{specify 2 group names for comparisons, these group names is corresponding to experimental condition factor levels.}
 
-\item{expCondName2change}{if above 'expCondSepName' is defined not as 'org', provide the name to be changed}
+\item{deMethod}{DE test method with options: 'wilcox', 't', 'negbinom', 'poisson', 'MAST', 'DESeq2', by default = 'wilcox'.}
+
+\item{pAdjValCutoff}{adjusted p-value cutoff for significant DEGs detection, by default = 0.05.}
+
+\item{topNo}{specify the top number of up and down significant DEGs in each identified/annotated cell clusters, by default = 10.}
 }
 \value{
 a list item including 3 elements:
@@ -45,7 +51,7 @@ a list item including 3 elements:
 getClusterExpCondDe() Function
 }
 \details{
-This function is used to identify DEGs in each identified/annotated cell cluster based on orignial/redesigned experimental conditions originated from sample name
+This function is used to identify DEGs in each identified/annotated cell cluster based on the experimental conditions from metadata table column 'sample', 'expCond1', or 'expCond2'
 }
 \examples{
 getClusterExpCondDe()

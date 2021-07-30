@@ -22,27 +22,33 @@ getGoiDotplot(
 )
 }
 \arguments{
-\item{resDir}{full path of integration results analysis returned in getClusterMarkers()}
+\item{resDir}{full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.}
 
-\item{newAnnotation}{logical value, whether to provide manual annotation}
+\item{rdsFname}{User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.}
 
-\item{newAnnotationRscriptName}{if newAnnotation == T, this script is used to redefine the old clusters}
+\item{newAnnotation}{logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.}
 
-\item{goiFname}{full path of a file name, where a list of marker/features genes provided}
+\item{newAnnotationRscriptName}{if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.}
 
-\item{expCondSepName}{character string, user defined name either to be 'org' or any character string}
+\item{goiFname}{path to file, where a list of marker/features genes are provided in column 'Gene', if column 'Cell Type' is also provided, option 'geneCellTypeOrder' can be used to adjust orders.}
 
-\item{expCondName2change}{if above 'expCondSepName' is defined not as 'org', provide the name to be changed}
+\item{geneCellTypeOrder}{if column 'Cell Type' is provided in the 'goiFname' file, this option can be used to adjust the orders of marker gene's cell types, if not provided, marker gene's cell types will be sorted alphabetically.}
 
-\item{expCondReorderLevels}{orders presented on y-axis from bottom to top}
+\item{expCondCheck}{3 options: 'sample', 'expCond1', or 'expCond2' to specify which experimental conditions to be explored with this function.}
 
-\item{dotPlotFnamePrefix}{dot Plot file name prefix}
+\item{expCondSepName}{part of file name string to specify the analysis results folder name.}
 
-\item{dotPlotMinExpCutoff}{dot Plot minimum expression threshold}
+\item{expCondName2change}{character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.}
 
-\item{dotPlotWidth}{dot Plot width}
+\item{expCondReorderLevels}{character string of the corresponding experimental condition factor levels' orders presented on the y-axis of the dot-plot from bottom to top, if not defined, sorted numerically or alphabetically.}
 
-\item{dotPlotHeight}{dot Plot height}
+\item{dotPlotFnamePrefix}{dot plot file name prefix, if not defined, by default = 'goiDotplots'.}
+
+\item{dotPlotMinExpCutoff}{minimum expression value threshold presented in the dot plot, if not defined, by default = 0.3.}
+
+\item{dotPlotWidth}{dot plot width, if not defined, will be decided automatically based on the number of marker genes presented in 'goiFname'}
+
+\item{dotPlotHeight}{dot plot height, if not defined, will be decided automatically based on the number of experimental condition or sample's cell clusters.}
 }
 \value{
 the dotplots of provided GOI(gene of interest) saved in '' inside the provided 'resDir'

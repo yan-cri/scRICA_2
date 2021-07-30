@@ -12,22 +12,22 @@ calcPCApseudo(
 )
 }
 \arguments{
-\item{obj}{required, either a seurat or SingleCellExperiment object}
+\item{obj}{either a Seurat or SingleCellExperiment object.}
 
-\item{slingshotclusterLabels}{default no cluster used for slingshot, 3 options: NULL, GMM, seurat_clusters}
+\item{slingshotclusterLabels}{cluster used for slingshot with 3 options: NULL, GMM, Seurat_clusters, by default NULL.}
 
-\item{resSave}{optional, default is F}
+\item{resSave}{whether to save the analysis results into Rdata, by default 'FALSE'}
 
-\item{resFnamePrefix}{optional, default is 'TEST', when resSave is on}
+\item{resFnamePrefix}{if 'resSave = T', the Rdata file name prefix, by default 'TEST'}
 }
 \value{
-a SingleCellExperiment where 3 methods functional pseudotime analysis results are saved in colData
+a SingleCellExperiment where 3 methods functional pseudo time analysis results are saved in colData
 }
 \description{
 calcPCApseudo() Function
 }
 \details{
-This function is used to perform functional pseudotime analysis via PCA, Diffusion Map, and slingshot
+This function is used to perform functional pseudo time analysis via PCA, Diffusion Map, and slingshot
 }
 \examples{
 calcPCApseudo()

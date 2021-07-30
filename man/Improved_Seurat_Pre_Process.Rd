@@ -24,7 +24,7 @@ Improved_Seurat_Pre_Process(
 
 }
 \description{
-This function allows you to find and estimate doublets with DoubletDecon for the provide iput 'cellrangerResList'
+This function allows you to find and estimate doublets with DoubletDecon for the provide input 'cellrangerResList', taken from DoubletDecon directly due to function calling problems.
 }
 \examples{
 Improved_Seurat_Pre_Process()

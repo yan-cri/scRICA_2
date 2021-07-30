@@ -2,7 +2,7 @@
 % Please edit documentation in R/pdHeatmap.R
 \name{pdHeatmap}
 \alias{pdHeatmap}
-\title{pdHeatmap() Function}
+\title{pdHeatmap() Function modified from heatmap.3 to include extra ColSideColors factors.}
 \usage{
 pdHeatmap(
   x,
@@ -135,7 +135,7 @@ pdHeatmap(
 
 }
 \description{
-pdHeatmap() Function
+pdHeatmap() Function modified from heatmap.3 to include extra ColSideColors factors.
 }
 \details{
 

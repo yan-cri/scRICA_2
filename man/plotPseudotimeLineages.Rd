@@ -7,10 +7,12 @@
 plotPseudotimeLineages(pseudoRes, plotname = "TEST")
 }
 \arguments{
-\item{pseudoRes}{required, returned results from above fn calcFnPseudo()$pseudoRes}
+\item{pseudoRes}{required, returned results from function calcFnPseudo()$pseudoRes}
+
+\item{plotname}{GMM slingshot lineage plot file name prefix, by default 'TEST_ptGMM_lineage.pdf'}
 }
 \value{
-noting, but will save a PCA plot with slingshot calculated lineage in defined plotname.pdf
+generate a PCA plot with slingshot calculated lineage in defined plotname.pdf
 \subsection{------------------------------------------------------------------------------------}{
 }
 }
@@ -18,7 +20,7 @@ noting, but will save a PCA plot with slingshot calculated lineage in defined pl
 plotPseudotime() Function
 }
 \details{
-This function is used to perform functional pseudotime analysis via PCA, Diffusion Map, and slingshot
+This function is used to perform functional pseudo time analysis via PCA, Diffusion Map, and slingshot
 }
 \examples{
 plotPseudotimeLineages()

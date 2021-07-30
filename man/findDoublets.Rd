@@ -14,21 +14,21 @@ findDoublets(
 )
 }
 \arguments{
-\item{metadata}{txt file with 2 columns, where sample specifiy the sample names, and path specify full path to cellranger analysis results for that sample.}
+\item{metadata}{required, metadata table with at least 2 required columns: 'sample' and 'path', where path shows the count table matrix is located.}
 
-\item{genomeSpecies}{genome species, supporting human, mouse, and rate so far.}
+\item{genomeSpecies}{genome species, currently supporting human, mouse, and rate.}
 
-\item{doubletDeconRhop}{to be added}
+\item{doubletDeconRhop}{option used for DoubletDecon detection, by default = 0.5.}
 
-\item{doubletDeconPMF}{to be added}
+\item{doubletDeconPMF}{option used for DoubletDecon detection, by default 'FALSE'.}
 
-\item{doubletDeconNoCore}{to be added}
+\item{doubletDeconNoCore}{option used for DoubletDecon detection, by default '-1' no parallel.}
 
-\item{resFilename}{to be added}
+\item{resFilename}{define the folder/directory name where doublets detection results will be saved, if not defined, by default results will be saved at the current working directory in a folder named as 'doublets_results'.}
 }
 \value{
-no returned value directly, instead all results are saved in the defined 'resFilename' folder, where includes
-doublets identification analysis results for all samples in the metadata with data structure shown as below:
+generate a result directory/folder specified with 'resFilename' to save
+doublets identification analysis results for all samples in the metadata with a data structure shown as below:
 \enumerate{
 \item 'metadata$sample' + '_medoids_doublet_cells_name.Rdata': detected doublet cells with mediods, object named as 'centroidsDoubletCells'
 \item 'metadata$sample' + '_centroids_doublet_cells_name.Rdata': detected doublet cells with centroids, object named as 'centroidsDoubletCells'

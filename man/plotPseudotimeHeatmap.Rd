@@ -7,9 +7,9 @@
 plotPseudotimeHeatmap(pseudoRes, plotname = "TEST")
 }
 \arguments{
-\item{pseudoRes}{required, returned results from above fn calcFnPseudo()$pseudoRes$sceObj}
+\item{pseudoRes}{required, returned results from function calcFnPseudo()$pseudoRes$sceObj}
 
-\item{plotname}{if not provided, named as 'test.pdf'}
+\item{plotname}{GAM clustering heatmap plot file name prefix, by default 'TEST_ptGMM_GAMheatmap.pdf'}
 }
 \value{
 a plot with corresponding specified x, y-axis used for plot
@@ -20,7 +20,7 @@ a plot with corresponding specified x, y-axis used for plot
 plotPseudotimeHeatmap() Function
 }
 \details{
-This function is used to perform functional pseudotime analysis via PCA, Diffusion Map, and slingshot
+This function is used to perform functional pseudo time analysis via PCA, Diffusion Map, and slingshot
 }
 \examples{
 plotPseudotimeHeatmap()

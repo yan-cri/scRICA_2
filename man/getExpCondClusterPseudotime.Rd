@@ -9,19 +9,31 @@ getExpCondClusterPseudotime(
   rdsFname = NULL,
   newAnnotation = "F",
   newAnnotationRscriptName = NULL,
-  expCondCheck = NULL,
+  expCondCheck = "sample",
+  expCondSepName = NULL,
+  expCondName2change = NULL,
   expCond = NULL,
   cellcluster = NULL
 )
 }
 \arguments{
-\item{resDir}{full path of integration results analysis returned in getClusterMarkers()}
+\item{resDir}{full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.}
 
-\item{newAnnotation}{logical value, whether to provide manual annotation}
+\item{rdsFname}{User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.}
 
-\item{newAnnotationRscriptName}{if newAnnotation == T, this script is used to redefine the old clusters}
+\item{newAnnotation}{logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.}
 
-\item{clusterName}{specified a single or several cluster names used for pseudotime analysis}
+\item{newAnnotationRscriptName}{if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.}
+
+\item{expCondCheck}{3 options: 'sample', 'expCond1', or 'expCond2' to specify which experimental conditions to be explored with this function.}
+
+\item{expCondSepName}{part of file name string to specify the analysis results folder name.}
+
+\item{expCondName2change}{character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.}
+
+\item{expCond}{specify the specific experimental condition for pseudo time trajectory analysis, if not specified, all experimental conditions will be performed .}
+
+\item{cellcluster}{specify the specific cell cluster name for pseudo time trajectory analysis, if not specified, all cell clusters will be performed .}
 }
 \value{
 a SingleCellExperiment where 3 methods functional pseudotime analysis results are saved in colData

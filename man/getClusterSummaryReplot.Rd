@@ -11,21 +11,32 @@ getClusterSummaryReplot(
   newAnnotationRscriptName = NULL,
   expCondCheck = "sample",
   expCondSepName = NULL,
+  expCondName2change = NULL,
   fpClusterOrder = NULL,
   perClusterOrder = NULL,
   expCondNameOrder = NULL
 )
 }
 \arguments{
-\item{resDir}{full path of integration results analysis returned in getClusterMarkers()}
+\item{resDir}{full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.}
 
-\item{newAnnotation}{logical value, whether to provide manual annotation}
+\item{rdsFname}{User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.}
 
-\item{newAnnotationRscriptName}{if newAnnotation == T, this script is used to redefine the old clusters}
+\item{newAnnotation}{logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.}
 
-\item{expCondCheck}{character string, user defined name either to be 'org' or any character string}
+\item{newAnnotationRscriptName}{if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.}
 
-\item{expCondNameOrder}{whether to change the experimental conditions order in summarized feature plots and percentage bar plots}
+\item{expCondCheck}{3 options: 'sample', 'expCond1', or 'expCond2' to specify which experimental conditions to be explored with this function.}
+
+\item{expCondSepName}{part of file name string to specify the analysis results folder name.}
+
+\item{expCondName2change}{character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.}
+
+\item{fpClusterOrder}{character string of cell clusters orders to specify the cell clusters orders corresponding to the color scheme, if not defined, sorted numerically, alphabetically, or the orders shown in the annotation R script.}
+
+\item{perClusterOrder}{character string of cell clusters orders to specify the cell clusters orders presented in the percentage bar plot, if not defined, sorted numerically or alphabetically.}
+
+\item{expCondNameOrder}{character string of the corresponding experimental condition factor levels' orders presented in the percentage bar plot, if not defined, sorted numerically or alphabetically.}
 }
 \value{
 
@@ -34,7 +45,7 @@ getClusterSummaryReplot(
 getClusterSummaryReplot() Function
 }
 \details{
-This function is used to annotate/assign and merge identified clusters,
+This function is used to 1). summarize the number of cells in each originally identified/annotated cells clusters; 2). re-make clustering reduction UMAP/tSNE plots; 3). make the cells percentage plot based on experimental condition levels specified in the metadata table.
 }
 \examples{
 clusterSummary()

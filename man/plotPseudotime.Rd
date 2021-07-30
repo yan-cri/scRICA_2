@@ -7,19 +7,19 @@
 plotPseudotime(pseudoRes, xCol, xLabel, yCol, yLabel, colCol, colLabel)
 }
 \arguments{
-\item{pseudoRes}{required, returned results from above fn calcFnPseudo()$pseudoRes}
+\item{pseudoRes}{required, returned results from function calcFnPseudo()$pseudoRes}
 
 \item{xCol}{required, which column in the provided object needs to be visualized as x-axis}
 
-\item{xLabel}{optional, x axis lable, by default = 'xCol'}
+\item{xLabel}{optional, x axis label, by default = 'xCol'}
 
 \item{yCol}{required, which column in the provided object needs to be visualized as y-axis}
 
-\item{yLabel}{optional, y axis lable, by default = 'yCol'}
+\item{yLabel}{optional, y axis label, by default = 'yCol'}
 
-\item{colCol}{required, which column in the provided object needs to be visualized via different colour}
+\item{colCol}{required, which column in the provided object needs to be visualized via different color}
 
-\item{colLabel}{optional, legend color lable, by default = 'colCol'}
+\item{colLabel}{optional, legend color label, by default = 'colCol'}
 }
 \value{
 a plot with corresponding specified x, y-axis used for plot
@@ -30,7 +30,7 @@ a plot with corresponding specified x, y-axis used for plot
 plotPseudotime() Function
 }
 \details{
-This function is used to perform functional pseudotime analysis via PCA, Diffusion Map, and slingshot
+This function is used to perform functional pseudo time analysis via PCA, Diffusion Map, and slingshot
 }
 \examples{
 plotPseudotime()

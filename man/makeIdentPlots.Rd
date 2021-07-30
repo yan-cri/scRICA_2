@@ -8,9 +8,11 @@ makeIdentPlots(pseudoRes, plotname = "TEST")
 }
 \arguments{
 \item{pseudoRes}{required, results from fn getClusterPseudo()}
+
+\item{plotname}{pseudo time GMM clustering plot name prefix, by default 'TEST'}
 }
 \value{
-2 plots (correlation plots and 3 combined pseudotime plots) with this specified cluster name in input 'pseudoRes$clusterName'
+2 plots (correlation plots and 3 combined pseudo time plots) with this specified cluster name in input 'pseudoRes$clusterName'
 \subsection{------------------------------------------------------------------------------------}{
 }
 }

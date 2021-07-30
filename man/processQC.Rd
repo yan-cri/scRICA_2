@@ -15,19 +15,19 @@ processQC(
 )
 }
 \arguments{
-\item{metadata}{required, metadata table}
+\item{metadata}{required, metadata table with at least 4 required columns: 'sample', 'path', 'doubletsRmMethod', and 'expCond1'.}
 
-\item{resDirName}{optional, define folder/directory name where integration analysis results will be saved, if not defined, results will be saved current directory in a folder named as 'scRICA_results'}
+\item{resDirName}{define the folder/directory name where integration analysis results will be saved, if not defined, by default results will be saved at the current working directory in a folder named as 'scRICA_results'.}
 
-\item{genomeSpecies}{optional, default = 'human', specify sample's genome species}
+\item{genomeSpecies}{specify sample's genome species, by default 'human', currently supporting human, mouse, and rate.}
 
-\item{minCells}{optional, default = 3, used in creating Seurat object to indicate the minimum detected number of cells to be included.}
+\item{minCells}{the minimum detected number of cells to be included in the analysis used by Seurat, bu default = 3.}
 
-\item{minFeatures}{optional, default = 200, used in creating Seurat object to indicate the minimum detected number of gene features (genes) of included cells.}
+\item{minFeatures}{the minimum number of expressed gene features for cells included in the analysis used by Seurat, by default = 200.}
 
-\item{mtFiltering}{default = F, logical, whether to filter mitochondrial content}
+\item{mtFiltering}{logical to indicate whether to filter mitochondrial content, by default 'FALSE'.}
 
-\item{mtPerCutoff}{optional, if mtFiltering = T, default = 20, indicating the percentage cut-off of mitochondrial content}
+\item{mtPerCutoff}{if 'mtFiltering = T', this option is required to indicate the percentage cut-off for mitochondrial content filtering.}
 }
 \value{
 the QC analysis results saved in defined 'resDir' under current working directory.
@@ -42,7 +42,7 @@ Meanwhile, this will also return a list item including 3 elements:
 processQC() Function
 }
 \details{
-This function is used to readin cellranger results into seurat object by defining w/wo doublets removal
+This function is used to read-in cellranger results into Seurat object by defining w/wo doublets removal.
 }
 \examples{
 processQC()

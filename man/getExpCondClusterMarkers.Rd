@@ -10,24 +10,30 @@ getExpCondClusterMarkers(
   newAnnotation = F,
   newAnnotationRscriptName = NULL,
   expCondCheck = "sample",
+  expCondSepName = NULL,
+  expCondName2change = NULL,
   pAdjValCutoff = 0.05,
   topNo = 10
 )
 }
 \arguments{
-\item{resDir}{full path of integration results analysis returned in getClusterMarkers()}
+\item{resDir}{full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.}
 
-\item{newAnnotation}{logical value, whether to provide manual annotation}
+\item{rdsFname}{User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.}
 
-\item{newAnnotationRscriptName}{if newAnnotation == T, this script is used to redefine the old clusters}
+\item{newAnnotation}{logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.}
 
-\item{pAdjValCutoff}{adjusted p-value cutoff of significant positively expressed cluster markers}
+\item{newAnnotationRscriptName}{if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.}
 
-\item{topNo}{output this number of top up and down significant positively expressed cluster markers in each identified/annotated clusters}
+\item{expCondCheck}{3 options: 'sample', 'expCond1', or 'expCond2' to specify which experimental conditions to be explored with this function.}
 
-\item{expCondSepName}{character string, user defined name either to be 'org' or any character string}
+\item{expCondSepName}{part of file name string to specify the analysis results folder name.}
 
-\item{expCondName2change}{if above 'expCondSepName' is defined not as 'org', provide the name to be changed}
+\item{expCondName2change}{character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.}
+
+\item{pAdjValCutoff}{adjusted p-value cutoff for significant positively expressed cluster markers, by default = 0.05.}
+
+\item{topNo}{specify the top number of up and down significant positively expressed cluster markers in each identified/annotated clusters, by default = 10.}
 }
 \value{
 a list item including 3 elements:
@@ -36,7 +42,7 @@ a list item including 3 elements:
 getExpCondClusterMarkers() Function
 }
 \details{
-This function is used to identify positively expressed cluster markers in specified expreimental conditions
+This function is used to identify positively expressed cluster markers for all originally identified/annotated cell clusters from the experimental conditions specified in the metadata table.
 }
 \examples{
 getExpCondClusterMarkers()

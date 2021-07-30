@@ -10,6 +10,7 @@ getGoiFeatureplot(
   newAnnotation = F,
   newAnnotationRscriptName = NULL,
   expCondCheck = "sample",
+  expCondSepName = NULL,
   expCondName2change = NULL,
   goiFname,
   featurePlotMinExpCutoff = 0.3,
@@ -18,23 +19,27 @@ getGoiFeatureplot(
 )
 }
 \arguments{
-\item{resDir}{full path of integration results analysis returned in getClusterMarkers()}
+\item{resDir}{full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.}
 
-\item{newAnnotation}{logical value, whether to provide manual annotation}
+\item{rdsFname}{User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.}
 
-\item{newAnnotationRscriptName}{if newAnnotation == T, this script is used to redefine the old clusters}
+\item{newAnnotation}{logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.}
 
-\item{expCondName2change}{if above 'expCondSepName' is defined not as 'org', provide the name to be changed}
+\item{newAnnotationRscriptName}{if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.}
 
-\item{goiFname}{full path of a file name, where a list of marker/features genes provided}
+\item{expCondCheck}{3 options: 'sample', 'expCond1', or 'expCond2' to specify which experimental conditions to be explored with this function.}
 
-\item{featurePlotMinExpCutoff}{feature plot minimum expression threshold}
+\item{expCondSepName}{part of file name string to specify the analysis results folder name.}
 
-\item{featurePlotReductionMethod}{feature plot reduction methods: options are 'tsne' or 'umap'}
+\item{expCondName2change}{character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.}
 
-\item{featurePlotFnamePrefix}{feature plot file name prefix}
+\item{goiFname}{path to file, where a list of marker/features genes are provided in column 'Gene', if column 'Cell Type' is also provided, option 'geneCellTypeOrder' can be used to adjust orders.}
 
-\item{expCondSepName}{character string, user defined name either to be 'org' or any character string}
+\item{featurePlotMinExpCutoff}{feature plot minimum expression value threshold, by default = 0.3.}
+
+\item{featurePlotReductionMethod}{feature plot clustering reduction methods 'tsne' or 'umap', by default 'umap'}
+
+\item{featurePlotFnamePrefix}{feature plot file name prefix, if not defined, by default 'goiFeaturePlot'}
 }
 \value{
 the dotplots of provided GOI(gene of interest) saved in '' inside the provided 'resDir'
