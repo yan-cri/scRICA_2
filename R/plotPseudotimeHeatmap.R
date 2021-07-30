@@ -1,11 +1,11 @@
-## plotPseudotimeHeatmap(): used to genearate heatmap of GAM ranked genes on slinghsot pseudotime cells ##
+## plotPseudotimeHeatmap(): used to generate heatmap of GAM ranked genes on slingshot pseudo time cells ##
 ## Developed by Yan Li, June, 2021
 ##--------------------------------------------------------------------------------------##
 #' plotPseudotimeHeatmap() Function
 #' @details
-#' This function is used to perform functional pseudotime analysis via PCA, Diffusion Map, and slingshot
-#' @param pseudoRes required, returned results from above fn calcFnPseudo()$pseudoRes$sceObj
-#' @param plotname if not provided, named as 'test.pdf'
+#' This function is used to perform functional pseudo time analysis via PCA, Diffusion Map, and slingshot
+#' @param pseudoRes required, returned results from function calcFnPseudo()$pseudoRes$sceObj
+#' @param plotname GAM clustering heatmap plot file name prefix, by default 'TEST_ptGMM_GAMheatmap.pdf'
 #'
 #' @importFrom SummarizedExperiment assays
 #' @importFrom gplots heatmap.2

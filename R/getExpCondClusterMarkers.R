@@ -1,4 +1,3 @@
-## getExpCondClusterMarkers(): integrate seurat objects with identified anchor via seurat method   ##
 ## Developed by Yan Li, June, 2021                                                        ##
 ##----------------------------------------------------------------------------------------##
 # library(Seurat)
@@ -8,15 +7,17 @@
 ## -------------------------------------------------------------------------------------- ##
 #' getExpCondClusterMarkers() Function
 #' @details
-#' This function is used to identify positively expressed cluster markers in specified expreimental conditions
+#' This function is used to identify positively expressed cluster markers for all originally identified/annotated cell clusters from the experimental conditions specified in the metadata table.
 #'
-#' @param resDir full path of integration results analysis returned in getClusterMarkers()
-#' @param newAnnotation logical value, whether to provide manual annotation
-#' @param newAnnotationRscriptName if newAnnotation == T, this script is used to redefine the old clusters
-#' @param expCondSepName character string, user defined name either to be 'org' or any character string
-#' @param expCondName2change if above 'expCondSepName' is defined not as 'org', provide the name to be changed
-#' @param pAdjValCutoff adjusted p-value cutoff of significant positively expressed cluster markers
-#' @param topNo output this number of top up and down significant positively expressed cluster markers in each identified/annotated clusters
+#' @param resDir full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.
+#' @param rdsFname User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.
+#' @param newAnnotation logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.
+#' @param newAnnotationRscriptName if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.
+#' @param expCondCheck 3 options: 'sample', 'expCond1', or 'expCond2' to specify which experimental conditions to be explored with this function.
+#' @param expCondSepName part of file name string to specify the analysis results folder name.
+#' @param expCondName2change character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.
+#' @param pAdjValCutoff adjusted p-value cutoff for significant positively expressed cluster markers, by default = 0.05.
+#' @param topNo specify the top number of up and down significant positively expressed cluster markers in each identified/annotated clusters, by default = 10.
 #'
 #' @importFrom Seurat DefaultAssay
 #' @importFrom Seurat Idents
@@ -39,7 +40,7 @@
 #' @return
 #' a list item including 3 elements:
 ## -------------------------------------------------------------------------------------- ##
-getExpCondClusterMarkers <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, expCondCheck='sample', pAdjValCutoff = 0.05, topNo = 10) {
+getExpCondClusterMarkers <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, expCondCheck='sample', expCondSepName = NULL, expCondName2change=NULL, pAdjValCutoff = 0.05, topNo = 10) {
   options(java.parameters = "-Xmx32000m")
   ## ---
   pAdjValCutoff           <- as.numeric(pAdjValCutoff)
@@ -78,9 +79,17 @@ getExpCondClusterMarkers <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F
   if (!dir.exists(resDir)) dir.create(resDir)
   ## -------------------------------------------------------------------------------------
   if (expCondCheck == 'sample') {
-    expCondSepName        <- 'expCond_sample'
+    if (is.null(expCondSepName)) {
+      expCondSepName        <- 'expCond_sample'
+    } else {
+      expCondSepName        <- expCondSepName
+    }
   } else {
-    expCondSepName        <- as.character(expCondCheck)
+    if (is.null(expCondSepName)) {
+      expCondSepName        <- as.character(expCondCheck)
+    } else {
+      expCondSepName        <- expCondSepName
+    }
   }
   ## ---
   print(sprintf('Cluster marker genes identification on cell clusters with respect experimental condition %s will be saved at %s', expCondSepName, resDir))
@@ -105,16 +114,18 @@ getExpCondClusterMarkers <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F
   # }
   ## -------------------------------------------------------------------------------------
   if (expCondCheck == 'sample') {
-    seuratObjFinal        <- seuratObjFinal
+    seuratObjFinal                     <- seuratObjFinal
   } else if (expCondCheck == 'expCond1') {
     if (!'expCond1' %in% colnames(seuratObjFinal@meta.data)){
-      stop("Error: 'expCond1' has not been included in the original integration analysis.")
+      print("Error: 'expCond1' has not been included in the original integration analysis.")
+      seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
     } else {
       seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond1
     }
   } else if (expCondCheck == 'expCond2') {
-    if (!'expCond1' %in% colnames(seuratObjFinal@meta.data)){
-      stop("Error: 'expCond1' has not been included in the original integration analysis.")
+    if (!'expCond2' %in% colnames(seuratObjFinal@meta.data)){
+      print("Error: 'expCond2' has not been included in the original integration analysis.")
+      seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
     } else {
       seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond2
     }

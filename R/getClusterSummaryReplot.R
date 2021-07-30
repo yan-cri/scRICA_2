@@ -1,12 +1,17 @@
 #' getClusterSummaryReplot() Function
 #' @details
-#' This function is used to annotate/assign and merge identified clusters,
+#' This function is used to 1). summarize the number of cells in each originally identified/annotated cells clusters; 2). re-make clustering reduction UMAP/tSNE plots; 3). make the cells percentage plot based on experimental condition levels specified in the metadata table.
 #'
-#' @param resDir full path of integration results analysis returned in getClusterMarkers()
-#' @param newAnnotation logical value, whether to provide manual annotation
-#' @param newAnnotationRscriptName if newAnnotation == T, this script is used to redefine the old clusters
-#' @param expCondCheck character string, user defined name either to be 'org' or any character string
-#' @param expCondNameOrder whether to change the experimental conditions order in summarized feature plots and percentage bar plots
+#' @param resDir full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.
+#' @param rdsFname User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.
+#' @param newAnnotation logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.
+#' @param newAnnotationRscriptName if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.
+#' @param expCondCheck 3 options: 'sample', 'expCond1', or 'expCond2' to specify which experimental conditions to be explored with this function.
+#' @param expCondSepName part of file name string to specify the analysis results folder name.
+#' @param expCondName2change character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.
+#' @param fpClusterOrder character string of cell clusters orders to specify the cell clusters orders corresponding to the color scheme, if not defined, sorted numerically, alphabetically, or the orders shown in the annotation R script.
+#' @param perClusterOrder character string of cell clusters orders to specify the cell clusters orders presented in the percentage bar plot, if not defined, sorted numerically or alphabetically.
+#' @param expCondNameOrder character string of the corresponding experimental condition factor levels' orders presented in the percentage bar plot, if not defined, sorted numerically or alphabetically.
 #'
 #' @importFrom ggplot2 theme
 #' @importFrom ggplot2 guides
@@ -30,7 +35,7 @@
 #' @export
 #' @return
 ## ---------------------------------------------------------------------------------------
-getClusterSummaryReplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, expCondCheck='sample', expCondSepName = NULL, fpClusterOrder = NULL, perClusterOrder = NULL, expCondNameOrder = NULL) {
+getClusterSummaryReplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, expCondCheck='sample', expCondSepName = NULL, expCondName2change=NULL, fpClusterOrder = NULL, perClusterOrder = NULL, expCondNameOrder = NULL) {
   ## ---
   newAnnotation           <- as.logical(newAnnotation)
   if (newAnnotation & is.null(newAnnotationRscriptName)) print("Option 'newAnnotation' is on, please provide corresponding option 'newAnnotationRscriptName'.")
@@ -88,16 +93,18 @@ getClusterSummaryReplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F,
                                    legend.text = element_text(size = 14) )
   ## -------------------------------------------------------------------------------------
   if (expCondCheck == 'sample') {
-    seuratObjFinal        <- seuratObjFinal
+    seuratObjFinal                     <- seuratObjFinal
   } else if (expCondCheck == 'expCond1') {
     if (!'expCond1' %in% colnames(seuratObjFinal@meta.data)){
-      stop("Error: 'expCond1' has not been included in the original integration analysis.")
+      print("Error: 'expCond1' has not been included in the original integration analysis.")
+      seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
     } else {
       seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond1
     }
   } else if (expCondCheck == 'expCond2') {
-    if (!'expCond1' %in% colnames(seuratObjFinal@meta.data)){
-      stop("Error: 'expCond1' has not been included in the original integration analysis.")
+    if (!'expCond2' %in% colnames(seuratObjFinal@meta.data)){
+      print("Error: 'expCond2' has not been included in the original integration analysis.")
+      seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
     } else {
       seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond2
     }

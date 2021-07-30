@@ -1,10 +1,11 @@
-## makeIdentPlots(): used to generate pseudotime times based on GMM clustering          ##
+## makeIdentPlots(): used to generate pseudotime times PCA plots of 3 analysis methods, calling plotPseudotime() from plotPseudotime.R  ##
 ## Developed by Yan Li, June, 2021
 ##--------------------------------------------------------------------------------------##
 #' makeIdentPlots() Function
 #' @details
 #' This function is used to perform functional pseudotime analysis via PCA, Diffusion Map, and slingshot
 #' @param pseudoRes required, results from fn getClusterPseudo()
+#' @param plotname pseudo time GMM clustering plot name prefix, by default 'TEST'
 #'
 #' @importFrom SingleCellExperiment colData
 #' @importFrom ggplot2 ggplot
@@ -31,7 +32,7 @@
 #' @export
 #'
 #' @return
-#' 2 plots (correlation plots and 3 combined pseudotime plots) with this specified cluster name in input 'pseudoRes$clusterName'
+#' 2 plots (correlation plots and 3 combined pseudo time plots) with this specified cluster name in input 'pseudoRes$clusterName'
 #'
 #' ## ------------------------------------------------------------------------------------ ##
 makeIdentPlots <- function(pseudoRes, plotname = 'TEST') {

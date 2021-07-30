@@ -1,7 +1,7 @@
 ##--------------------------------------------------------------------------------------##
 #' Improved_Seurat_Pre_Process() Function
 #'
-#' This function allows you to find and estimate doublets with DoubletDecon for the provide iput 'cellrangerResList'
+#' This function allows you to find and estimate doublets with DoubletDecon for the provide input 'cellrangerResList', taken from DoubletDecon directly due to function calling problems.
 #' @param seuratObject list including full path to cellranger analysis results for different samples.
 #' @param num_genes num_genes
 #' @param write_files to be added

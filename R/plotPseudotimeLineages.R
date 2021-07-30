@@ -1,10 +1,11 @@
-## plotPseudotimeLineages(): make PCA plot with slingshot lineage                       ##
+## plotPseudotimeLineages(): make slingshot lineage on PCA dimensions                   ##
 ## Developed by Yan Li, Junly, 2021
 ##--------------------------------------------------------------------------------------##
 #' plotPseudotime() Function
 #' @details
-#' This function is used to perform functional pseudotime analysis via PCA, Diffusion Map, and slingshot
-#' @param pseudoRes required, returned results from above fn calcFnPseudo()$pseudoRes
+#' This function is used to perform functional pseudo time analysis via PCA, Diffusion Map, and slingshot
+#' @param pseudoRes required, returned results from function calcFnPseudo()$pseudoRes
+#' @param plotname GMM slingshot lineage plot file name prefix, by default 'TEST_ptGMM_lineage.pdf'
 #'
 #' @importFrom SingleCellExperiment colData
 #' @importFrom dplyr rename
@@ -20,7 +21,7 @@
 #' @export
 #'
 #' @return
-#' noting, but will save a PCA plot with slingshot calculated lineage in defined plotname.pdf
+#' generate a PCA plot with slingshot calculated lineage in defined plotname.pdf
 #'
 #' ## ------------------------------------------------------------------------------------ ##
 plotPseudotimeLineages    <- function(pseudoRes, plotname = 'TEST') {

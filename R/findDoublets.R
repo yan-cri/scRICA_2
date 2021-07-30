@@ -4,12 +4,12 @@
 #' findDoublets() Function
 #'
 #' This function allows you to identify doublets with DoubletDecon for the provide input in metadata
-#' @param metadata txt file with 2 columns, where sample specifiy the sample names, and path specify full path to cellranger analysis results for that sample.
-#' @param genomeSpecies genome species, supporting human, mouse, and rate so far.
-#' @param doubletDeconRhop to be added
-#' @param doubletDeconPMF to be added
-#' @param doubletDeconNoCore to be added
-#' @param resFilename to be added
+#' @param metadata required, metadata table with at least 2 required columns: 'sample' and 'path', where path shows the count table matrix is located.
+#' @param genomeSpecies genome species, currently supporting human, mouse, and rate.
+#' @param doubletDeconRhop option used for DoubletDecon detection, by default = 0.5.
+#' @param doubletDeconPMF option used for DoubletDecon detection, by default 'FALSE'.
+#' @param doubletDeconNoCore option used for DoubletDecon detection, by default '-1' no parallel.
+#' @param resFilename define the folder/directory name where doublets detection results will be saved, if not defined, by default results will be saved at the current working directory in a folder named as 'doublets_results'.
 #'
 #' @importFrom SeuratObject UpdateSeuratObject
 #' @importFrom dplyr %>%
@@ -18,8 +18,8 @@
 #' @keywords findDoublets
 #' @export
 #' @examples findDoublets()
-#' @return no returned value directly, instead all results are saved in the defined 'resFilename' folder, where includes
-#' doublets identification analysis results for all samples in the metadata with data structure shown as below:
+#' @return generate a result directory/folder specified with 'resFilename' to save
+#' doublets identification analysis results for all samples in the metadata with a data structure shown as below:
 #' 1. 'metadata$sample' + '_medoids_doublet_cells_name.Rdata': detected doublet cells with mediods, object named as 'centroidsDoubletCells'
 #' 2. 'metadata$sample' + '_centroids_doublet_cells_name.Rdata': detected doublet cells with centroids, object named as 'centroidsDoubletCells'
 #' 3. 'metadata$sample' + '_OL_doublet_cells_name.Rdata': detected overlapped doublet cells with centroids and mediods, object named as 'olDoubletCells'

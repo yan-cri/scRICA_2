@@ -5,6 +5,7 @@
 #' @details
 #' This function is used to perform functional pseudotime analysis via PCA, Diffusion Map, and slingshot
 #' @param pseudoRes required, results from fn getClusterPseudo()
+#' @param plotname pseudo time GMM clustering plot name prefix, by default 'TEST'
 #'
 #' @importFrom SingleCellExperiment colData
 #' @importFrom ggplot2 ggplot

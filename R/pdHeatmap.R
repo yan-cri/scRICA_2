@@ -1,4 +1,4 @@
-#' pdHeatmap() Function
+#' pdHeatmap() Function modified from heatmap.3 to include extra ColSideColors factors.
 #' @details
 #'
 #' @inheritParams stats::heatmap

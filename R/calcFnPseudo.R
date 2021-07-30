@@ -3,11 +3,11 @@
 ##--------------------------------------------------------------------------------------##
 #' calcPCApseudo() Function
 #' @details
-#' This function is used to perform functional pseudotime analysis via PCA, Diffusion Map, and slingshot
-#' @param obj required, either a seurat or SingleCellExperiment object
-#' @param slingshotclusterLabels default no cluster used for slingshot, 3 options: NULL, GMM, seurat_clusters
-#' @param resSave optional, default is F
-#' @param resFnamePrefix optional, default is 'TEST', when resSave is on
+#' This function is used to perform functional pseudo time analysis via PCA, Diffusion Map, and slingshot
+#' @param obj either a Seurat or SingleCellExperiment object.
+#' @param slingshotclusterLabels cluster used for slingshot with 3 options: NULL, GMM, Seurat_clusters, by default NULL.
+#' @param resSave whether to save the analysis results into Rdata, by default 'FALSE'
+#' @param resFnamePrefix if 'resSave = T', the Rdata file name prefix, by default 'TEST'
 #'
 #' @importFrom slingshot slingshot
 #' @importFrom mclust Mclust
@@ -22,7 +22,7 @@
 #' @export
 #'
 #' @return
-#' a SingleCellExperiment where 3 methods functional pseudotime analysis results are saved in colData
+#' a SingleCellExperiment where 3 methods functional pseudo time analysis results are saved in colData
 ## ------------------------------------------------------------------------------------ ##
 calcPCApseudo <- function(obj, slingshotclusterLabels = NULL, resSave = 'F', resFnamePrefix = 'TEST') {
   ## ------
@@ -46,7 +46,7 @@ calcPCApseudo <- function(obj, slingshotclusterLabels = NULL, resSave = 'F', res
   ## ---
   ## 1. perform BiocSingular PCA analysis
   print('-=-=-=-=-=-=-=-=-=-=')
-  print(sprintf('Start step1: BiocSingular PCA pseudotime calculation at %s',  Sys.time() ))
+  print(sprintf('Start step1: BiocSingular PCA pseudo time calculation at %s',  Sys.time() ))
   systime1         <- Sys.time()
   # print('8494934934893843984')
   sceObj           <- scater::runPCA(sceObj, ncomponents = 50)
@@ -59,12 +59,12 @@ calcPCApseudo <- function(obj, slingshotclusterLabels = NULL, resSave = 'F', res
   sceObj$ptPC1     <- rank(sceObj$PCApc1)  # rank cells by their PC1 score
   # print(head(as.data.frame(colData(sceObj))))
   systime2         <- Sys.time()
-  print(sprintf('End step1: BiocSingular PCA pseudotime calculation at %s',  systime2 ))
+  print(sprintf('End step1: BiocSingular PCA pseudo time calculation at %s',  systime2 ))
   print(sprintf("Step1 PCA analysis used %s %s.", round(difftime(systime2, systime1), digits = 2), attr(difftime(systime2, systime1), "units") ))
   ## ---
-  ## 2. perform Diffusion map pseudotime
+  ## 2. perform Diffusion map pseudo time
   print('-=-=-=-=-=-=-=-=-=-=')
-  print(sprintf('Start step2: Diffusion map pseudotime calculation at %s',  Sys.time() ))
+  print(sprintf('Start step2: Diffusion map pseudo time calculation at %s',  Sys.time() ))
   systime1         <- Sys.time()
   dmPca            <- destiny::DiffusionMap(pca)
   dpt              <- destiny::DPT(dmPca)
@@ -76,7 +76,7 @@ calcPCApseudo <- function(obj, slingshotclusterLabels = NULL, resSave = 'F', res
   sceObj$dmapDptRank <- rank(dpt$dpt)
   systime2         <- Sys.time()
   print(sprintf('End step2: Diffusion map pseudotime calculation at %s',  systime2 ))
-  print(sprintf("Step2 Diffsion Map analysis used %s %s.", round(difftime(systime2, systime1), digits = 2), attr(difftime(systime2, systime1), "units") ))
+  print(sprintf("Step2 Diffusion Map analysis used %s %s.", round(difftime(systime2, systime1), digits = 2), attr(difftime(systime2, systime1), "units") ))
   ## ---
   ## 3. perform Slingshot map pseudotime
   print('-=-=-=-=-=-=-=-=-=-=')

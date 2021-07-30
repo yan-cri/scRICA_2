@@ -65,6 +65,7 @@ sample5_condB_cond2  | /FullPath/to/CountMatrix/ | condB | cond2 | OL/centroids/
 
 ### 4. Analysis workflow implementations demonstration data 
 ```{r echo=TRUE}
+system.file('extdata', package = 'scRICA', mustWork = T)
 metadata <- read.delim2(file = system.file('extdata', 'metadata_mac.txt', package = 'scRICA', mustWork = T), header = T) 
 metadata
 ```

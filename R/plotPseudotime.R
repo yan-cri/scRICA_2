@@ -1,16 +1,16 @@
-## plotPseudotime(): used to perform functional pseudotime analysis                      ##
+## plotPseudotime(): used to generate functional pseudo time plots, called by makeIdentPlots.R ##
 ## Developed by Yan Li, May, 2021
 ##--------------------------------------------------------------------------------------##
 #' plotPseudotime() Function
 #' @details
-#' This function is used to perform functional pseudotime analysis via PCA, Diffusion Map, and slingshot
-#' @param pseudoRes required, returned results from above fn calcFnPseudo()$pseudoRes
+#' This function is used to perform functional pseudo time analysis via PCA, Diffusion Map, and slingshot
+#' @param pseudoRes required, returned results from function calcFnPseudo()$pseudoRes
 #' @param xCol required, which column in the provided object needs to be visualized as x-axis
-#' @param xLabel optional, x axis lable, by default = 'xCol'
+#' @param xLabel optional, x axis label, by default = 'xCol'
 #' @param yCol required, which column in the provided object needs to be visualized as y-axis
-#' @param yLabel optional, y axis lable, by default = 'yCol'
-#' @param colCol required, which column in the provided object needs to be visualized via different colour
-#' @param colLabel optional, legend color lable, by default = 'colCol'
+#' @param yLabel optional, y axis label, by default = 'yCol'
+#' @param colCol required, which column in the provided object needs to be visualized via different color
+#' @param colLabel optional, legend color label, by default = 'colCol'
 #'
 #' @importFrom SingleCellExperiment colData
 #' @importFrom ggplot2 ggplot
