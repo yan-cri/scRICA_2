@@ -40,7 +40,50 @@ sample5_condB_cond2  | /FullPath/to/CountMatrix/ | condB | cond2 | OL/centroids/
 ### 4. Analysis workflow implementations demonstration data 
 
 ```r
-metadata <- read.delim2(file = system.file('extdata', 'metadata_mac.txt', package = 'scRICA', mustWork = T), header = T) 
+print(system.file('extdata', package = 'scRICA', mustWork = T))
+```
+
+```r
+## [1] "/Library/Frameworks/R.framework/Versions/4.1/Resources/library/scRICA/extdata"
+```
+
+```
+-- 3041A
+   |__barcodes.tsv
+   |__genes.tsv
+   |__matrix.mtx
+-- 3041F
+   |__barcodes.tsv
+   |__genes.tsv
+   |__matrix.mtx
+-- 3041I
+   |__barcodes.tsv
+   |__genes.tsv
+   |__matrix.mtx
+-- 3396A
+   |__barcodes.tsv.gz
+   |__features.tsv.gz
+   |__matrix.mtx.gz
+-- 3396F
+   |__barcodes.tsv.gz
+   |__features.tsv.gz
+   |__matrix.mtx.gz
+-- 3396I
+   |__barcodes.tsv.gz
+   |__features.tsv.gz
+   |__matrix.mtx.gz
+```
+
+```r
+metadata <- read.delim2(file = 'path/to/metadata.txt', header = T) 
+```
+
+```r
+  sample expCond1 expCond2                                                                                 path doubletsRmMethod
+1  A3396     3396        A /Library/Frameworks/R.framework/Versions/4.1/Resources/library/scRICA/extdata/3396A/               OL
+2  F3396     3396        F /Library/Frameworks/R.framework/Versions/4.1/Resources/library/scRICA/extdata/3396F/               OL
+3  A3041     3041        A  /Library/Frameworks/R.framework/Versions/4.1/Resources/library/scRICA/extdata/3041A             none
+4  I3041     3041        I  /Library/Frameworks/R.framework/Versions/4.1/Resources/library/scRICA/extdata/3041I             None
 ```
 
 ### 5. Analysis workflow implementations
@@ -57,7 +100,7 @@ qcResult <- processQC(metadata = metadata, resDirName = 'scRICA_test_result', ge
 qcResult <- processQC(metadata = metadata, resDirName = 'scRICA_test_result', genomeSpecies = 'human', mtFiltering = T, mtPerCutoff = 20)
 ```
 
-```r
+```
 ## -- scRICA_test_result
 ##    |__doublet_results
 ##       |__ ...
@@ -87,7 +130,7 @@ qcResult <- processQC(metadata = metadata, resDirName = 'scRICA_test_result', ge
 results <- getClusterMarkers(qcProcessedResults = qcResult)
 ```
 
-```r
+```
 ## -- scRICA_test_result
 ##    |__allCluster_pos_markers_no.txt
 ##    |__allCluster_pos_markers_top10.txt
@@ -118,7 +161,7 @@ The integrated analyses result can be summarized on the different experimental c
 getClusterSummaryReplot(resDir = results$resDir, newAnnotation = F, expCondCheck = 'sample', expCondSepName = 'sample_org')
 ```
 
-```r
+```
 ## -- scRICA_test_result
 ##    |__results_wOrgClusterAnnotation
 ##       |__expCond_sample_org
@@ -141,7 +184,7 @@ getClusterSummaryReplot(resDir = results$resDir, newAnnotation = F, expCondCheck
 getClusterSummaryReplot(resDir = results$resDir, newAnnotation = F, expCondCheck = 'expCond2', expCondSepName = 'expCond2_org' )
 ```
 
-```r
+```
 ## -- scRICA_test_result
 ##    |__results_wOrgClusterAnnotation
 ##       |__expCond_expCond1_org
@@ -160,7 +203,7 @@ getClusterSummaryReplot(resDir = results$resDir, newAnnotation = F, expCondCheck
 getGoiDotplot(resDir = results$resDir, goiFname = 'scRICA/misc/marker_genes.xlsx', expCondCheck = 'expCond1', expCondSepName = 'expCond1_org')
 ```
 
-```r
+```
 ## -- scRICA_test_result
 ##    |__results_wOrgClusterAnnotation
 ##       |__dotplot_selected_markers_expCond_expCond1_org
@@ -172,7 +215,7 @@ getGoiDotplot(resDir = results$resDir, goiFname = 'scRICA/misc/marker_genes.xlsx
 getGoiFeatureplot(resDir = results$resDir, goiFname = 'scRICA/misc/marker_genes.xlsx', expCondCheck  = 'expCond1')
 ```
 
-```r
+```
 ## -- scRICA_test_result
 ##    |__results_wOrgClusterAnnotation
 ##       |__featurePlot_selected_markers_expCond1
@@ -187,7 +230,7 @@ getGoiFeatureplot(resDir = results$resDir, goiFname = 'scRICA/misc/marker_genes.
 getGoiFeatureplot(resDir = results$resDir, goiFname = 'scRICA/misc/marker_genes_set2.xlsx', expCondCheck  = 'expCond1', featurePlotFnamePrefix='goiFeaturePlot_set2')
 ```
 
-```r 
+```
 ## -- scRICA_test_result
 ##    |__results_wOrgClusterAnnotation
 ##       |__featurePlot_selected_markers_expCond1
