@@ -9,13 +9,14 @@
 #' @param goiFname path to file, where a list of marker/features genes are provided in column 'Gene', if column 'Cell Type' is also provided, option 'geneCellTypeOrder' can be used to adjust orders.
 #' @param geneCellTypeOrder if column 'Cell Type' is provided in the 'goiFname' file, this option can be used to adjust the orders of marker gene's cell types, if not provided, marker gene's cell types will be sorted alphabetically.
 #' @param expCondCheck 3 options: 'sample', 'expCond1', or 'expCond2' to specify which experimental conditions to be explored with this function.
-#' @param expCondSepName part of file name string to specify the analysis results folder name.
-#' @param expCondName2change character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.
-#' @param expCondReorderLevels character string of the corresponding experimental condition factor levels' orders presented on the y-axis of the dot-plot from bottom to top, if not defined, sorted numerically or alphabetically.
-#' @param dotPlotFnamePrefix dot plot file name prefix, if not defined, by default = 'goiDotplots'.
+#' @param expCondSepName suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.
+#' @param expCondName2change a character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.
+#' @param expCondReorderLevels a character string of the corresponding experimental condition factor levels' orders presented on the y-axis of the dot-plot from bottom to top, if not defined, sorted numerically or alphabetically.
+#' @param dotPlotFnamePrefix prefix of the dot plot file name, if not defined, by default = 'goiDotplots'.
 #' @param dotPlotMinExpCutoff minimum expression value threshold presented in the dot plot, if not defined, by default = 0.3.
 #' @param dotPlotWidth dot plot width, if not defined, will be decided automatically based on the number of marker genes presented in 'goiFname'
 #' @param dotPlotHeight dot plot height, if not defined, will be decided automatically based on the number of experimental condition or sample's cell clusters.
+#' @param legendPer specify the legend proportion in the dot plot, if not specified, by default = 0.1
 #'
 #' @importFrom ggplot2 theme
 #' @importFrom ggplot2 guides
@@ -50,7 +51,7 @@
 # library(grDevices)
 # library(tools)
 # library(xlsx)
-getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, goiFname, geneCellTypeOrder=NULL, expCondCheck='sample', expCondSepName = NULL, expCondName2change=NULL, expCondReorderLevels=NULL, dotPlotFnamePrefix='goiDotplots', dotPlotMinExpCutoff=0.3, dotPlotWidth=NULL, dotPlotHeight=NULL ){
+getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, goiFname, geneCellTypeOrder=NULL, expCondCheck='sample', expCondSepName = NULL, expCondName2change=NULL, expCondReorderLevels=NULL, dotPlotFnamePrefix='goiDotplots', dotPlotMinExpCutoff=0.3, dotPlotWidth=NULL, dotPlotHeight=NULL, legendPer=NULL ){
   ## ---
   newAnnotation           <- as.logical(newAnnotation)
   if (newAnnotation & is.null(newAnnotationRscriptName)) print("Option 'newAnnotation' is on, please provide corresponding option 'newAnnotationRscriptName'.")
@@ -138,7 +139,11 @@ getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnota
   # print(head(markerGenesPrep))
   print("----------------")
   if (sum(duplicated(markerGenesPrep$gene))>0) print(sprintf("%s genes are duplicated genes, they are: %s", sum(duplicated(markerGenesPrep$gene)), paste(markerGenesPrep$gene[duplicated(markerGenesPrep$gene)], collapse = ', ' ) ))
-  markerGenesPrep           <- markerGenesPrep[!duplicated(markerGenesPrep$gene),]
+  if (dim(markerGenesPrep)[2] == 1) {
+    markerGenesPrep       <- data.frame('gene'= markerGenesPrep[!duplicated(markerGenesPrep$gene),])
+  } else {
+    markerGenesPrep       <- markerGenesPrep[!duplicated(markerGenesPrep$gene),]
+  }
   print(sprintf("A total of %s genes will be searched for GOI dot-plot", length(unique(markerGenesPrep$gene))))
   print("----------------")
   ## marker gene for dot plot is based on either 'gene' column or 1st column
@@ -260,7 +265,8 @@ getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnota
     } else {
       plot              <- cowplot::plot_grid(g2woLegend, g1woLegend, align = "v", ncol = 1, axis = 'lr', rel_heights = c(0.03*dotPlotHeight, 0.95*dotPlotHeight))
     }
-    plotWlegend         <- cowplot::plot_grid(plot, legend, nrow = 1, align = 'h', axis = 'none', rel_widths = c(0.9*dotPlotWidth, 0.1*dotPlotWidth))
+    if(is.null(legendPer)) legendPer <- 0.1
+    plotWlegend         <- cowplot::plot_grid(plot, legend, nrow = 1, align = 'h', axis = 'none', rel_widths = c((1-legendPer)*dotPlotWidth, legendPer*dotPlotWidth))
     ggplot2::ggsave(filename = dotplotFname, plot = plotWlegend, width = dotPlotWidth, height = dotPlotHeight, limitsize = FALSE)
   }
 }

@@ -18,7 +18,8 @@ getGoiDotplot(
   dotPlotFnamePrefix = "goiDotplots",
   dotPlotMinExpCutoff = 0.3,
   dotPlotWidth = NULL,
-  dotPlotHeight = NULL
+  dotPlotHeight = NULL,
+  legendPer = NULL
 )
 }
 \arguments{
@@ -36,19 +37,21 @@ getGoiDotplot(
 
 \item{expCondCheck}{3 options: 'sample', 'expCond1', or 'expCond2' to specify which experimental conditions to be explored with this function.}
 
-\item{expCondSepName}{part of file name string to specify the analysis results folder name.}
+\item{expCondSepName}{suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.}
 
-\item{expCondName2change}{character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.}
+\item{expCondName2change}{a character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.}
 
-\item{expCondReorderLevels}{character string of the corresponding experimental condition factor levels' orders presented on the y-axis of the dot-plot from bottom to top, if not defined, sorted numerically or alphabetically.}
+\item{expCondReorderLevels}{a character string of the corresponding experimental condition factor levels' orders presented on the y-axis of the dot-plot from bottom to top, if not defined, sorted numerically or alphabetically.}
 
-\item{dotPlotFnamePrefix}{dot plot file name prefix, if not defined, by default = 'goiDotplots'.}
+\item{dotPlotFnamePrefix}{prefix of the dot plot file name, if not defined, by default = 'goiDotplots'.}
 
 \item{dotPlotMinExpCutoff}{minimum expression value threshold presented in the dot plot, if not defined, by default = 0.3.}
 
 \item{dotPlotWidth}{dot plot width, if not defined, will be decided automatically based on the number of marker genes presented in 'goiFname'}
 
 \item{dotPlotHeight}{dot plot height, if not defined, will be decided automatically based on the number of experimental condition or sample's cell clusters.}
+
+\item{legendPer}{specify the legend proportion in the dot plot, if not specified, by default = 0.1}
 }
 \value{
 the dotplots of provided GOI(gene of interest) saved in '' inside the provided 'resDir'
