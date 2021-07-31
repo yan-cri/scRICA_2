@@ -25,27 +25,9 @@ library(scRICA)
 browseVignettes(package = 'scRICA')
 ```
 
-### 3. Input metadata table file
+### 3. Demonstration data
 
-This workflow package has its own inherited structure, and requires an initial metadata table to initiate the entire scRNA-Seq workflow analyses. 4 columns are required in the metadata table, they are `sample`, `path`, `doubletsRmMethod` and `expCond1` for samples names, full path to sample's count matrix tables directory (cellranger analysis results), doublets detective methods with four options, and experimental condition levels respectively; up to 2 experimental conditions specified in column `expCond1` and `expCond2` can be explored with this package. If no doublets removal is needed for samples, please specify 'none' for that sample in the column `doubletsRmMethod`.
-
-sample  | path  | expCond1 | expCond2 | doubletsRmMethod
-------------- | -------------  | -------------  | ------------- | ------------- 
-sample1_condA_cond1  | /FullPath/to/CountMatrix/ | condA | cond1 | OL/centroids/medoids/none 
-sample2_condA_cond2  | /FullPath/to/CountMatrix/ | condA | cond2 | OL/centroids/medoids/none 
-sample3_condA_cond3  | /FullPath/to/CountMatrix/ | condA | cond3 | OL/centroids/medoids/none
-sample4_condB_cond1  | /FullPath/to/CountMatrix/ | condB | cond1 | OL/centroids/medoids/none 
-sample5_condB_cond2  | /FullPath/to/CountMatrix/ | condB | cond2 | OL/centroids/medoids/none 
-
-### 4. Analysis workflow implementations demonstration data 
-
-```r
-print(system.file('extdata', package = 'scRICA', mustWork = T))
-```
-
-```r
-## [1] "/Library/Frameworks/R.framework/Versions/4.1/Resources/library/scRICA/extdata"
-```
+As shown in below, a total of 6 samples single cell gene expression count matrix results from cell ranger analysis are included in this package as the demonstration data for this package analysis implementations. 
 
 ```
 -- 3041A
@@ -74,11 +56,30 @@ print(system.file('extdata', package = 'scRICA', mustWork = T))
    |__matrix.mtx.gz
 ```
 
-```r
+### 4. Input metadata table file
+
+This workflow package has its own inherited structure, and requires an initial metadata table to initiate the entire scRNA-Seq workflow analyses. 4 columns are required in the metadata table, they are `sample`, `path`, `doubletsRmMethod` and `expCond1` for samples names, full path to sample's count matrix tables directory (cellranger analysis results), doublets detective methods with four options, and experimental condition levels respectively; up to 2 experimental conditions specified in column `expCond1` and `expCond2` can be explored with this package. If no doublets removal is needed for samples, please specify 'none' for that sample in the column `doubletsRmMethod`.
+
+sample  | path  | expCond1 | expCond2 | doubletsRmMethod
+------------- | -------------  | -------------  | ------------- | ------------- 
+sample1_condA_cond1  | /FullPath/to/CountMatrix/ | condA | cond1 | OL/centroids/medoids/none 
+sample2_condA_cond2  | /FullPath/to/CountMatrix/ | condA | cond2 | OL/centroids/medoids/none 
+sample3_condA_cond3  | /FullPath/to/CountMatrix/ | condA | cond3 | OL/centroids/medoids/none
+sample4_condB_cond1  | /FullPath/to/CountMatrix/ | condB | cond1 | OL/centroids/medoids/none 
+sample5_condB_cond2  | /FullPath/to/CountMatrix/ | condB | cond2 | OL/centroids/medoids/none 
+
+To figure out the path where the package demonstration data are located, this can be find out with the command `system.file('extdata', package = 'scRICA', mustWork = T)` shown as below. An example of input metadata table can be find in the `'misc'` folder, where we include 4 package demonstration samples, 3396A, 3396F, 3041A, and 3041I. Please update the corresponding path in the metadata table column 'path'. 
+
+```
+print(system.file('extdata', package = 'scRICA', mustWork = T))
+[1] "/Library/Frameworks/R.framework/Versions/4.1/Resources/library/scRICA/extdata"
+```
+
+```
 metadata <- read.delim2(file = 'path/to/metadata.txt', header = T) 
 ```
 
-```r
+```
   sample expCond1 expCond2                                                                                 path doubletsRmMethod
 1  A3396     3396        A /Library/Frameworks/R.framework/Versions/4.1/Resources/library/scRICA/extdata/3396A/               OL
 2  F3396     3396        F /Library/Frameworks/R.framework/Versions/4.1/Resources/library/scRICA/extdata/3396F/               OL
