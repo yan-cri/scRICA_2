@@ -151,10 +151,7 @@ qcResult <- processQC(metadata = metadata, resDirName = 'scRICA_test_result', ge
 ##       |__ ...
 ```
     The analyses results will be saved in the defined `resDirName = 'scRICA_test_result'` option under the current working directory shown as below data structure, where includes 2 directories and 3 text files. 
-      ```{r echo=F}
-source('/Users/yanli/Desktop/scRIC_development/scRICA_fnPseudotime_exploration/twee.R')
-##twee(path = '/Users/yanli/Desktop/scRIC_development/scRICA_test_result_vig/') 
-```
+
       + Directory 'doublet_results' include the doublets detection results;
       + Directory 'QC_plots' contains all quality assessement results with respect to each sample in the metadata table;
       + Text file 'MT_percentage_summary.txt' presents a summary of mitochondrial content persentage for all samples;
