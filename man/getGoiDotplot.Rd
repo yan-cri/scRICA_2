@@ -10,7 +10,7 @@ getGoiDotplot(
   newAnnotation = F,
   newAnnotationRscriptName = NULL,
   goiFname,
-  geneCellTypeOrder = NULL,
+  geneTypeOrder = NULL,
   expCondCheck = "sample",
   expCondSepName = NULL,
   expCondName2change = NULL,
@@ -31,9 +31,9 @@ getGoiDotplot(
 
 \item{newAnnotationRscriptName}{if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.}
 
-\item{goiFname}{path to file, where a list of marker/features genes are provided in column 'Gene', if column 'Cell Type' is also provided, option 'geneCellTypeOrder' can be used to adjust orders.}
+\item{goiFname}{path to file, where a list of marker/features genes are provided in column 'Gene', if column 'Cell Type' is also provided, option 'geneTypeOrder' can be used to adjust orders.}
 
-\item{geneCellTypeOrder}{if column 'Cell Type' is provided in the 'goiFname' file, this option can be used to adjust the orders of marker gene's cell types, if not provided, marker gene's cell types will be sorted alphabetically.}
+\item{geneTypeOrder}{if column 'Cell Type' is provided in the 'goiFname' file, this option can be used to adjust the orders of marker gene's cell types, if not provided, marker gene's cell types will be sorted alphabetically.}
 
 \item{expCondCheck}{3 options: 'sample', 'expCond1', or 'expCond2' to specify which experimental conditions to be explored with this function.}
 

@@ -6,8 +6,8 @@
 #' @param rdsFname User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.
 #' @param newAnnotation logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.
 #' @param newAnnotationRscriptName if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.
-#' @param goiFname path to file, where a list of marker/features genes are provided in column 'Gene', if column 'Cell Type' is also provided, option 'geneCellTypeOrder' can be used to adjust orders.
-#' @param geneCellTypeOrder if column 'Cell Type' is provided in the 'goiFname' file, this option can be used to adjust the orders of marker gene's cell types, if not provided, marker gene's cell types will be sorted alphabetically.
+#' @param goiFname path to file, where a list of marker/features genes are provided in column 'Gene', if column 'Cell Type' is also provided, option 'geneTypeOrder' can be used to adjust orders.
+#' @param geneTypeOrder if column 'Cell Type' is provided in the 'goiFname' file, this option can be used to adjust the orders of marker gene's cell types, if not provided, marker gene's cell types will be sorted alphabetically.
 #' @param expCondCheck 3 options: 'sample', 'expCond1', or 'expCond2' to specify which experimental conditions to be explored with this function.
 #' @param expCondSepName suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.
 #' @param expCondName2change a character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.
@@ -51,7 +51,7 @@
 # library(grDevices)
 # library(tools)
 # library(xlsx)
-getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, goiFname, geneCellTypeOrder=NULL, expCondCheck='sample', expCondSepName = NULL, expCondName2change=NULL, expCondReorderLevels=NULL, dotPlotFnamePrefix='goiDotplots', dotPlotMinExpCutoff=0.3, dotPlotWidth=NULL, dotPlotHeight=NULL, legendPer=NULL ){
+getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, goiFname, geneTypeOrder=NULL, expCondCheck='sample', expCondSepName = NULL, expCondName2change=NULL, expCondReorderLevels=NULL, dotPlotFnamePrefix='goiDotplots', dotPlotMinExpCutoff=0.3, dotPlotWidth=NULL, dotPlotHeight=NULL, legendPer=NULL ){
   ## ---
   newAnnotation           <- as.logical(newAnnotation)
   if (newAnnotation & is.null(newAnnotationRscriptName)) print("Option 'newAnnotation' is on, please provide corresponding option 'newAnnotationRscriptName'.")
@@ -129,7 +129,7 @@ getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnota
   ## ------
   print(table(Seurat::Idents(seuratObjFinal)))
   ## ------
-  ## using column 'gene' as marker genes, if column 'celltype' exist, will be used to categorize the genes
+  ## using column 'gene' as marker genes, if column 'geneType' exist, will be used to categorize the genes
   if (file_ext(basename(goiFname)) == 'xlsx') {
     markerGenesPrep         <- read.xlsx(file = as.character(goiFname), sheetIndex = 1, header = T)
   } else if (file_ext(basename(goiFname)) == 'txt') {
@@ -153,20 +153,20 @@ getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnota
     markerGenes           <- as.character(unique(markerGenesPrep[,1]))
   }
   ## -
-  if ('celltype' %in% colnames(markerGenesPrep) ){
-    markerGenesCat        <- as.factor(markerGenesPrep$celltype)
+  if ('geneType' %in% colnames(markerGenesPrep) ){
+    markerGenesCat        <- as.factor(markerGenesPrep$geneType)
   } else {
     markerGenesCat        <- NULL
   }
   ## -
   if (!is.null(markerGenesCat)){
-    markerGenesDf         <- data.frame('gene' = markerGenes, 'celltype'=markerGenesCat)
-    if (!is.null(geneCellTypeOrder)) {
-      markerGenesDf$celltype <- factor(markerGenesDf$celltype, levels = geneCellTypeOrder)
-      markerGenesDf          <- markerGenesDf[order(markerGenesDf$celltype),]
+    markerGenesDf         <- data.frame('gene' = markerGenes, 'geneType'=markerGenesCat)
+    if (!is.null(geneTypeOrder)) {
+      markerGenesDf$geneType <- factor(markerGenesDf$geneType, levels = geneTypeOrder)
+      markerGenesDf          <- markerGenesDf[order(markerGenesDf$geneType),]
     }
   }
-  ## Note: if column 'celltype' does not exist, markerGenesCat=NULL, NO 'markerGenesDf' exist
+  ## Note: if column 'geneType' does not exist, markerGenesCat=NULL, NO 'markerGenesDf' exist
   ## -------------------------------------------------------------------------------------
   # dotplotFname           <- paste(plotResDir, 'selected_markerGenesV2_dotplot.pdf', sep = '/')
   dotplotFname           <- file.path(plotResDir, sprintf('%s_markerGenes_dotplot_expCond_%s.pdf', dotPlotFnamePrefix, expCondSepName))
@@ -244,12 +244,12 @@ getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnota
     print(g1)
     dev.off()
   } else {
-    ## 'markerGenesDf' exist with 2 columns 'gene' & 'celltype'
+    ## 'markerGenesDf' exist with 2 columns 'gene' & 'geneType'
     markerGenesDf2      <- markerGenesDf %>% dplyr::filter(gene %in% levels(droplevels(g1$data$features.plot)) )
     markerGenesDf2$gene <- factor(markerGenesDf2$gene, levels = levels(droplevels(g1$data$features.plot)) )
     ## below DiscretePalette() in Seurat with 4 color scheme options, color scheme display seen in https://kwstat.github.io/pals/
-    colschemeg2         <- Seurat::DiscretePalette(n = length(levels(markerGenesDf2$celltype)), palette = 'glasbey')
-    g2     <- ggplot2::ggplot(markerGenesDf2) + ggplot2::geom_bar(mapping = aes(x = gene, y = 1, fill = celltype), stat = "identity", width = 1)
+    colschemeg2         <- Seurat::DiscretePalette(n = length(levels(markerGenesDf2$geneType)), palette = 'glasbey')
+    g2     <- ggplot2::ggplot(markerGenesDf2) + ggplot2::geom_bar(mapping = aes(x = gene, y = 1, fill = geneType), stat = "identity", width = 1)
     g2     <- g2 + ggplot2::scale_fill_manual(values=colschemeg2)
     # ggsave(filename = 'TEST11.pdf', plot = g2, width = 40, height = 2)
     # g2     <- g2 + theme(panel.spacing.x = grid::unit(1, "mm"))
