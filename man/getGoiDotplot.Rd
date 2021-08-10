@@ -19,7 +19,11 @@ getGoiDotplot(
   dotPlotMinExpCutoff = 0.3,
   dotPlotWidth = NULL,
   dotPlotHeight = NULL,
-  legendPer = NULL
+  legendPer = NULL,
+  fontsize.x = 24,
+  fontsize.y = 18,
+  fontsize.legend1 = 20,
+  fontsize.legend2 = NULL
 )
 }
 \arguments{

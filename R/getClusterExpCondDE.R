@@ -9,7 +9,7 @@
 #' @param expCondCheck 3 options: 'sample', 'expCond1', or 'expCond2' to specify which experimental conditions to be explored with this function.
 #' @param expCondSepName part of file name string to specify the analysis results folder name.
 #' @param expCondName2change character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.
-#' @param compGroup specify 2 group names for comparisons, these group names is corresponding to experimental condition factor levels.
+#' @param compGroup specify either 1 or 2 group names seperated by '/' for comparisons, these group names is corresponding to experimental condition factor levels. If only 1 group named is specified, it makes comparison between this specified group with all others.
 #' @param deMethod DE test method with options: 'wilcox', 't', 'negbinom', 'poisson', 'MAST', 'DESeq2', by default = 'wilcox'.
 #' @param pAdjValCutoff adjusted p-value cutoff for significant DEGs detection, by default = 0.05.
 #' @param topNo specify the top number of up and down significant DEGs in each identified/annotated cell clusters, by default = 10.

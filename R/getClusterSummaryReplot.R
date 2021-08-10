@@ -72,7 +72,7 @@ getClusterSummaryReplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F,
     source(as.character(newAnnotationRscriptName))
   }
   ## -------------------------------------------------------------------------------------
-  # setup cutome theme for plotting
+  # setup custom theme for plotting
   theme1noLegend          <- theme(plot.title = element_text(size = 16, hjust = 0.5),
                                    # legend.key.size = unit(0.7, "cm"),
                                    axis.title = element_text(size = 20),
@@ -82,7 +82,7 @@ getClusterSummaryReplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F,
   theme1wLegend           <- theme(plot.title = element_text(size = 16, hjust = 0.5),
                                    # legend.key.size = unit(0.7, "cm"),
                                    axis.title = element_text(size = 15),
-                                   axis.text = element_text(size = 20),
+                                   axis.text = element_text(size = 25),
                                    legend.position="bottom",
                                    legend.text = element_text(size = 15) )
   theme1wLegendRight      <- theme(plot.title = element_text(size = 16, hjust = 0.5),

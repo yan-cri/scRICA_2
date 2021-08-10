@@ -33,7 +33,7 @@ getClusterExpCondDe(
 
 \item{expCondName2change}{character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.}
 
-\item{compGroup}{specify 2 group names for comparisons, these group names is corresponding to experimental condition factor levels.}
+\item{compGroup}{specify either 1 or 2 group names seperated by '/' for comparisons, these group names is corresponding to experimental condition factor levels. If only 1 group named is specified, it makes comparison between this specified group with all others.}
 
 \item{deMethod}{DE test method with options: 'wilcox', 't', 'negbinom', 'poisson', 'MAST', 'DESeq2', by default = 'wilcox'.}
 

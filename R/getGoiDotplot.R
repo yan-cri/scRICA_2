@@ -51,7 +51,7 @@
 # library(grDevices)
 # library(tools)
 # library(xlsx)
-getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, goiFname, geneTypeOrder=NULL, expCondCheck='sample', expCondSepName = NULL, expCondName2change=NULL, expCondReorderLevels=NULL, dotPlotFnamePrefix='goiDotplots', dotPlotMinExpCutoff=0.3, dotPlotWidth=NULL, dotPlotHeight=NULL, legendPer=NULL ){
+getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, goiFname, geneTypeOrder=NULL, expCondCheck='sample', expCondSepName = NULL, expCondName2change=NULL, expCondReorderLevels=NULL, dotPlotFnamePrefix='goiDotplots', dotPlotMinExpCutoff=0.3, dotPlotWidth=NULL, dotPlotHeight=NULL, legendPer=NULL, fontsize.x = 24, fontsize.y = 18, fontsize.legend1 = 20, fontsize.legend2 = NULL ){
   ## ---
   newAnnotation           <- as.logical(newAnnotation)
   if (newAnnotation & is.null(newAnnotationRscriptName)) print("Option 'newAnnotation' is on, please provide corresponding option 'newAnnotationRscriptName'.")
@@ -153,17 +153,17 @@ getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnota
     markerGenes           <- as.character(unique(markerGenesPrep[,1]))
   }
   ## -
-  if ('geneType' %in% colnames(markerGenesPrep) ){
-    markerGenesCat        <- as.factor(markerGenesPrep$geneType)
+  if ('genetype' %in% colnames(markerGenesPrep) ){
+    markerGenesCat        <- as.factor(markerGenesPrep$genetype)
   } else {
     markerGenesCat        <- NULL
   }
   ## -
   if (!is.null(markerGenesCat)){
-    markerGenesDf         <- data.frame('gene' = markerGenes, 'geneType'=markerGenesCat)
+    markerGenesDf         <- data.frame('gene' = markerGenes, 'genetype'=markerGenesCat)
     if (!is.null(geneTypeOrder)) {
-      markerGenesDf$geneType <- factor(markerGenesDf$geneType, levels = geneTypeOrder)
-      markerGenesDf          <- markerGenesDf[order(markerGenesDf$geneType),]
+      markerGenesDf$genetype <- factor(markerGenesDf$genetype, levels = geneTypeOrder)
+      markerGenesDf          <- markerGenesDf[order(markerGenesDf$genetype),]
     }
   }
   ## Note: if column 'geneType' does not exist, markerGenesCat=NULL, NO 'markerGenesDf' exist
@@ -175,7 +175,7 @@ getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnota
   ## ---
   ## 2. make dotplot with provided gene markers; dot plot of all selected marker genes presented on x-axis
   SeuratObject::DefaultAssay(seuratObjFinal)   <- "RNA" ## suggested by Seurat tutorial at 'https://satijalab.org/seurat/articles/integration_introduction.html' using RNA slot for feature plot and dot plot and downstream analysis
-  # SeuratObject::DefaultAssay(seuratObjFinal)   <- "integrated"
+  ## SeuratObject::DefaultAssay(seuratObjFinal)   <- "integrated"
   ## adding expCond to the idents of identified clusters
   if (all( names(Seurat::Idents(seuratObjFinal)) == names(seuratObjFinal$expCond) )) {
     ## re-define Seurat::Idents(seuratObjFinal) with level name: cluster + expCond if expCondCheck != 'comb'
@@ -191,21 +191,6 @@ getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnota
       Seurat::Idents(seuratObjFinal)        <- factor(Seurat::Idents(seuratObjFinal), levels = expCondReorderLevels)
     }
 
-    # if (!is.null(expCondReorderLevels)) {
-    #   if (cellclusterNameSort) {
-    # if ( !all(expCondReorderLevels %in% levels(factor(seuratObjFinal$expCond))) ) stop("Please provide correct corresponding 'expCondReorderLevels' to sort y-axis dot plot")
-    # Seurat::Idents(seuratObjFinal) <- factor(paste(Seurat::Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels = paste(rep(levels(Seurat::Idents(seuratObjFinal)), each = length(levels(factor(seuratObjFinal$expCond))) ), levels(factor(seuratObjFinal$expCond, levels = expCondReorderLevels)), sep = '_') )
-    #   } else {
-    # Seurat::Idents(seuratObjFinal) <- factor(paste(Seurat::Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels = unlist(lapply(levels(factor(seuratObjFinal$expCond, levels = expCondReorderLevels)), function(x) paste(levels(Seurat::Idents(seuratObjFinal)), x, sep = '_')) ) )
-    #   }
-    # } else {
-    #   if (cellclusterNameSort) {
-    #     Seurat::Idents(seuratObjFinal) <- factor(paste(Seurat::Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels = paste(rep(levels(Seurat::Idents(seuratObjFinal)), each = length(levels(factor(seuratObjFinal$expCond))) ), levels(factor(seuratObjFinal$expCond)), sep = '_') )
-    #   } else {
-    #     Seurat::Idents(seuratObjFinal) <- factor(paste(Seurat::Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels = unlist(lapply(levels(factor(seuratObjFinal$expCond)), function(x) paste(levels(Seurat::Idents(seuratObjFinal)), x, sep = '_')) ) )
-    #   }
-    # }
-    ## ---
   }
   print(sprintf('Updated idents information with experimental condition are as below:'))
   print(table(Seurat::Idents(seuratObjFinal) ))
@@ -241,6 +226,7 @@ getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnota
   ## ---
   if (is.null(markerGenesCat)) {
     pdf(file = dotplotFname, width = dotPlotWidth, height = dotPlotHeight )
+    g1     <- g1 + theme(legend.text = element_text(color = "black", size = fontsize.legend1), axis.text.x = element_text(color = "black", size = fontsize.x), axis.text.y = element_text(color = "black", size = axis.text.y), axis.title = element_blank() )
     print(g1)
     dev.off()
   } else {
@@ -248,14 +234,15 @@ getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnota
     markerGenesDf2      <- markerGenesDf %>% dplyr::filter(gene %in% levels(droplevels(g1$data$features.plot)) )
     markerGenesDf2$gene <- factor(markerGenesDf2$gene, levels = levels(droplevels(g1$data$features.plot)) )
     ## below DiscretePalette() in Seurat with 4 color scheme options, color scheme display seen in https://kwstat.github.io/pals/
-    colschemeg2         <- Seurat::DiscretePalette(n = length(levels(markerGenesDf2$geneType)), palette = 'glasbey')
-    g2     <- ggplot2::ggplot(markerGenesDf2) + ggplot2::geom_bar(mapping = aes(x = gene, y = 1, fill = geneType), stat = "identity", width = 1)
+    colschemeg2         <- Seurat::DiscretePalette(n = length(levels(markerGenesDf2$genetype)), palette = 'glasbey')
+    g2     <- ggplot2::ggplot(markerGenesDf2) + ggplot2::geom_bar(mapping = aes(x = gene, y = 1, fill = genetype), stat = "identity", width = 1)
     g2     <- g2 + ggplot2::scale_fill_manual(values=colschemeg2)
     # ggsave(filename = 'TEST11.pdf', plot = g2, width = 40, height = 2)
     # g2     <- g2 + theme(panel.spacing.x = grid::unit(1, "mm"))
     g2     <- g2 + ggplot2::theme_void() + theme(panel.spacing.x = grid::unit(1, "mm")) ##+ facet_grid(.~colorBar, scales = "free_x") ##testing to make sure gene name aligned
-    g2     <- g2 + theme(legend.text = element_text(color = "black", size = 20), legend.title = element_blank() )
-    g1     <- g1 + theme(legend.text = element_text(color = "black", size = 20), axis.text.x = element_text(color = "black", size = 24), axis.text.y = element_text(color = "black", size = 18), axis.title = element_blank() )
+    if (is.null(fontsize.legend2)) fontsize.legend2 = fontsize.legend1
+    g2     <- g2 + theme(legend.text = element_text(color = "black", size = fontsize.legend2), legend.title = element_blank() )
+    g1     <- g1 + theme(legend.text = element_text(color = "black", size = fontsize.legend1), axis.text.x = element_text(color = "black", size = fontsize.x), axis.text.y = element_text(color = "black", size = fontsize.y), axis.title = element_blank() )
     legend              <- cowplot::plot_grid(cowplot::get_legend(g2), cowplot::get_legend(g1), ncol = 1, align = 'h', axis = 'l')
     g1woLegend          <- g1 + theme(legend.position = "none")
     g2woLegend          <- g2 + theme(legend.position = "none")
