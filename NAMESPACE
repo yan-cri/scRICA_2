@@ -2,6 +2,7 @@
 
 export(Improved_Seurat_Pre_Process)
 export(calcPCApseudo)
+export(clusterSummary)
 export(findDoublets)
 export(getClusterExpCondDe)
 export(getClusterMarkers)

@@ -5,6 +5,7 @@
 #' @param heatmap.view 3 options: 'ident', 'expCond', and 'expCond.ident' to make heatmap, by default 'idents'.
 #' @param resDir full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.
 #' @param rds User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.
+#' @param scaled whether input rds is scaled, by default False, will scale data based on selected 'cellcluster' and 'expCond'.
 #' @param newAnnotation logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.
 #' @param newAnnotationRscriptName if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.
 #' @param resSaveFname whether to save re-scaled seurat object on the defined 'cellcluster' and 'expCond', by default it is 'NULL' without saving re-scaled RDS object.
@@ -63,7 +64,7 @@
 #'
 ## ---------------------------------------------------------------------------------------
 getGoiHeatmap <- function(heatmap.view = 'ident', resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL,
-                          resSaveFname = NULL,
+                          resSaveFname = NULL, scaled = F,
                           goiFname = NULL, geneNames = NULL,
                           expCondCheck='sample', expCondSepName = NULL, expCondName2change=NULL,
                           cellcluster = NULL , expCond = NULL, expCondReorderLevels = NULL,
@@ -215,7 +216,11 @@ getGoiHeatmap <- function(heatmap.view = 'ident', resDir=NULL, rds=NULL, newAnno
   plotTheme <- ggplot2::theme(axis.text.y = element_text(color = "black", size = fontsize.y, angle = fontangle.y),
                               legend.text = element_text(color = "black", size = fontsize.legend),
                               legend.title = element_blank() )
-  seuratObjFinal <- Seurat::ScaleData(object = seuratObjFinal, do.scale = T, do.center = T) ## by default, both do.scale/center are on, will scale the expression level for each feature by dividing the centered feature expression levels by their standard deviations
+  if (!scaled) {
+    seuratObjFinal <- Seurat::ScaleData(object = seuratObjFinal, do.scale = T, do.center = T) ## by default, both do.scale/center are on, will scale the expression level for each feature by dividing the centered feature expression levels by their standard deviations
+  } else {
+    print("Input RDS is already scaled, no further scaling is implemented here.")
+  }
   if (!is.null(resSaveFname)) {
     saveRDS(object = seuratObjFinal, file = file.path(rdsDir, sprintf("%s.rds", resSaveFname)) )
   }
