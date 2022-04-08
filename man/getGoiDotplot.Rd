@@ -6,7 +6,7 @@
 \usage{
 getGoiDotplot(
   resDir = NULL,
-  rdsFname = NULL,
+  rds = NULL,
   newAnnotation = F,
   newAnnotationRscriptName = NULL,
   goiFname,
@@ -15,21 +15,29 @@ getGoiDotplot(
   expCondSepName = NULL,
   expCondName2change = NULL,
   expCondReorderLevels = NULL,
+  expCondName = NULL,
+  cellcluster = NULL,
   dotPlotFnamePrefix = "goiDotplots",
   dotPlotMinExpCutoff = 0.3,
+  dotPlotMaxExpCutoff = 2.5,
   dotPlotWidth = NULL,
   dotPlotHeight = NULL,
   legendPer = NULL,
+  genetypebarPer = NULL,
   fontsize.x = 24,
   fontsize.y = 18,
+  fontangle.x = 90,
+  fontangle.y = 90,
   fontsize.legend1 = 20,
-  fontsize.legend2 = NULL
+  fontsize.legend2 = NULL,
+  gridOn = as.logical(F),
+  geneTypeLegendOn = as.logical(T)
 )
 }
 \arguments{
 \item{resDir}{full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.}
 
-\item{rdsFname}{User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.}
+\item{rds}{User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.}
 
 \item{newAnnotation}{logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.}
 
@@ -47,15 +55,25 @@ getGoiDotplot(
 
 \item{expCondReorderLevels}{a character string of the corresponding experimental condition factor levels' orders presented on the y-axis of the dot-plot from bottom to top, if not defined, sorted numerically or alphabetically.}
 
+\item{expCondName}{specify an experimental condition corresponding to 'expCondCheck'/'expCondName2change' levels to be displayed on the dot plot}
+
+\item{cellcluster}{specify cell clusters to be displayed on the dot plot}
+
 \item{dotPlotFnamePrefix}{prefix of the dot plot file name, if not defined, by default = 'goiDotplots'.}
 
 \item{dotPlotMinExpCutoff}{minimum expression value threshold presented in the dot plot, if not defined, by default = 0.3.}
+
+\item{dotPlotMaxExpCutoff}{maximum expression value threshold presented in the dot plot, if not defined, by default = 2.5.}
 
 \item{dotPlotWidth}{dot plot width, if not defined, will be decided automatically based on the number of marker genes presented in 'goiFname'}
 
 \item{dotPlotHeight}{dot plot height, if not defined, will be decided automatically based on the number of experimental condition or sample's cell clusters.}
 
 \item{legendPer}{specify the legend proportion in the dot plot, if not specified, by default = 0.1}
+
+\item{gridOn}{by default 'off', whether to have grid on the plot background}
+
+\item{geneTypeLegendOn}{by default 'on', whether to include legend in the plot}
 }
 \value{
 the dotplots of provided GOI(gene of interest) saved in '' inside the provided 'resDir'

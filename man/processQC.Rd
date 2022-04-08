@@ -6,16 +6,23 @@
 \usage{
 processQC(
   metadata,
+  multiomics = F,
+  extraFilter = F,
   resDirName = NULL,
   genomeSpecies = NULL,
   minCells = 3,
   minFeatures = 200,
   mtFiltering = F,
-  mtPerCutoff = NULL
+  mtPerCutoff = NULL,
+  nfeatures = 5000
 )
 }
 \arguments{
 \item{metadata}{required, metadata table with at least 4 required columns: 'sample', 'path', 'doubletsRmMethod', and 'expCond1'.}
+
+\item{multiomics}{optional, default = F}
+
+\item{extraFilter}{optional, default = F, if 'TRUE', column 'filterFname' needs to be included in the provided metadata table.}
 
 \item{resDirName}{define the folder/directory name where integration analysis results will be saved, if not defined, by default results will be saved at the current working directory in a folder named as 'scRICA_results'.}
 

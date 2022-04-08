@@ -3,7 +3,7 @@
 #' This function is used to make dotplot of marker/features genes in provided 'goiFname'.
 #'
 #' @param resDir full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.
-#' @param rdsFname User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.
+#' @param rds User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.
 #' @param newAnnotation logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.
 #' @param newAnnotationRscriptName if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.
 #' @param goiFname path to file, where a list of marker/features genes are provided in column 'Gene', if column 'Cell Type' is also provided, option 'geneTypeOrder' can be used to adjust orders.
@@ -12,11 +12,16 @@
 #' @param expCondSepName suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.
 #' @param expCondName2change a character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.
 #' @param expCondReorderLevels a character string of the corresponding experimental condition factor levels' orders presented on the y-axis of the dot-plot from bottom to top, if not defined, sorted numerically or alphabetically.
+#' @param expCondName specify an experimental condition corresponding to 'expCondCheck'/'expCondName2change' levels to be displayed on the dot plot
+#' @param cellcluster specify cell clusters to be displayed on the dot plot
 #' @param dotPlotFnamePrefix prefix of the dot plot file name, if not defined, by default = 'goiDotplots'.
 #' @param dotPlotMinExpCutoff minimum expression value threshold presented in the dot plot, if not defined, by default = 0.3.
+#' @param dotPlotMaxExpCutoff maximum expression value threshold presented in the dot plot, if not defined, by default = 2.5.
 #' @param dotPlotWidth dot plot width, if not defined, will be decided automatically based on the number of marker genes presented in 'goiFname'
 #' @param dotPlotHeight dot plot height, if not defined, will be decided automatically based on the number of experimental condition or sample's cell clusters.
 #' @param legendPer specify the legend proportion in the dot plot, if not specified, by default = 0.1
+#' @param gridOn by default 'off', whether to have grid on the plot background
+#' @param geneTypeLegendOn by default 'on', whether to include legend in the plot
 #'
 #' @importFrom ggplot2 theme
 #' @importFrom ggplot2 guides
@@ -27,6 +32,7 @@
 #' @importFrom ggplot2 theme_void
 #' @importFrom ggplot2 geom_bar
 #' @importFrom ggplot2 ggsave
+#' @importFrom ggplot2 element_line
 #' @importFrom Seurat Idents
 #' @importFrom Seurat NoLegend
 #' @importFrom Seurat RotatedAxis
@@ -51,24 +57,33 @@
 # library(grDevices)
 # library(tools)
 # library(xlsx)
-getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, goiFname, geneTypeOrder=NULL, expCondCheck='sample', expCondSepName = NULL, expCondName2change=NULL, expCondReorderLevels=NULL, dotPlotFnamePrefix='goiDotplots', dotPlotMinExpCutoff=0.3, dotPlotWidth=NULL, dotPlotHeight=NULL, legendPer=NULL, fontsize.x = 24, fontsize.y = 18, fontsize.legend1 = 20, fontsize.legend2 = NULL ){
+getGoiDotplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, goiFname, geneTypeOrder=NULL, expCondCheck='sample', expCondSepName = NULL, expCondName2change=NULL, expCondReorderLevels=NULL, expCondName = NULL, cellcluster = NULL, dotPlotFnamePrefix='goiDotplots', dotPlotMinExpCutoff=0.3, dotPlotMaxExpCutoff = 2.5, dotPlotWidth=NULL, dotPlotHeight=NULL, legendPer=NULL, genetypebarPer=NULL, fontsize.x = 24, fontsize.y = 18, fontangle.x = 90, fontangle.y = 90, fontsize.legend1 = 20, fontsize.legend2 = NULL, gridOn = as.logical(F), geneTypeLegendOn = as.logical(T) ){
   ## ---
   newAnnotation           <- as.logical(newAnnotation)
   if (newAnnotation & is.null(newAnnotationRscriptName)) print("Option 'newAnnotation' is on, please provide corresponding option 'newAnnotationRscriptName'.")
   ## ---
-  if (is.null(resDir) & !is.null(rdsFname)) {
-    rdsFname              <- rdsFname
+  if (is.null(resDir) & !is.null(rds)) {
+    if (class(rds)=='Seurat') {
+      seuratObjFinal      <<- rds
+      print('RDS is provided with rds option')
+    } else {
+      rdsFname            <- rds
+      ## ---
+      if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
+      seuratObjFinal      <<- readRDS(file = as.character(rdsFname))
+      print('Done for RDS read in')
+    }
     resDir                <- getwd()
-  } else if (!is.null(resDir) & is.null(rdsFname)) {
+  } else if (!is.null(resDir) & is.null(rds)) {
     rdsFname              <- sprintf('%s/RDS_Dir/%s.rds', resDir, basename(resDir))
     resDir                <- resDir
+    ## ---
+    if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
+    seuratObjFinal          <<- readRDS(file = as.character(rdsFname))
+    print('Done for RDS read in')
   } else {
     stop("Error: please provide either option 'resDir' or 'rdsFname'. ")
   }
-  ## ---
-  if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
-  seuratObjFinal          <<- readRDS(file = as.character(rdsFname))
-  print('Done for RDS read in')
   ## ------
   ## update results directory if new annotation is used
   if (newAnnotation) {
@@ -81,8 +96,13 @@ getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnota
   if (newAnnotation) {
     ## Assign cell type identity to clusters
     ## redefine the level of Idents on the y-axis can be adjusted here by inputting order for cell annotation
-    source(as.character(newAnnotationRscriptName))
+    print("Before adding new annotation")
+    print(table(Idents(seuratObjFinal)))
+    source(newAnnotationRscriptName)
+    print("After adding new annotation")
+    print(table(Idents(seuratObjFinal)))
   }
+
   ## -------------------------------------------------------------------------------------
   if (expCondCheck == 'sample') {
     if (is.null(expCondSepName)) {
@@ -98,24 +118,25 @@ getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnota
     }
   }
   ## -------------------------------------------------------------------------------------
-  ## update 'seuratObjFinal@meta.data$expCond' and create corresponding 'plotResDir' for feature-plot to save
+  ## create corresponding 'plotResDir' for feature-plot to save
   plotResDir            <- paste(resDir, sprintf('dotplot_selected_markers_expCond_%s', expCondSepName), sep = '/')
   if (!dir.exists(plotResDir)) dir.create(plotResDir)
   ## ------
+  ## update 'seuratObjFinal@meta.data$expCond'
   if (expCondCheck == 'sample') {
     seuratObjFinal                     <- seuratObjFinal
   } else if (expCondCheck == 'comb') {
     seuratObjFinal@meta.data$expCond   <- Seurat::Idents(seuratObjFinal)
   } else if (expCondCheck == 'expCond1') {
     if (!'expCond1' %in% colnames(seuratObjFinal@meta.data)){
-      print("Error: 'expCond1' has not been included in the original integration analysis.")
+      print("Note: 'expCond1' has not been included in the original integration analysis, using 'expCondName2change' to change 'expCond'.")
       seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
     } else {
       seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond1
     }
   } else if (expCondCheck == 'expCond2') {
     if (!'expCond2' %in% colnames(seuratObjFinal@meta.data)){
-      print("Error: 'expCond2' has not been included in the original integration analysis.")
+      print("Note: 'expCond2' has not been included in the original integration analysis, using 'expCondName2change' to change 'expCond'.")
       seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
     } else {
       seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond2
@@ -126,9 +147,23 @@ getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnota
   # print(sprintf('4444 plotResDir is %s', plotResDir))
   if (!dir.exists(plotResDir)) dir.create(plotResDir)
   print(sprintf('GOI dot plots will be saved in %s', plotResDir))
+  ## -------------------------------------------------------------------------------------
+  # print(table(seuratObjFinal@meta.data$expCond))
+  expCondLevels = levels(factor(seuratObjFinal@meta.data$expCond))
+  if (!is.null(expCondName)) {
+    if (any(!expCondName %in% expCondLevels ) ) stop('Please provide the corresponding experimental condition.')
+    print(sprintf('Subsetting a specific experimental condition level: %s', expCondName))
+    seuratObjFinal                          <- subset(seuratObjFinal, expCond == expCondName )
+  }
   ## ------
-  print(table(Seurat::Idents(seuratObjFinal)))
-  ## ------
+  # print(table(Seurat::Idents(seuratObjFinal)))
+  clusterLevels <- levels(Seurat::Idents(seuratObjFinal))
+  if (!is.null(cellcluster)) {
+    if (any(!cellcluster %in% clusterLevels ) ) stop('Please provide the corresponding cell clusters ')
+    print(sprintf('Subsetting %s specific cell clusters: %s', length(cellcluster), paste(cellcluster, collapse = ',')))
+    seuratObjFinal                          <- subset(seuratObjFinal, idents = cellcluster )
+  }
+  ## -----------------------------------------------------------------------------
   ## using column 'gene' as marker genes, if column 'geneType' exist, will be used to categorize the genes
   if (file_ext(basename(goiFname)) == 'xlsx') {
     markerGenesPrep         <- read.xlsx(file = as.character(goiFname), sheetIndex = 1, header = T)
@@ -198,15 +233,16 @@ getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnota
   ## -----------------------------------------------------------------------------
   ## Currently Seurat::DotPlot() x-axis is based on Seurat::DotPlot()$data$features.plot levels after dropping off unused levels by droplevels()
   if (is.null(markerGenesCat)) {
-    g1                <- Seurat::DotPlot(seuratObjFinal, features = markerGenes, cols = c('#D3D3D3', '#CC0000'), col.min = dotPlotMinExpCutoff, scale = T, scale.by = 'size', dot.min = 0.01 ) + Seurat::RotatedAxis()
+    g1                <- Seurat::DotPlot(seuratObjFinal, features = markerGenes, cols = c('#D3D3D3', '#CC0000'), col.min = dotPlotMinExpCutoff, col.max = dotPlotMaxExpCutoff, scale = T, scale.by = 'size', dot.min = 0.01 ) + Seurat::RotatedAxis()
     # print(Seurat::DotPlot(seuratObjFinal, features = markerGenes, cols = c('#D3D3D3', '#CC0000'), col.min = 0.3, scale = T, scale.by = 'size', dot.min = 0.01, idents = levels(Seurat::Idents(seuratObjFinal))[-c(7,14)] ) + Seurat::RotatedAxis())
     # print(Seurat::DotPlot(seuratObjFinal, features = markerGenes, cols = c('#D3D3D3', '#CC0000'), col.min = dotPlotMinExpCutoff, scale = T, scale.by = 'size', dot.min = 0.01 ) + Seurat::RotatedAxis())
     # print(Seurat::DotPlot(seuratObjFinal, features = markerGenes, col.min = 0.3 ) + Seurat::RotatedAxis())
     # print(Seurat::DotPlot(seuratObjFinal, features = markerGenes ) + Seurat::RotatedAxis())
-
   } else {
-    g1                <- Seurat::DotPlot(seuratObjFinal, features = markerGenesDf$gene, cols = c('#D3D3D3', '#CC0000'), col.min = dotPlotMinExpCutoff, scale = T, scale.by = 'size', dot.min = 0.01 ) + Seurat::RotatedAxis()
+    g1                <- Seurat::DotPlot(seuratObjFinal, features = markerGenesDf$gene, cols = c('#D3D3D3', '#CC0000'), col.min = dotPlotMinExpCutoff, col.max = dotPlotMaxExpCutoff, scale = T, scale.by = 'size', dot.min = 0.01 ) + Seurat::RotatedAxis()
+
   }
+  # print(g1)
   # ggsave(filename = 'TEST1.pdf', plot = g1, width = 40, height = 15)
   ## ------
   print(sprintf('A total of %s genes displayed in GOI dot plot.', length(unique(g1$data$features.plot))))
@@ -224,9 +260,23 @@ getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnota
     }
   }
   ## ---
+  if (fontangle.y < 90) {
+    hjustVal = 1 ##right align
+    vjustVal.y = 0.5
+  } else if (fontangle.y > 90 & fontangle.y < 180) {
+    hjustVal = 0 ##left align
+    vjustVal.y = 1
+  } else {
+    hjustVal = 0 ##left align
+    vjustVal.y = 0.5
+  }
+  ## -
   if (is.null(markerGenesCat)) {
     pdf(file = dotplotFname, width = dotPlotWidth, height = dotPlotHeight )
-    g1     <- g1 + theme(legend.text = element_text(color = "black", size = fontsize.legend1), axis.text.x = element_text(color = "black", size = fontsize.x), axis.text.y = element_text(color = "black", size = axis.text.y), axis.title = element_blank() )
+    g1     <- g1 + theme(legend.text = element_text(color = "black", size = fontsize.legend1), axis.text.x = element_text(color = "black", size = fontsize.x, angle = fontangle.x, vjust = 0.5), axis.text.y = element_text(color = "black", size = fontsize.y, angle = fontangle.y, hjust = hjustVal, vjust = vjustVal.y), axis.title = element_blank() )
+    if (gridOn) {
+      g1 <- g1 + theme(panel.grid.major = element_line(colour = "grey85"))
+    }
     print(g1)
     dev.off()
   } else {
@@ -242,19 +292,30 @@ getGoiDotplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnota
     g2     <- g2 + ggplot2::theme_void() + theme(panel.spacing.x = grid::unit(1, "mm")) ##+ facet_grid(.~colorBar, scales = "free_x") ##testing to make sure gene name aligned
     if (is.null(fontsize.legend2)) fontsize.legend2 = fontsize.legend1
     g2     <- g2 + theme(legend.text = element_text(color = "black", size = fontsize.legend2), legend.title = element_blank() )
-    g1     <- g1 + theme(legend.text = element_text(color = "black", size = fontsize.legend1), axis.text.x = element_text(color = "black", size = fontsize.x), axis.text.y = element_text(color = "black", size = fontsize.y), axis.title = element_blank() )
+    if (gridOn) {
+      g1 <- g1 + theme(panel.grid.major = element_line(colour = "grey80"))
+    }
+    g1     <- g1 + theme(legend.text = element_text(color = "black", size = fontsize.legend1), axis.text.x = element_text(color = "black", size = fontsize.x, angle = fontangle.x, vjust = 0.5), axis.text.y = element_text(color = "black", size = fontsize.y, angle = fontangle.y, hjust = hjustVal, vjust = vjustVal.y), axis.title = element_blank() )
     legend              <- cowplot::plot_grid(cowplot::get_legend(g2), cowplot::get_legend(g1), ncol = 1, align = 'h', axis = 'l')
+    legend1             <- cowplot::plot_grid(cowplot::get_legend(g1), ncol = 1, align = 'h', axis = 'l')
     g1woLegend          <- g1 + theme(legend.position = "none")
     g2woLegend          <- g2 + theme(legend.position = "none")
-
-    if (length(levels(factor(Seurat::Idents(seuratObjFinal) ))) < 151 ){
-      plot              <- cowplot::plot_grid(g2woLegend, g1woLegend, align = "v", ncol = 1, axis = 'lr', rel_heights = c(0.015*dotPlotHeight, 0.95*dotPlotHeight))
-    } else {
-      plot              <- cowplot::plot_grid(g2woLegend, g1woLegend, align = "v", ncol = 1, axis = 'lr', rel_heights = c(0.03*dotPlotHeight, 0.95*dotPlotHeight))
-    }
+    if (is.null(genetypebarPer)) genetypebarPer <- 0.01
+    plot                <- cowplot::plot_grid(g2woLegend, g1woLegend, align = "v", ncol = 1, axis = 'lr', rel_heights = c(genetypebarPer*dotPlotHeight, (1-genetypebarPer)*dotPlotHeight))
+    # if (length(levels(factor(Seurat::Idents(seuratObjFinal) ))) < 151 ){
+    #   plot              <- cowplot::plot_grid(g2woLegend, g1woLegend, align = "v", ncol = 1, axis = 'lr', rel_heights = c(0.015*dotPlotHeight, 0.95*dotPlotHeight))
+    # } else {
+    #   plot              <- cowplot::plot_grid(g2woLegend, g1woLegend, align = "v", ncol = 1, axis = 'lr', rel_heights = c(0.03*dotPlotHeight, 0.95*dotPlotHeight))
+    # }
     if(is.null(legendPer)) legendPer <- 0.1
-    plotWlegend         <- cowplot::plot_grid(plot, legend, nrow = 1, align = 'h', axis = 'none', rel_widths = c((1-legendPer)*dotPlotWidth, legendPer*dotPlotWidth))
-    ggplot2::ggsave(filename = dotplotFname, plot = plotWlegend, width = dotPlotWidth, height = dotPlotHeight, limitsize = FALSE)
+    if (geneTypeLegendOn) {
+      plotWlegend         <- cowplot::plot_grid(plot, legend, nrow = 1, align = 'h', axis = 'none', rel_widths = c((1-legendPer)*dotPlotWidth, legendPer*dotPlotWidth))
+      ggplot2::ggsave(filename = dotplotFname, plot = plotWlegend, width = dotPlotWidth, height = dotPlotHeight, limitsize = FALSE)
+    } else {
+      plotWlegend2        <- cowplot::plot_grid(plot, legend1, nrow = 1, align = 'h', axis = 'none', rel_widths = c((1-legendPer)*dotPlotWidth, legendPer*dotPlotWidth))
+      ggplot2::ggsave(filename = dotplotFname, plot = plotWlegend2, width = dotPlotWidth, height = dotPlotHeight, limitsize = FALSE)
+    }
+
   }
 }
 ## ---------------------------------------------------------------------------------------

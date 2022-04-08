@@ -11,6 +11,7 @@
 #' This function is used to integrate Seurat objects with identified anchor via Seurat method,
 #' followed with clustering analysis, and cluster markers identification.
 #' @param qcProcessedResults required, processQC() returned full result list or object 'qcProcessObj'.
+#' @param integrationMethod default = 'CCA', either 'CCA' or 'RPCA' integration method can be applied for anchor identification for integration.
 #' @param topN optional, default = 10, indicating the number of identified cluster gene markers
 #' @param resDirName optional, define folder/directory name where integration analysis results will be saved.
 #' If processQC() full results used for option 'qcProcessedResults', it will use the same 'resDirName' used in processQC()
@@ -20,6 +21,7 @@
 #' @importFrom Seurat DefaultAssay
 #' @importFrom Seurat FindIntegrationAnchors
 #' @importFrom Seurat IntegrateData
+#' @importFrom Seurat SelectIntegrationFeatures
 #' @importFrom Seurat ScaleData
 #' @importFrom Seurat RunPCA
 #' @importFrom Seurat ElbowPlot
@@ -52,9 +54,8 @@
 #' 3. 'resDir': full path of results directory, where the entire integration analysis results are saved.
 #'
 ##----------------------------------------------------------------------------------------
-getClusterMarkers <- function(qcProcessedResults, resDirName = NULL, topN = 10) {
+getClusterMarkers <- function(qcProcessedResults, integrationMethod = 'CCA', nfeatures = 2000, resDirName = NULL, topN = 10) {
   ## ---
-  anchorIntegrate               <- as.logical(T)
   topN                          <- as.numeric(topN)
   if ('resDir' %in% names(qcProcessedResults) & 'countReadInOjb' %in% names(qcProcessedResults) ){
     qcProcessedSeuratObjList    <- qcProcessedResults$qcProcessObj
@@ -88,7 +89,6 @@ getClusterMarkers <- function(qcProcessedResults, resDirName = NULL, topN = 10) 
   ## ------------------
   print(sprintf('Integration results will be saved in %s', resDir))
   ## ---
-  # if (length(qcProcessedSeuratObjList) == 1 & anchorIntegrate == as.logical(T)) stop("ERROR: only 1 item in input 'qcProcessedSeuratObjList', no integration can be performed ")
   if (length(qcProcessedSeuratObjList) == 1) {
     ## ---
     print("No integration is needed, only 1 Seurat object is provided.")
@@ -99,7 +99,24 @@ getClusterMarkers <- function(qcProcessedResults, resDirName = NULL, topN = 10) 
     ## 3.1 Finding anchors, by default running CCA
     print(sprintf('Step 1: Process data integration at %s', Sys.time()))
     print(sprintf('%s samples will be integrated', length(qcProcessedSeuratObjList)))
-    anchors                     <- FindIntegrationAnchors(object.list = qcProcessedSeuratObjList)
+    print(sprintf("%s anchor integration is implemented on %s features.", integrationMethod, nfeatures))
+    # select features that are repeatedly variable across datasets, added Jan, 2022
+    features                    <- SelectIntegrationFeatures(object.list = qcProcessedSeuratObjList, nfeatures = nfeatures)
+    if (integrationMethod == 'RPCA') {
+      # normalize and identify variable features for each dataset independently
+      qcProcessedSeuratObjList <- lapply(X = qcProcessedSeuratObjList, FUN = function(x) {
+        x <- ScaleData(object = x)
+        x <- RunPCA(object = x)
+      })
+
+      anchors                     <- FindIntegrationAnchors(object.list = qcProcessedSeuratObjList,
+                                                            anchor.features = features,
+                                                            reduction = 'rpca' )
+
+    } else {
+      anchors                     <- FindIntegrationAnchors(object.list = qcProcessedSeuratObjList,
+                                                            anchor.features = features )
+    }
     ## 3.2 Integrating data based on found anchors above
     seuratObjIntegrated         <- IntegrateData(anchorset = anchors)
     print(sprintf('End Step 1: data integration at %s', Sys.time()))
