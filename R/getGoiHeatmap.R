@@ -1,3 +1,4 @@
+#' getGoiHeatmap() Function
 #' @details
 #' This function is used to make heat-map of marker/features genes in provided 'goiFname' or geneNames.
 #'
