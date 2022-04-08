@@ -134,7 +134,7 @@ getExpCondClusterMarkers <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F
   ## updated expCond factor after above updating
   expCondLevels           <- levels(factor(seuratObjFinal@meta.data$expCond))
   ## ---
-  Seurat::DefaultAssay(seuratObjFinal) <- "integrated"
+  # Seurat::DefaultAssay(seuratObjFinal) <- "integrated"
   expCondPosMarkers       <- list()
   expCondSigPosMarkers    <- list()
   ## -------------------------------------------------------------------------------------
@@ -148,10 +148,12 @@ getExpCondClusterMarkers <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F
     seuratObjFinalexpCond <- subset(seuratObjFinal, expCond == expCondLevel)
     ## identify cluster positively expressed markers
     print(sprintf('Start %s: finding positive regulated cluster marker genes for experimental condition: %s', l, expCondLevel))
-    allPosMarkers         <- FindAllMarkers(seuratObjFinalexpCond, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
-    write.table(x = allPosMarkers, file = file.path(sprintf('%s/expCond_%s_%s_allCluster_pos_markers_full.txt', resDir, expCondSepName, expCondLevel)), quote = F, sep = '\t', row.names = T, col.names = NA)
-    print(sprintf('Maximum p_value is %s, Maximum adjusted p_value is %s', round(max(allPosMarkers$p_val), digits = 4), round(max(allPosMarkers$p_val_adj), digits = 4)))
     ## identify significant positively expressed cluster markers
+    if (assay == 'integrated') {
+      allPosMarkers <- FindAllMarkers(seuratObjFinalexpCond, assay = assay, slot = "scale.data", only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+    } else {
+      allPosMarkers <- FindAllMarkers(seuratObjFinalexpCond, assay = assay, slot = "data", only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+    }
     allPosMarkersAdjSig   <- allPosMarkers %>% dplyr::filter(p_val_adj <= pAdjValCutoff) %>% dplyr::mutate(perDiff = pct.1-pct.2)
     if (dim(allPosMarkersAdjSig)[1] > 0) write.table(x = allPosMarkersAdjSig, file = file.path(sprintf('%s/expCond_%s_%s_allCluster_pos_markers_UpSig.txt', resDir, expCondSepName, expCondLevel)), quote = F, sep = '\t', row.names = T, col.names = NA)
     print(sprintf('A total of %s positively expressed genes identified for experimental condition %s at %s, among them %s are significant up expressed at adjusted p-value significant level of %s', dim(allPosMarkers)[1], expCondSepName, expCondLevel, dim(allPosMarkersAdjSig)[1], pAdjValCutoff ))
@@ -164,18 +166,8 @@ getExpCondClusterMarkers <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F
     systime2               <- Sys.time()
     print(sprintf('END %s: finding positive regulated cluster marker genes for experimental condition in %s with computation time: %s %s.', l, expCondLevel, round(difftime(systime2, systime1), digits = 2), attr(difftime(systime2, systime1), "units") ))
     print('Start: Step 6 making cluster marker genes heatmap plot')
-    ## top N markers identification
-    topMarkers             <- allPosMarkers %>% group_by(cluster) %>% top_n(n = topNo, wt = avg_log2FC) %>% as.data.frame()
-    write.table(x = topMarkers, file = file.path(sprintf('%s/expCond_%s_%s_allCluster_pos_markers_top%s.txt', resDir, expCondSepName, expCondLevel, topNo )), quote = F, sep = '\t', row.names = T, col.names = NA)
-    # Seurat::DefaultAssay(seuratObjFinalexpCond) <- "integrated"
-    ## top N markers heatmap
-    cluterTopMarkerheatmap <- DoHeatmap(seuratObjFinalexpCond, features = topMarkers$gene)
-    pdf(file = file.path(sprintf('%s/expCond_%s_%s_allCluster_top%sPosMarkers_heatmap.pdf', resDir, expCondSepName, expCondLevel, topNo )), width = 25, height = 20)
-    print(cluterTopMarkerheatmap)
-    dev.off()
-    print(sprintf('complete top %s cluster marker genes heatmap plot', topNo))
     ## all significant cluster markers heatmap
-    cluterAllsigMarkerheatmap <- DoHeatmap(seuratObjFinalexpCond, features = allPosMarkersAdjSig$gene)
+    cluterAllsigMarkerheatmap <- DoHeatmap(seuratObjFinalexpCond, assay = assay, slot = "scale.data", features = allPosMarkersAdjSig$gene)
     pdf(file = file.path(sprintf('%s/expCond_%s_%s_allCluster_pos_markers_UpSig_heatmap.pdf', resDir, expCondSepName, expCondLevel )), width = 25, height = 20)
     print(cluterAllsigMarkerheatmap)
     dev.off()

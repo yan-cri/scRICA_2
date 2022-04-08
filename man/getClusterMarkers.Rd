@@ -4,10 +4,18 @@
 \alias{getClusterMarkers}
 \title{getClusterMarkers() Function}
 \usage{
-getClusterMarkers(qcProcessedResults, resDirName = NULL, topN = 10)
+getClusterMarkers(
+  qcProcessedResults,
+  integrationMethod = "CCA",
+  nfeatures = 2000,
+  resDirName = NULL,
+  topN = 10
+)
 }
 \arguments{
 \item{qcProcessedResults}{required, processQC() returned full result list or object 'qcProcessObj'.}
+
+\item{integrationMethod}{default = 'CCA', either 'CCA' or 'RPCA' integration method can be applied for anchor identification for integration.}
 
 \item{resDirName}{optional, define folder/directory name where integration analysis results will be saved.
 If processQC() full results used for option 'qcProcessedResults', it will use the same 'resDirName' used in processQC()}

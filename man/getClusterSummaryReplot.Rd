@@ -6,25 +6,34 @@
 \usage{
 getClusterSummaryReplot(
   resDir = NULL,
-  rdsFname = NULL,
+  rds = NULL,
   newAnnotation = F,
   newAnnotationRscriptName = NULL,
+  colors = NULL,
+  cellcluster = NULL,
   expCondCheck = "sample",
   expCondSepName = NULL,
   expCondName2change = NULL,
   fpClusterOrder = NULL,
   perClusterOrder = NULL,
+  perPlotVertical = F,
+  perPlotHeight = NULL,
+  perPlotWidth = NULL,
   expCondNameOrder = NULL
 )
 }
 \arguments{
 \item{resDir}{full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.}
 
-\item{rdsFname}{User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.}
+\item{rds}{User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.}
 
 \item{newAnnotation}{logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.}
 
 \item{newAnnotationRscriptName}{if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.}
+
+\item{colors}{by default it is null, colors will be automatically selected, otherwise, a vector string of colors can be specified with this option for colors used in the plots.}
+
+\item{cellcluster}{by default it is null, all cell clusters will be plot, otherwise, cell clusters presented in the plots (UMAP/tSNE and percentage plots) can be specified with this option.}
 
 \item{expCondCheck}{3 options: 'sample', 'expCond1', or 'expCond2' to specify which experimental conditions to be explored with this function.}
 

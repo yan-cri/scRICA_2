@@ -93,6 +93,8 @@ getClusterExpCondDe <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, new
   ## -------------------------------------------------------------------------------------
   if (expCondCheck == 'sample') {
     seuratObjFinal                     <- seuratObjFinal
+  } else if (expCondCheck == 'comb') {
+    seuratObjFinal@meta.data$expCond   <- Seurat::Idents(seuratObjFinal)
   } else if (expCondCheck == 'expCond1') {
     if (!'expCond1' %in% colnames(seuratObjFinal@meta.data)){
       print("Error: 'expCond1' has not been included in the original integration analysis.")

@@ -3,12 +3,14 @@
 #' This function is used to 1). summarize the number of cells in each originally identified/annotated cells clusters; 2). re-make clustering reduction UMAP/tSNE plots; 3). make the cells percentage plot based on experimental condition levels specified in the metadata table.
 #'
 #' @param resDir full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.
-#' @param rdsFname User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.
+#' @param rds User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.
 #' @param newAnnotation logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.
 #' @param newAnnotationRscriptName if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.
 #' @param expCondCheck 3 options: 'sample', 'expCond1', or 'expCond2' to specify which experimental conditions to be explored with this function.
 #' @param expCondSepName part of file name string to specify the analysis results folder name.
 #' @param expCondName2change character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.
+#' @param colors by default it is null, colors will be automatically selected, otherwise, a vector string of colors can be specified with this option for colors used in the plots.
+#' @param cellcluster by default it is null, all cell clusters will be plot, otherwise, cell clusters presented in the plots (UMAP/tSNE and percentage plots) can be specified with this option.
 #' @param fpClusterOrder character string of cell clusters orders to specify the cell clusters orders corresponding to the color scheme, if not defined, sorted numerically, alphabetically, or the orders shown in the annotation R script.
 #' @param perClusterOrder character string of cell clusters orders to specify the cell clusters orders presented in the percentage bar plot, if not defined, sorted numerically or alphabetically.
 #' @param expCondNameOrder character string of the corresponding experimental condition factor levels' orders presented in the percentage bar plot, if not defined, sorted numerically or alphabetically.
@@ -35,24 +37,46 @@
 #' @export
 #' @return
 ## ---------------------------------------------------------------------------------------
-getClusterSummaryReplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, expCondCheck='sample', expCondSepName = NULL, expCondName2change=NULL, fpClusterOrder = NULL, perClusterOrder = NULL, expCondNameOrder = NULL) {
+getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, colors = NULL, cellcluster = NULL, expCondCheck='sample', expCondSepName = NULL, expCondName2change=NULL, fpClusterOrder = NULL, perClusterOrder = NULL, perPlotVertical = F, perPlotHeight = NULL, perPlotWidth = NULL, expCondNameOrder = NULL) {
   ## ---
   newAnnotation           <- as.logical(newAnnotation)
   if (newAnnotation & is.null(newAnnotationRscriptName)) print("Option 'newAnnotation' is on, please provide corresponding option 'newAnnotationRscriptName'.")
   ## ---
-  if (is.null(resDir) & !is.null(rdsFname)) {
-    rdsFname              <- rdsFname
+  # if (is.null(resDir) & !is.null(rds)) {
+  #   rdsFname              <- rdsFname
+  #   resDir                <- getwd()
+  # } else if (!is.null(resDir) & is.null(rdsFname)) {
+  #   rdsFname              <- sprintf('%s/RDS_Dir/%s.rds', resDir, basename(resDir))
+  #   resDir                <- resDir
+  # } else {
+  #   stop("Error: please provide either option 'resDir' or 'rdsFname'. ")
+  # }
+  # ## ---
+  # if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
+  # seuratObjFinal          <<- readRDS(file = as.character(rdsFname))
+  # print('Done for RDS readin')
+  if (is.null(resDir) & !is.null(rds)) {
+    if (class(rds)=='Seurat') {
+      seuratObjFinal      <<- rds
+      print('RDS is provided with rds option')
+    } else {
+      rdsFname            <- rds
+      ## ---
+      if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
+      seuratObjFinal      <<- readRDS(file = as.character(rdsFname))
+      print('Done for RDS read in')
+    }
     resDir                <- getwd()
-  } else if (!is.null(resDir) & is.null(rdsFname)) {
+  } else if (!is.null(resDir) & is.null(rds)) {
     rdsFname              <- sprintf('%s/RDS_Dir/%s.rds', resDir, basename(resDir))
     resDir                <- resDir
+    ## ---
+    if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
+    seuratObjFinal          <<- readRDS(file = as.character(rdsFname))
+    print('Done for RDS read in')
   } else {
     stop("Error: please provide either option 'resDir' or 'rdsFname'. ")
   }
-  ## ---
-  if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
-  seuratObjFinal          <<- readRDS(file = as.character(rdsFname))
-  print('Done for RDS readin')
   ## ------
   clusteringPlotRemake    <- as.logical(T)
   clusterCellsNoSummary   <- as.logical(T)
@@ -69,7 +93,12 @@ getClusterSummaryReplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F,
   if (newAnnotation) {
     ## Assign cell type identity to clusters
     ## redefine the level of Idents on the y-axis can be adjusted here by inputting order for cell annotation
-    source(as.character(newAnnotationRscriptName))
+    print("Before adding new annotation")
+    print(table(Idents(seuratObjFinal)))
+    source(newAnnotationRscriptName)
+    print("After adding new annotation")
+    print(table(Idents(seuratObjFinal)))
+
   }
   ## -------------------------------------------------------------------------------------
   # setup custom theme for plotting
@@ -94,6 +123,8 @@ getClusterSummaryReplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F,
   ## -------------------------------------------------------------------------------------
   if (expCondCheck == 'sample') {
     seuratObjFinal                     <- seuratObjFinal
+  } else if (expCondCheck == 'comb') {
+    seuratObjFinal@meta.data$expCond   <- Seurat::Idents(seuratObjFinal)
   } else if (expCondCheck == 'expCond1') {
     if (!'expCond1' %in% colnames(seuratObjFinal@meta.data)){
       print("Error: 'expCond1' has not been included in the original integration analysis.")
@@ -109,6 +140,20 @@ getClusterSummaryReplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F,
       seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond2
     }
   }
+  seuratObjFinal$expCond <- gsub(pattern = '_', replacement = '-', x = seuratObjFinal$expCond)
+  ## ------
+  # print('6666666666666')
+  # print(table(Seurat::Idents(seuratObjFinal)))
+  # print('6666666666666')
+  clusterLevels <- levels(Seurat::Idents(seuratObjFinal))
+  if (!is.null(cellcluster)) {
+    if (any(!cellcluster %in% clusterLevels ) ) stop('Please provide the corresponding cell clusters ')
+    print(sprintf('Subsetting %s specific cell clusters: %s', length(cellcluster), paste(cellcluster, collapse = ',')))
+    seuratObjFinal                          <- subset(seuratObjFinal, idents = cellcluster )
+  }
+  # print('8787878787878')
+  # print(table(Idents(seuratObjFinal)))
+  # print('8787878787878')
   ## ---
   if (expCondCheck == 'sample') {
     if (is.null(expCondSepName)) {
@@ -141,8 +186,13 @@ getClusterSummaryReplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F,
     if (is.null(fpClusterOrder)) fpClusterOrder <- levels(factor(Seurat::Idents(seuratObjFinal)))
     Seurat::Idents(seuratObjFinal) <- factor(Seurat::Idents(seuratObjFinal), levels = fpClusterOrder )
     ## ---
-    # selectedCol  <- DiscretePalette(n = length(levels(Seurat::Idents(seuratObjFinal))), palette = 'alphabet')
-    selectedCol        <- ggplotColours(n=length(levels(Seurat::Idents(seuratObjFinal))))
+    if (is.null(colors)) {
+      # selectedCol  <- DiscretePalette(n = length(levels(Seurat::Idents(seuratObjFinal))), palette = 'alphabet')
+      selectedCol        <- ggplotColours(n=length(levels(Seurat::Idents(seuratObjFinal))))
+    } else {
+      selectedCol        <- colors
+    }
+
     print('***************************************************')
     ## ---
     print(sprintf('Start step1: remake tSNE/UMAP plots'))
@@ -280,49 +330,92 @@ getClusterSummaryReplot <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F,
     # if (newAnnotation) {
     #   perData2plotLong$cluster     <- factor(perData2plotLong$cluster, levels = perClusterOrder )
     # }
-    perData2plotLong$cluster     <- factor(perData2plotLong$cluster, levels = perClusterOrder )
     ## ---------
     ## updating 'expCond' levels order
     if (!is.null(expCondNameOrder)){
-      perData2plotLong$variable    <- factor(perData2plotLong$variable, levels = rev(expCondNameOrder) )
+      if (perPlotVertical) {
+        perData2plotLong$variable    <- factor(perData2plotLong$variable, levels = expCondNameOrder )
+      } else {
+        perData2plotLong$variable    <- factor(perData2plotLong$variable, levels = rev(expCondNameOrder) )
+      }
     }
     ## ---------
-    selectedCol2 <- selectedCol[match( perClusterOrder, fpClusterOrder)]
-    # print(sprintf('dimention of clusterCellExpNoWidePer is %s, %s', dim(clusterCellExpNoWidePer)[1], dim(clusterCellExpNoWidePer)[2] ))
-    if (dim(clusterCellExpNoWidePer)[2] > 2) {
-      plotSizeHeight               <- round( (0.5*dim(clusterCellExpNoWidePer)[2]), digits = 0)
-      plotSize <- c( round(dim(clusterCellExpNoWidePer)[1], digits = 0), round( (0.5*dim(clusterCellExpNoWidePer)[2]), digits = 0) )
+    if (perPlotVertical) {
+      perData2plotLong$cluster     <- factor(perData2plotLong$cluster, levels = perClusterOrder )
+      selectedCol2 <- selectedCol[match( perClusterOrder, fpClusterOrder)]
     } else {
-      plotSizeHeight               <- round( (0.8*dim(clusterCellExpNoWidePer)[2]), digits = 0)
-      plotSize <- c( round(dim(clusterCellExpNoWidePer)[1], digits = 0), round( (0.8*dim(clusterCellExpNoWidePer)[2]), digits = 0) )
+      perData2plotLong$cluster     <- factor(perData2plotLong$cluster, levels = rev(perClusterOrder) )
+      selectedCol2 <- selectedCol[match( rev(perClusterOrder), fpClusterOrder)]
+    }
+
+    if (is.null(perPlotHeight)) {
+      # print(sprintf('dimention of clusterCellExpNoWidePer is %s, %s', dim(clusterCellExpNoWidePer)[1], dim(clusterCellExpNoWidePer)[2] ))
+      if (dim(clusterCellExpNoWidePer)[2] > 2) {
+        plotSizeHeight               <- round( (0.5*dim(clusterCellExpNoWidePer)[2]), digits = 0)
+        # plotSize <- c( round(dim(clusterCellExpNoWidePer)[1], digits = 0), round( (0.5*dim(clusterCellExpNoWidePer)[2]), digits = 0) )
+      } else {
+        plotSizeHeight               <- round( (0.8*dim(clusterCellExpNoWidePer)[2]), digits = 0)
+        # plotSize <- c( round(dim(clusterCellExpNoWidePer)[1], digits = 0), round( (0.8*dim(clusterCellExpNoWidePer)[2]), digits = 0) )
+      }
+      if (perPlotVertical) plotSizeWidth <- plotSizeHeight+3
+    } else {
+      plotSizeHeight <- perPlotHeight
+    }
+
+    ## -
+    if (is.null(perPlotWidth)) {
+      if (dim(clusterCellExpNoWidePer)[1] < 11) {
+        plotSizeWidth                <- round(dim(clusterCellExpNoWidePer)[1], digits = 0)
+      } else if (dim(clusterCellExpNoWidePer)[1] > 10 & dim(clusterCellExpNoWidePer)[1] < 17 ) {
+        plotSizeWidth                <- round(0.7*dim(clusterCellExpNoWidePer)[1], digits = 0)
+      }  else if (dim(clusterCellExpNoWidePer)[1] > 16) {
+        plotSizeWidth                <- round(0.5*dim(clusterCellExpNoWidePer)[1], digits = 0)
+      }
+      if (perPlotVertical) plotSizeHeight <- plotSizeWidth-2
+    } else {
+      plotSizeWidth <- perPlotWidth
     }
     ## -
-    if (dim(clusterCellExpNoWidePer)[1] < 11) {
-      plotSizeWidth                <- round(dim(clusterCellExpNoWidePer)[1], digits = 0)
-    } else if (dim(clusterCellExpNoWidePer)[1] > 10 & dim(clusterCellExpNoWidePer)[1] < 17 ) {
-      plotSizeWidth                <- round(0.7*dim(clusterCellExpNoWidePer)[1], digits = 0)
-    }  else if (dim(clusterCellExpNoWidePer)[1] > 16) {
-      plotSizeWidth                <- round(0.5*dim(clusterCellExpNoWidePer)[1], digits = 0)
-    }
     ## ---------
-    plotSize <- c( plotSizeWidth, plotSizeHeight )
-    pdf(file = gsub('.txt', '.pdf', cellnoFname), width = plotSizeWidth, height = plotSizeHeight )
-    g1 <- ggplot2::ggplot(perData2plotLong, ggplot2::aes(x = value, y = factor(variable), fill = factor(cluster) )) + ggplot2::geom_bar(stat="identity")
-    g1 <- g1 + ggplot2::scale_fill_manual(values=selectedCol2)
-    g1 <- g1 + ggplot2::labs(title='', x = '', y = '')
-    g1 <- g1 + ggplot2::labs(fill = '')
-    g1 <- g1 + theme(plot.title = element_text(color="black", size=20, face="bold.italic"),
-                     axis.title.x = element_text(color="black", size=16, face="bold"),
-                     axis.title.y = element_text(color="black", size=16, face="bold"))
-    g1 <- g1 + theme(axis.text.x = element_text(face="plain", color="black", size=20, angle=0),
-                     axis.text.y = element_text(face="plain", color="#000000", size=20, angle=0))
-    g1 <- g1 + theme(legend.title = element_text(color = "black", size = 18),
-                     legend.text = element_text(color = "black", size = 18) )
-    if (dim(clusterCellExpNoWidePer)[1] > 10) {
-      g1 <- g1 + guides(fill=guide_legend(ncol=2))
+    if (perPlotVertical) {
+      pdf(file = gsub('.txt', '_vertical.pdf', cellnoFname), width = plotSizeWidth, height = plotSizeHeight  )
+      g1 <- ggplot2::ggplot(perData2plotLong, ggplot2::aes(x = factor(variable), y = value, fill = factor(cluster) )) + ggplot2::geom_bar(stat="identity")
+      g1 <- g1 + ggplot2::scale_fill_manual(values=selectedCol2)
+      g1 <- g1 + ggplot2::labs(title='', x = '', y = '')
+      g1 <- g1 + ggplot2::labs(fill = '')
+      g1 <- g1 + theme(plot.title = element_text(color="black", size=20, face="bold.italic"),
+                       axis.title.x = element_text(color="black", size=16, face="bold"),
+                       axis.title.y = element_text(color="black", size=16, face="bold"))
+      g1 <- g1 + theme(axis.text.x = element_text(face="plain", color="black", size=20, angle=90, vjust = 0, hjust = 1),
+                       axis.text.y = element_text(face="plain", color="#000000", size=20, angle=0))
+      g1 <- g1 + theme(legend.title = element_text(color = "black", size = 18),
+                       legend.text = element_text(color = "black", size = 18) )
+      if (dim(clusterCellExpNoWidePer)[1] > 10) {
+        g1 <- g1 + guides(fill=guide_legend(ncol=1))
+      }
+      print(g1)
+      dev.off()
+    } else {
+      pdf(file = gsub('.txt', '.pdf', cellnoFname), width = plotSizeWidth, height = plotSizeHeight )
+      g1 <- ggplot2::ggplot(perData2plotLong, ggplot2::aes(x = value, y = factor(variable), fill = factor(cluster) )) + ggplot2::geom_bar(stat="identity")
+      g1 <- g1 + ggplot2::scale_fill_manual(values=selectedCol2)
+      g1 <- g1 + ggplot2::labs(title='', x = '', y = '')
+      g1 <- g1 + ggplot2::labs(fill = '')
+      g1 <- g1 + theme(plot.title = element_text(color="black", size=20, face="bold.italic"),
+                       axis.title.x = element_text(color="black", size=16, face="bold"),
+                       axis.title.y = element_text(color="black", size=16, face="bold"))
+      g1 <- g1 + theme(axis.text.x = element_text(face="plain", color="black", size=20, angle=0),
+                       axis.text.y = element_text(face="plain", color="#000000", size=20, angle=0))
+      g1 <- g1 + theme(legend.title = element_text(color = "black", size = 18),
+                       legend.text = element_text(color = "black", size = 18) )
+      if (dim(clusterCellExpNoWidePer)[1] > 10) {
+        g1 <- g1 + guides(fill=guide_legend(ncol=2, reverse = T))
+      }
+      print(g1)
+      dev.off()
     }
-    print(g1)
-    dev.off()
+
+
     print(sprintf('END step2.2: plotting identified cell no. percentage in each cluster'))
     ## -
   }

@@ -24,7 +24,7 @@
 Improved_Seurat_Pre_Process <- function (seuratObject, num_genes = 50, write_files = FALSE, data_type = "counts") {
 
   version = packageVersion("Seurat")
-  seuratObject = UpdateSeuratObject(object = seuratObject)
+  # seuratObject = UpdateSeuratObject(object = seuratObject)
   if (data_type == "counts") {
     expression = as.data.frame(seuratObject@assays[["RNA"]]@counts)
   }

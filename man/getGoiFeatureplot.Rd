@@ -6,14 +6,17 @@
 \usage{
 getGoiFeatureplot(
   resDir = NULL,
-  rdsFname = NULL,
+  rds = NULL,
   newAnnotation = F,
   newAnnotationRscriptName = NULL,
   expCondCheck = "sample",
   expCondSepName = NULL,
   expCondName2change = NULL,
+  expCondReorderLevels = NULL,
+  cellcluster = NULL,
   goiFname,
   featurePlotMinExpCutoff = 0.3,
+  featurePlotMaxExpCutoff = NULL,
   featurePlotReductionMethod = "umap",
   featurePlotFnamePrefix = "goiFeaturePlot"
 )
@@ -21,17 +24,19 @@ getGoiFeatureplot(
 \arguments{
 \item{resDir}{full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.}
 
-\item{rdsFname}{User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.}
+\item{rds}{User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.}
 
 \item{newAnnotation}{logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.}
 
 \item{newAnnotationRscriptName}{if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.}
 
-\item{expCondCheck}{3 options: 'sample', 'expCond1', or 'expCond2' to specify which experimental conditions to be explored with this function.}
+\item{expCondCheck}{required, 4 options: 'sample', 'expCond1', 'expCond2' or 'comb' to specify which experimental conditions to be explored with this function.}
 
-\item{expCondSepName}{part of file name string to specify the analysis results folder name.}
+\item{expCondSepName}{optional, part of file name string to specify the analysis results folder name.}
 
-\item{expCondName2change}{character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.}
+\item{expCondName2change}{optional, character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.}
+
+\item{cellcluster}{optional, if needed, this option can be used to specify cell clusters to be displayed on the feature plot}
 
 \item{goiFname}{path to file, where a list of marker/features genes are provided in column 'Gene', if column 'Cell Type' is also provided, option 'geneCellTypeOrder' can be used to adjust orders.}
 

@@ -6,6 +6,8 @@
 \usage{
 findDoublets(
   metadata,
+  multiomics = F,
+  extraFilter = F,
   genomeSpecies = NULL,
   doubletDeconRhop = 0.5,
   doubletDeconPMF = F,
@@ -15,6 +17,10 @@ findDoublets(
 }
 \arguments{
 \item{metadata}{required, metadata table with at least 2 required columns: 'sample' and 'path', where path shows the count table matrix is located.}
+
+\item{multiomics}{optional, default = F}
+
+\item{extraFilter}{optional, default = F, if 'TRUE', column 'filterFname' needs to be included in the provided metadata table.}
 
 \item{genomeSpecies}{genome species, currently supporting human, mouse, and rate.}
 

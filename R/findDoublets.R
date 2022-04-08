@@ -5,6 +5,8 @@
 #'
 #' This function allows you to identify doublets with DoubletDecon for the provide input in metadata
 #' @param metadata required, metadata table with at least 2 required columns: 'sample' and 'path', where path shows the count table matrix is located.
+#' @param multiomics optional, default = F
+#' @param extraFilter optional, default = F, if 'TRUE', column 'filterFname' needs to be included in the provided metadata table.
 #' @param genomeSpecies genome species, currently supporting human, mouse, and rate.
 #' @param doubletDeconRhop option used for DoubletDecon detection, by default = 0.5.
 #' @param doubletDeconPMF option used for DoubletDecon detection, by default 'FALSE'.
@@ -12,6 +14,7 @@
 #' @param resFilename define the folder/directory name where doublets detection results will be saved, if not defined, by default results will be saved at the current working directory in a folder named as 'doublets_results'.
 #'
 #' @importFrom SeuratObject UpdateSeuratObject
+#' @importFrom tools file_ext
 #' @importFrom dplyr %>%
 #' @importFrom dplyr filter
 #' @importFrom DoubletDecon Main_Doublet_Decon
@@ -33,16 +36,18 @@
 # library(gplots)
 # Sys.setenv('R_MAX_VSIZE'=32000000000)
 ##----------------------------------------------------------------------------------------
-findDoublets <- function(metadata, genomeSpecies=NULL, doubletDeconRhop=0.5, doubletDeconPMF=F, doubletDeconNoCore=-1, resFilename=NULL) {
+findDoublets <- function(metadata, multiomics = F, extraFilter=F, genomeSpecies=NULL, doubletDeconRhop=0.5, doubletDeconPMF=F, doubletDeconNoCore=-1, resFilename=NULL) {
   ## ---
   if (is.null(genomeSpecies)) genomeSpecies <- 'human'
   if (is.null(resFilename)) resFilename <- 'doublets_results'
   doubletDeconRhop               <- as.numeric(doubletDeconRhop)
   doubletDeconPMF                <- as.logical(doubletDeconPMF)
+  multiomics                     <- as.logical(multiomics)
+  extraFilter                    <- as.logical(extraFilter)
   ## ---
   cellrangerResList              <- meata2list(metadata = metadata)
   ## ---
-  ## prepare results saving directory, if not exist, creat one
+  ## prepare results saving directory, if not exist, create one
   resDir  <- sprintf('%s/%s', getwd(), resFilename)
   if(!dir.exists(resDir)) dir.create(resDir)
   print(sprintf('Doublets identification results will be saved in %s', resDir))
@@ -56,9 +61,31 @@ findDoublets <- function(metadata, genomeSpecies=NULL, doubletDeconRhop=0.5, dou
     ## 1. creat seurat object as DoubletDecon suggested
     print('---')
     print(sprintf("Processing sample '%s'.", as.character(cellrangerResList[[x]])))
-    cellrangerCounts             <- Seurat::Read10X(data.dir = cellrangerResList[[x]])
+    cellrangerCountsOrg          <- Seurat::Read10X(data.dir = cellrangerResList[[x]])
+    if (multiomics) {
+      cellrangerCounts           <- cellrangerCountsOrg$`Gene Expression`
+    } else {
+      cellrangerCounts           <- cellrangerCountsOrg
+    }
     print(sprintf('Step1: Orignially it has %s cells and %s features originated from cellranger to import into seurat object', length(cellrangerCounts@Dimnames[[2]]), length(cellrangerCounts@Dimnames[[1]]) ))
     ## include feature detected in at least 'min.cells = 3', and include cells where at least 'min.features = 200' detected
+    ## ---
+    if(extraFilter) {
+      if (!'filterFname' %in% colnames(metadata)) stop("Option extraFilter is on, but no filter files is provided in the metadata table column 'filterFname'.")
+      if (file_ext(metadata$filterFname[x])=='csv') {
+        filterRes   <- read.csv(file = metadata$filterFname[x], header = T)
+      } else  if (file_ext(metadata$filterFname[x])=='txt') {
+        filterRes   <- read.delim(file = metadata$filterFname[x], header = T, sep = '\t')
+      }
+      if (sum(grepl('barcode|filter',colnames(filterRes)))!=2) stop("Please make sure columns 'barcode' & 'filter' are inside provided ''.")
+      if (!all(filterRes$barcode %in% colnames(cellrangerCounts) )) stop("provided filter files does not include all corresponding cells information.")
+      filter.index  <- grep('filter', colnames(filterRes))
+      print(sprintf("%s cells will be filtered based on input 'filterFname' in metadata table; %s cells will be used for next steps analysis.",
+                    sum(filterRes[,filter.index]==as.logical(T)), sum(filterRes[,filter.index]==as.logical(F)) ))
+      cellrangerCountsFilter <- cellrangerCounts[, match(filterRes$barcode[filterRes[,filter.index]==as.logical(F)], colnames(cellrangerCounts))]
+      cellrangerCounts       <- cellrangerCountsFilter
+    }
+    ## ---
     seuratObject                 <- Seurat::CreateSeuratObject(counts = cellrangerCounts,  project = names(cellrangerResList)[x], min.cells = 3, min.features = 200)
     ## add metadata feature into object, here is 'expCond'
     seuratObject                 <- Seurat::AddMetaData(object = seuratObject,  col.name = 'expCond', metadata = as.factor(names(cellrangerResList)[x]))

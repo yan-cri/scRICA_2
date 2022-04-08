@@ -6,6 +6,8 @@
 #' @details
 #' This function is used to read-in cellranger results into Seurat object by defining w/wo doublets removal.
 #' @param metadata required, metadata table with at least 4 required columns: 'sample', 'path', 'doubletsRmMethod', and 'expCond1'.
+#' @param multiomics optional, default = F
+#' @param extraFilter optional, default = F, if 'TRUE', column 'filterFname' needs to be included in the provided metadata table.
 #' @param resDirName define the folder/directory name where integration analysis results will be saved, if not defined, by default results will be saved at the current working directory in a folder named as 'scRICA_results'.
 #' @param genomeSpecies specify sample's genome species, by default 'human', currently supporting human, mouse, and rate.
 #' @param minCells the minimum detected number of cells to be included in the analysis used by Seurat, bu default = 3.
@@ -14,6 +16,7 @@
 #' @param mtPerCutoff if 'mtFiltering = T', this option is required to indicate the percentage cut-off for mitochondrial content filtering.
 #'
 #' @importFrom Seurat Read10X
+#' @importFrom tools file_ext
 #' @importFrom Seurat CreateSeuratObject
 #' @importFrom Seurat AddMetaData
 #' @importFrom Seurat PercentageFeatureSet
@@ -58,7 +61,7 @@
 ## 5. 'featureViolin_', names(seuratObjList)[x].pdf: featureViolin plot for each items in 'cellrangerResList'
 ##    if 'mtFiltering' is on: 'featureViolin_', names(seuratObjList)[x] +'_afterFiltering.pdf'
 ## 6. 'topVariableFeature_', names(seuratObjList)[x], '.pdf': topVariableFeature plot for each items in 'cellrangerResList'
-processQC <- function(metadata, resDirName=NULL, genomeSpecies=NULL, minCells=3, minFeatures=200, mtFiltering=F, mtPerCutoff=NULL) {
+processQC <- function(metadata, multiomics = F, extraFilter=F, resDirName=NULL, genomeSpecies=NULL, minCells=3, minFeatures=200, mtFiltering=F, mtPerCutoff=NULL, nfeatures = 5000) {
   ## ---
   if (!all(c("sample", "path", 'expCond1',"doubletsRmMethod" ) %in% colnames(metadata))) stop('Please provide metadata table with at least 4 columns: sample, path, expCond1, and doubletsRmMethod')
   ## ---
@@ -67,6 +70,8 @@ processQC <- function(metadata, resDirName=NULL, genomeSpecies=NULL, minCells=3,
   minCells                       <- as.numeric(minCells)
   minFeatures                    <- as.numeric(minFeatures)
   mtFiltering                    <- as.logical(mtFiltering)
+  multiomics                     <- as.logical(multiomics)
+  extraFilter                    <- as.logical(extraFilter)
   if (is.null(genomeSpecies)) genomeSpecies <- as.character('human')
   if (mtFiltering & is.null(mtPerCutoff)) stop("Mitochondrial content filtering option ('mtFiltering') is on, please provide corresponding Mitochondrial content percentage filtering option in 'mtPerCutoff'.  ")
   mtPerCutoff                    <- as.numeric(mtPerCutoff)
@@ -114,7 +119,10 @@ processQC <- function(metadata, resDirName=NULL, genomeSpecies=NULL, minCells=3,
     metadataOrg$doubletsRmMethod[metadataOrg$doubletsRmMethod=='None'] <- 'none'
     metadataOrgDbNotNa           <- metadataOrg %>% dplyr::filter(doubletsRmMethod != 'None') %>% dplyr::filter(doubletsRmMethod != 'NONE') %>% dplyr::filter(doubletsRmMethod != 'none')
     if(dim(metadataOrgDbNotNa)[1]>0) {
-      if (!all(dir.exists(metadataOrgDbNotNa$doubletsResDir))) stop("please provide correct corresponding 'doubletsResDir' in 'metadata' for column 'doubletsRmMethod' specified NOT as 'none'.")
+      if (!all(dir.exists(metadataOrgDbNotNa$doubletsResDir))){
+        print(sprintf("Stop at sample %s:", metadata$sample[which(!dir.exists(metadataOrgDbNotNa$doubletsResDir))]))
+        stop("please provide correct corresponding 'doubletsResDir' in 'metadata' for column 'doubletsRmMethod' specified NOT as 'none'.")
+      }
     }
     metadata                     <- metadataOrg
     print('Process to QC.')
@@ -134,9 +142,38 @@ processQC <- function(metadata, resDirName=NULL, genomeSpecies=NULL, minCells=3,
   for (x in 1:length(cellrangerResList)) {
     print('---===------------')
     print(sprintf("Processing sample %s: '%s'.", x, as.character(cellrangerResList[[x]])))
-    cellrangerCounts           <- Seurat::Read10X(data.dir = cellrangerResList[[x]])
+    cellrangerCountsOrg          <- Seurat::Read10X(data.dir = cellrangerResList[[x]])
+    ## -
+    if (multiomics) {
+      cellrangerCounts           <- cellrangerCountsOrg$`Gene Expression`
+    } else {
+      cellrangerCounts           <- cellrangerCountsOrg
+    }
+    ## -
     print(sprintf('Originally it has %s cells and %s features originated from cellranger to import into Seurat object', length(cellrangerCounts@Dimnames[[2]]), length(cellrangerCounts@Dimnames[[1]]) ))
     ## include feature detected in at least 'min.cells = 3', and include cells where at least 'min.features = 200' detected
+    ## ---
+    if(extraFilter) {
+      if (!'filterFname' %in% colnames(metadata)) stop("Option extraFilter is on, but no filter files is provided in the metadata table column 'filterFname'.")
+      if (is.na(metadata$filterFname[x])) {
+        print(sprintf("'extraFilter' is on for other samples, but not here; %s cells will be used for next steps analysis.", length(cellrangerCounts@Dimnames[[2]])))
+        cellrangerCounts <- cellrangerCounts
+      } else {
+        if (tools::file_ext(metadata$filterFname[x])=='csv') {
+          filterRes   <- read.csv(file = metadata$filterFname[x], header = T)
+        } else  if (tools::file_ext(metadata$filterFname[x])=='txt') {
+          filterRes   <- read.delim(file = metadata$filterFname[x], header = T, sep = '\t')
+        }
+        if (sum(grepl('barcode|filter',colnames(filterRes)))!=2) stop("Please make sure columns 'barcode' & 'filter' are inside provided ''.")
+        if (!all(filterRes$barcode %in% colnames(cellrangerCounts) )) stop("provided filter files does not include all corresponding cells information.")
+        filter.index  <- grep('filter', colnames(filterRes))
+        print(sprintf("%s cells will be filtered based on input 'filterFname' in metadata table; %s cells will be used for next steps analysis.",
+                      sum(filterRes[,filter.index]==as.logical(T)), sum(filterRes[,filter.index]==as.logical(F)) ))
+        cellrangerCountsFilter <- cellrangerCounts[, match(filterRes$barcode[filterRes[,filter.index]==as.logical(F)], colnames(cellrangerCounts))]
+        cellrangerCounts       <- cellrangerCountsFilter
+      }
+    }
+    ## ---
     seuratObjOrg               <- Seurat::CreateSeuratObject(counts = cellrangerCounts,  project = names(cellrangerResList)[x], min.cells = as.numeric(minCells), min.features = as.numeric(minFeatures))
     ## add metadata feature2 into object, here is 'expCond' for metadata$sample
     seuratObjOrg               <- Seurat::AddMetaData(object = seuratObjOrg,  col.name = 'expCond', metadata = as.factor(metadata$sample[x]))
@@ -290,7 +327,7 @@ processQC <- function(metadata, resDirName=NULL, genomeSpecies=NULL, minCells=3,
     seuratObj                   <- NormalizeData(seuratObj, normalization.method = "LogNormalize", scale.factor = 10000)
     ## 3). Find variable features, by default top 2000
     ## by default, select top 2000 features, vst is also default method, other options are 'mean.var.plot(mvp)' and 'dispersion (disp)'
-    seuratObj                   <- FindVariableFeatures(seuratObj, selection.method = 'vst', nfeatures = 5000)
+    seuratObj                   <- FindVariableFeatures(seuratObj, selection.method = 'vst', nfeatures = nfeatures)
     topFeatures                 <- head(VariableFeatures(seuratObj), n = 10)
     ## 3).2 plot top 100 variable features
     pdf(file = paste(qcPlotsDir, '/topVariableFeature_', names(seuratObjList)[x], '.pdf', sep = ''), width = 8, height = 6)
@@ -304,7 +341,9 @@ processQC <- function(metadata, resDirName=NULL, genomeSpecies=NULL, minCells=3,
   colnames(mtPerTabSampComb)    <- c(colnames(mtPerTabSampComb)[1], names(seuratObjList))
   write.table(x = mtPerTabSampComb, file = file.path(resDir, 'MT_percentage_summary.txt'), quote = F, sep = '\t', row.names = F, col.names = T)
   colnames(noFilteredCellsSampComb)   <- c(colnames(noFilteredCellsSampComb)[1], names(seuratObjList))
-  noFilteredCellsSampComb$Total       <- rowSums(noFilteredCellsSampComb[,-1])
+  if (length(seuratQcProcessObjList)>1) {
+    noFilteredCellsSampComb$Total       <- rowSums(noFilteredCellsSampComb[,-1])
+  }
   write.table(x = noFilteredCellsSampComb, file = file.path(resDir, 'No_filtered_cells_summary.txt'), quote = F, sep = '\t', row.names = F, col.names = T)
   print('Step 2: END check mitochondrial content & normalization')
   print('---===---')
