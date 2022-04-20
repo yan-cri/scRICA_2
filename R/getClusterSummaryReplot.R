@@ -9,6 +9,8 @@
 #' @param expCondCheck 3 options: 'sample', 'expCond1', or 'expCond2' to specify which experimental conditions to be explored with this function.
 #' @param expCondSepName part of file name string to specify the analysis results folder name.
 #' @param expCondName2change character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.
+#' @param fpRemake whether to re-make feature plots, default is True
+#' @param perRemake whether to re-calculate cell number percentage and related percentage plots, default is True
 #' @param colors by default it is null, colors will be automatically selected, otherwise, a vector string of colors can be specified with this option for colors used in the plots.
 #' @param cellcluster by default it is null, all cell clusters will be plot, otherwise, cell clusters presented in the plots (UMAP/tSNE and percentage plots) can be specified with this option.
 #' @param fpClusterOrder character string of cell clusters orders to specify the cell clusters orders corresponding to the color scheme, if not defined, sorted numerically, alphabetically, or the orders shown in the annotation R script.
@@ -37,7 +39,7 @@
 #' @export
 #' @return
 ## ---------------------------------------------------------------------------------------
-getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, colors = NULL, cellcluster = NULL, expCondCheck='sample', expCondSepName = NULL, expCondName2change=NULL, fpClusterOrder = NULL, perClusterOrder = NULL, perPlotVertical = F, perPlotHeight = NULL, perPlotWidth = NULL, expCondNameOrder = NULL) {
+getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, fpRemake = T, perRemake = T, colors = NULL, cellcluster = NULL, expCondCheck='sample', expCondSepName = NULL, expCondName2change=NULL, fpClusterOrder = NULL, perClusterOrder = NULL, perPlotVertical = F, perPlotHeight = NULL, perPlotWidth = NULL, expCondNameOrder = NULL) {
   ## ---
   newAnnotation           <- as.logical(newAnnotation)
   if (newAnnotation & is.null(newAnnotationRscriptName)) print("Option 'newAnnotation' is on, please provide corresponding option 'newAnnotationRscriptName'.")
@@ -78,8 +80,8 @@ getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newA
     stop("Error: please provide either option 'resDir' or 'rdsFname'. ")
   }
   ## ------
-  clusteringPlotRemake    <- as.logical(T)
-  clusterCellsNoSummary   <- as.logical(T)
+  clusteringPlotRemake    <- as.logical(fpRemake)
+  clusterCellsNoSummary   <- as.logical(perRemake)
   ## ------
   ## update results directory if new annotation is used
   if (newAnnotation) {
@@ -238,7 +240,7 @@ getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newA
       print(tsneSplit + theme1wLegend + guides(colour = guide_legend(nrow=4, byrow=TRUE, override.aes = list(size=6))) )
       dev.off()
     }
-    ## ---
+    ## --------------------------------------------------------
     ## 2. re-make UMAP plot
     newResDir          <- paste(resDir, sprintf('new_UMAP_plot_expCond_%s', expCondSepName), sep = '/')
     if(!dir.exists(newResDir)) dir.create(newResDir)
@@ -247,17 +249,20 @@ getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newA
     umapClusterNolabel <- DimPlot(seuratObjFinal, reduction = "umap", cols = selectedCol, label = F, repel = T) + labs(title = 'UMAP clustering', x = "UMAP 1", y = 'UMAP 2')
     if ( length(levels(as.factor(seuratObjFinal$expCond))) > 1 ) {
       ## relevel the 'expCond' for split.by= ordering
-      tsneSplit          <- DimPlot(seuratObjFinal, reduction = "umap", cols = selectedCol, label = T, label.size = 4, repel = T, split.by = 'expCond') + labs(title = 'UMAP clustering', x = "UMAP 1", y = 'UMAP 2')
+      umapSplit          <- DimPlot(seuratObjFinal, reduction = "umap", cols = selectedCol, label = T, label.size = 4, repel = T, split.by = 'expCond') + labs(title = 'UMAP clustering', x = "UMAP 1", y = 'UMAP 2')
+      umapSplitNolabel   <- DimPlot(seuratObjFinal, reduction = "umap", cols = selectedCol, label = F, label.size = 4, repel = T, split.by = 'expCond') + labs(title = 'UMAP clustering', x = "UMAP 1", y = 'UMAP 2')
     }
     ## -
     if (newAnnotation) {
       plotName1 = paste(newResDir, 'UMAP_plot_noLabel_integrate_newAnnotation.pdf', sep = '/')
       plotName2 = paste(newResDir, 'UMAP_plot_wLabel_integrate_newAnnotation.pdf', sep = '/')
       plotName3 = paste(newResDir, sprintf('UMAP_plot_wLabel_newAnnotation_expCond_%s.pdf', expCondSepName), sep = '/')
+      plotName4 = paste(newResDir, sprintf('UMAP_plot_noLabel_newAnnotation_expCond_%s.pdf', expCondSepName), sep = '/')
     } else {
       plotName1 = paste(newResDir, 'UMAP_plot_noLabel_integrate_orgAnnotation.pdf', sep = '/')
       plotName2 = paste(newResDir, 'UMAP_plot_wLabel_integrate_orgAnnotation.pdf', sep = '/')
       plotName3 = paste(newResDir, sprintf('UMAP_plot_wLabel_orgAnnotation_expCond_%s.pdf', expCondSepName), sep = '/')
+      plotName4 = paste(newResDir, sprintf('UMAP_plot_noLabel_orgAnnotation_expCond_%s.pdf', expCondSepName), sep = '/')
     }
     ## -
     pdf(file = plotName1, width = 5.7, height = 8)
@@ -278,8 +283,23 @@ getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newA
       } else if ( length(levels(as.factor(seuratObjFinal$expCond))) > 4) {
         pdf(file = plotName3, width = 5.5*length(levels(as.factor(seuratObjFinal$expCond))), height = 7)
       }
-      # print(tsneSplit + theme1noLegend)
-      print(tsneSplit + theme1wLegend + guides(colour = guide_legend(nrow=4, byrow=TRUE, override.aes = list(size=6))) )
+      # print(umapSplit + theme1noLegend)
+      print(umapSplit + theme1wLegend + guides(colour = guide_legend(nrow=4, byrow=TRUE, override.aes = list(size=6))) )
+      dev.off()
+    }
+    ## -
+    if ( length(levels(as.factor(seuratObjFinal$expCond))) > 1 ) {
+      if ( length(levels(as.factor(seuratObjFinal$expCond))) == 2 ) {
+        pdf(file = plotName4, width = 11, height = 7)
+      } else if ( length(levels(as.factor(seuratObjFinal$expCond))) == 3 ) {
+        pdf(file = plotName4, width = 13, height = 7)
+      } else if ( length(levels(as.factor(seuratObjFinal$expCond))) == 4 ) {
+        pdf(file = plotName4, width = 21, height = 7)
+      } else if ( length(levels(as.factor(seuratObjFinal$expCond))) > 4) {
+        pdf(file = plotName4, width = 5.5*length(levels(as.factor(seuratObjFinal$expCond))), height = 7)
+      }
+      # print(umapSplit + theme1noLegend)
+      print(umapSplitNolabel + theme1wLegend + guides(colour = guide_legend(nrow=4, byrow=TRUE, override.aes = list(size=6))) )
       dev.off()
     }
     print(sprintf('END step1: remake tSNE/UMAP plots'))

@@ -142,15 +142,38 @@ processQC <- function(metadata, multiomics = F, extraFilter=F, resDirName=NULL, 
   for (x in 1:length(cellrangerResList)) {
     print('---===------------')
     print(sprintf("Processing sample %s: '%s'.", x, as.character(cellrangerResList[[x]])))
-    cellrangerCountsOrg          <- Seurat::Read10X(data.dir = cellrangerResList[[x]])
+    if (dir.exists(cellrangerResList[[x]])) {
+      print("read in count data in MEX format")
+      cellrangerCountsOrg          <- Seurat::Read10X(data.dir = cellrangerResList[[x]])
+    } else {
+      if (tools::file_ext(cellrangerResList[[x]])=='h5' | tools::file_ext(cellrangerResList[[x]]) == 'hdf5') {
+        print("read in count data in h5/hdf5 format")
+        cellrangerCountsOrg        <- Seurat::Read10X_h5(filename = as.character(cellrangerResList[[x]]), use.names = TRUE, unique.features = TRUE)
+      } else if (tools::file_ext(cellrangerResList[[x]])=='txt' | tools::file_ext(gsub('.gz', '', cellrangerResList[[x]])) == 'txt') {
+        print("read in count data in txt format")
+        cellrangerCountsOrg        <- read.delim2(file = as.character(cellrangerResList[[x]]))
+      } else if (tools::file_ext(cellrangerResList[[x]])=='rds') {
+        print("read in count data in rds format")
+        rdsOrg                     <- readRDS(file = as.character(cellrangerResList[[x]]))
+        cellrangerCountsOrg        <- rdsOrg@assays$RNA@counts
+      } else {
+        stop("input file in metadata table cannot be read in, it should be any of these 3 formats: txt, hdf5, or MEX in a directory.")
+      }
+    }
     ## -
     if (multiomics) {
       cellrangerCounts           <- cellrangerCountsOrg$`Gene Expression`
     } else {
       cellrangerCounts           <- cellrangerCountsOrg
     }
+    print(colnames(cellrangerCounts)[1:5])
     ## -
-    print(sprintf('Originally it has %s cells and %s features originated from cellranger to import into Seurat object', length(cellrangerCounts@Dimnames[[2]]), length(cellrangerCounts@Dimnames[[1]]) ))
+    if (dir.exists(cellrangerResList[[x]]) | tools::file_ext(cellrangerResList[[x]])=='h5' | tools::file_ext(cellrangerResList[[x]]) == 'hdf5') {
+      print(sprintf('Originally it has %s cells and %s features originated from cellranger (MEX or hdf5 format) to import into Seurat object', length(cellrangerCounts@Dimnames[[2]]), length(cellrangerCounts@Dimnames[[1]]) ))
+    } else if (tools::file_ext(cellrangerResList[[x]])=='txt' | tools::file_ext(gsub('.gz', '', cellrangerResList[[x]])) == 'txt') {
+      print(sprintf('Originally it has %s cells and %s features originated from a txt format file to import into Seurat object', dim(cellrangerCounts)[2], dim(cellrangerCounts)[1] ))
+    }
+
     ## include feature detected in at least 'min.cells = 3', and include cells where at least 'min.features = 200' detected
     ## ---
     if(extraFilter) {
