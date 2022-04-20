@@ -248,7 +248,7 @@ getGoiHeatmap <- function(heatmap.view = 'ident', resDir=NULL, rds=NULL, newAnno
     ## ---
     print('Start to make heatmap seperated on expCond')
     if (!is.null(expCondReorderLevels)) {
-      print(levels(factor(seuratObjFinal$expCond)))
+      # print(levels(factor(seuratObjFinal$expCond)))
       if ( !all(expCondReorderLevels %in% levels(factor(seuratObjFinal$expCond))) ) stop("Please provide correct corresponding 'expCondReorderLevels' to sort heatmap top legend bars.")
       seuratObjFinal@meta.data$expCond <- factor(seuratObjFinal@meta.data$expCond, levels = expCondReorderLevels)
     }

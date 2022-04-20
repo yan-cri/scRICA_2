@@ -100,7 +100,14 @@ getClusterMarkers <- function(qcProcessedResults, integrationMethod = 'CCA', nfe
     print(sprintf('Step 1: Process data integration at %s', Sys.time()))
     print(sprintf('%s samples will be integrated', length(qcProcessedSeuratObjList)))
     print(sprintf("%s anchor integration is implemented on %s features.", integrationMethod, nfeatures))
-    # select features that are repeatedly variable across datasets, added Jan, 2022
+    ## if provided 'qcProcessedSeuratObjList' has not implemented with 'FindVariableFeatures', do it here with normalization again
+    if (any(unlist(lapply(qcProcessedSeuratObjList, function(x) length(Seurat::VariableFeatures(x))==0)))) {
+      print("Note: some input data in 'qcProcessedResults' seems not to be normalized, before integration, conducing normalization again")
+      qcProcessedSeuratObjList <- lapply(X = qcProcessedSeuratObjList, FUN = function(x) {
+        x <- Seurat::NormalizeData(x, normalization.method = "LogNormalize", scale.factor = 10000)
+        x <- Seurat::FindVariableFeatures(x, selection.method = 'vst', nfeatures = nfeatures)
+      })
+    }
     features                    <- SelectIntegrationFeatures(object.list = qcProcessedSeuratObjList, nfeatures = nfeatures)
     if (integrationMethod == 'RPCA') {
       # normalize and identify variable features for each dataset independently

@@ -9,6 +9,8 @@ getClusterSummaryReplot(
   rds = NULL,
   newAnnotation = F,
   newAnnotationRscriptName = NULL,
+  fpRemake = T,
+  perRemake = T,
   colors = NULL,
   cellcluster = NULL,
   expCondCheck = "sample",
@@ -30,6 +32,10 @@ getClusterSummaryReplot(
 \item{newAnnotation}{logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.}
 
 \item{newAnnotationRscriptName}{if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.}
+
+\item{fpRemake}{whether to re-make feature plots, default is True}
+
+\item{perRemake}{whether to re-calculate cell number percentage and related percentage plots, default is True}
 
 \item{colors}{by default it is null, colors will be automatically selected, otherwise, a vector string of colors can be specified with this option for colors used in the plots.}
 
