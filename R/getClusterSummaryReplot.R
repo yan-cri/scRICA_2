@@ -6,9 +6,8 @@
 #' @param rds User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.
 #' @param newAnnotation logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.
 #' @param newAnnotationRscriptName if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.
-#' @param expCondCheck 3 options: 'sample', 'expCond1', or 'expCond2' to specify which experimental conditions to be explored with this function.
-#' @param expCondSepName part of file name string to specify the analysis results folder name.
-#' @param expCondName2change character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.
+#' @param expCondCheck specify which experimental conditions to be explored, including sample, idents, or expCond1/2/....
+#' @param expCondCheckFname suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.
 #' @param fpRemake whether to re-make feature plots, default is True
 #' @param perRemake whether to re-calculate cell number percentage and related percentage plots, default is True
 #' @param colors by default it is null, colors will be automatically selected, otherwise, a vector string of colors can be specified with this option for colors used in the plots.
@@ -35,11 +34,11 @@
 #' @importFrom ggplot2 ggplot
 #'
 #' @keywords clusterSummary
-#' @examples clusterSummary()
+#' @examples clusterSummary(rds, expCondCheck='sample/idents/expCond*')
 #' @export
 #' @return
 ## ---------------------------------------------------------------------------------------
-getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, fpRemake = T, perRemake = T, colors = NULL, cellcluster = NULL, expCondCheck='sample', expCondSepName = NULL, expCondName2change=NULL, fpClusterOrder = NULL, perClusterOrder = NULL, perPlotVertical = F, perPlotHeight = NULL, perPlotWidth = NULL, expCondNameOrder = NULL) {
+getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, fpRemake = T, perRemake = T, colors = NULL, cellcluster = NULL, expCondCheck='sample', expCondCheckFname = NULL, fpClusterOrder = NULL, perClusterOrder = NULL, perPlotVertical = F, perPlotHeight = NULL, perPlotWidth = NULL, expCondNameOrder = NULL) {
   ## ---
   newAnnotation           <- as.logical(newAnnotation)
   if (newAnnotation & is.null(newAnnotationRscriptName)) print("Option 'newAnnotation' is on, please provide corresponding option 'newAnnotationRscriptName'.")
@@ -122,31 +121,24 @@ getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newA
                                    axis.text = element_text(size = 25),
                                    legend.position="right",
                                    legend.text = element_text(size = 14) )
-  ## -------------------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
+  ## update 'seuratObjFinal@meta.data$expCond'
   if (expCondCheck == 'sample') {
     seuratObjFinal                     <- seuratObjFinal
-  } else if (expCondCheck == 'comb') {
+  } else if (expCondCheck == 'idents') {
     seuratObjFinal@meta.data$expCond   <- Seurat::Idents(seuratObjFinal)
-  } else if (expCondCheck == 'expCond1') {
-    if (!'expCond1' %in% colnames(seuratObjFinal@meta.data)){
-      print("Error: 'expCond1' has not been included in the original integration analysis.")
-      seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
+  } else {
+    if (!expCondCheck%in%colnames(seuratObjFinal@meta.data)) {
+      stop("ERROR: 'expCondCheck' does not exist in your 'rds' metadata.")
     } else {
-      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond1
-    }
-  } else if (expCondCheck == 'expCond2') {
-    if (!'expCond2' %in% colnames(seuratObjFinal@meta.data)){
-      print("Error: 'expCond2' has not been included in the original integration analysis.")
-      seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
-    } else {
-      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond2
+      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data[, grep(as.character(expCondCheck), colnames(seuratObjFinal@meta.data))]
     }
   }
   seuratObjFinal$expCond <- gsub(pattern = '_', replacement = '-', x = seuratObjFinal$expCond)
-  ## ------
   # print('6666666666666')
   # print(table(Seurat::Idents(seuratObjFinal)))
   # print('6666666666666')
+  ##--------------------------------------------------------------------------------------##
   clusterLevels <- levels(Seurat::Idents(seuratObjFinal))
   if (!is.null(cellcluster)) {
     if (any(!cellcluster %in% clusterLevels ) ) stop('Please provide the corresponding cell clusters ')
@@ -156,23 +148,23 @@ getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newA
   # print('8787878787878')
   # print(table(Idents(seuratObjFinal)))
   # print('8787878787878')
-  ## ---
+  ##--------------------------------------------------------------------------------------##
   if (expCondCheck == 'sample') {
-    if (is.null(expCondSepName)) {
-      expCondSepName        <- 'expCond_sample'
+    if (is.null(expCondCheckFname)) {
+      expCondCheckFname        <- 'expCond_sample'
     } else {
-      expCondSepName        <- expCondSepName
+      expCondCheckFname        <- expCondCheckFname
     }
   } else {
-    if (is.null(expCondSepName)) {
-      expCondSepName        <- as.character(expCondCheck)
+    if (is.null(expCondCheckFname)) {
+      expCondCheckFname        <- as.character(expCondCheck)
     } else {
-      expCondSepName        <- expCondSepName
+      expCondCheckFname        <- expCondCheckFname
     }
   }
-  ## -------------------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
   ## update 'seuratObjFinal@meta.data$expCond' and create corresponding updated 'resDir' for new tSNE/UMAP plots to save
-  resDir                <- sprintf('%s/expCond_%s', resDir, expCondSepName)
+  resDir                <- sprintf('%s/expCond_%s', resDir, expCondCheckFname)
   if (!dir.exists(resDir)) dir.create(resDir)
   ## ---------------------------------------------------------------------------------------
   if (!is.null(expCondNameOrder)) {
@@ -198,7 +190,7 @@ getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newA
     print('***************************************************')
     ## ---
     print(sprintf('Start step1: remake tSNE/UMAP plots'))
-    newResDir             <- paste(resDir, sprintf('new_tSNE_plot_expCond_%s', expCondSepName), sep = '/')
+    newResDir             <- paste(resDir, sprintf('new_tSNE_plot_%s', expCondCheckFname), sep = '/')
     if(!dir.exists(newResDir)) dir.create(newResDir)
     ## tsne plot
     tsneCluster           <- DimPlot(seuratObjFinal, reduction = "tsne", cols = selectedCol, label = T, label.size = 6, repel = T) + labs(title = 'tSNE clustering', x = "tSNE 1", y = 'tSNE 2')
@@ -211,11 +203,11 @@ getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newA
     if (newAnnotation) {
       plotName1 = paste(newResDir, 'tsne_plot_noLabel_integrate_newAnnotation.pdf', sep = '/')
       plotName2 = paste(newResDir, 'tsne_plot_wLabel_integrate_newAnnotation.pdf', sep = '/')
-      plotName3 = paste(newResDir, sprintf('tsne_plot_wLabel_newAnnotation_expCond_%s.pdf', expCondSepName), sep = '/')
+      plotName3 = paste(newResDir, sprintf('tsne_plot_wLabel_newAnnotation_%s.pdf', expCondCheckFname), sep = '/')
     } else {
       plotName1 = paste(newResDir, 'tsne_plot_noLabel_integrate_orgAnnotation.pdf', sep = '/')
       plotName2 = paste(newResDir, 'tsne_plot_wLabel_integrate_orgAnnotation.pdf', sep = '/')
-      plotName3 = paste(newResDir, sprintf('tsne_plot_wLabel_orgAnnotation_expCond_%s.pdf', expCondSepName), sep = '/')
+      plotName3 = paste(newResDir, sprintf('tsne_plot_wLabel_orgAnnotation_%s.pdf', expCondCheckFname), sep = '/')
     }
     ## -
     pdf(file = plotName1, width = 5.7, height = 6.7)
@@ -242,7 +234,7 @@ getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newA
     }
     ## --------------------------------------------------------
     ## 2. re-make UMAP plot
-    newResDir          <- paste(resDir, sprintf('new_UMAP_plot_expCond_%s', expCondSepName), sep = '/')
+    newResDir          <- paste(resDir, sprintf('new_UMAP_plot_%s', expCondCheckFname), sep = '/')
     if(!dir.exists(newResDir)) dir.create(newResDir)
     ## umap plot
     umapCluster        <- DimPlot(seuratObjFinal, reduction = "umap", cols = selectedCol, label = T, label.size = 6, repel = T) + labs(title = 'UMAP clustering', x = "UMAP 1", y = 'UMAP 2')
@@ -256,13 +248,13 @@ getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newA
     if (newAnnotation) {
       plotName1 = paste(newResDir, 'UMAP_plot_noLabel_integrate_newAnnotation.pdf', sep = '/')
       plotName2 = paste(newResDir, 'UMAP_plot_wLabel_integrate_newAnnotation.pdf', sep = '/')
-      plotName3 = paste(newResDir, sprintf('UMAP_plot_wLabel_newAnnotation_expCond_%s.pdf', expCondSepName), sep = '/')
-      plotName4 = paste(newResDir, sprintf('UMAP_plot_noLabel_newAnnotation_expCond_%s.pdf', expCondSepName), sep = '/')
+      plotName3 = paste(newResDir, sprintf('UMAP_plot_wLabel_newAnnotation_%s.pdf', expCondCheckFname), sep = '/')
+      plotName4 = paste(newResDir, sprintf('UMAP_plot_noLabel_newAnnotation_%s.pdf', expCondCheckFname), sep = '/')
     } else {
       plotName1 = paste(newResDir, 'UMAP_plot_noLabel_integrate_orgAnnotation.pdf', sep = '/')
       plotName2 = paste(newResDir, 'UMAP_plot_wLabel_integrate_orgAnnotation.pdf', sep = '/')
-      plotName3 = paste(newResDir, sprintf('UMAP_plot_wLabel_orgAnnotation_expCond_%s.pdf', expCondSepName), sep = '/')
-      plotName4 = paste(newResDir, sprintf('UMAP_plot_noLabel_orgAnnotation_expCond_%s.pdf', expCondSepName), sep = '/')
+      plotName3 = paste(newResDir, sprintf('UMAP_plot_wLabel_orgAnnotation_%s.pdf', expCondCheckFname), sep = '/')
+      plotName4 = paste(newResDir, sprintf('UMAP_plot_noLabel_orgAnnotation_%s.pdf', expCondCheckFname), sep = '/')
     }
     ## -
     pdf(file = plotName1, width = 5.7, height = 8)
@@ -306,7 +298,8 @@ getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newA
     ## -
   }
   ## -------------------------------------------------------------------------------------
-  ## 2. summarize cell no in each idetified clusters, if clleNo summary will change automately based on above whether to update on 'expCondSepName'
+  ## 2. summarize cell no in each idetified clusters, if clleNo summary will change automately based on above whether to update on 'expCondCheckFname'
+  ## '_' is used here to combine idents() with expCond' factor levels.
   if (clusterCellsNoSummary) {
     Seurat::DefaultAssay(seuratObjFinal)   <- "RNA"
     ## ---
@@ -333,9 +326,9 @@ getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newA
     colnames(clusterCellNoComb)    <- gsub(pattern = '.x', replacement = '', x = colnames(clusterCellNoComb))
     colnames(clusterCellNoComb)    <- gsub(pattern = '.y', replacement = '_Per', x = colnames(clusterCellNoComb))
     if (newAnnotation) {
-      cellnoFname                  <- paste(resDir, sprintf('cellNo_summary_newAnnotation_expCond_%s.txt', expCondSepName), sep = '/')
+      cellnoFname                  <- paste(resDir, sprintf('cellNo_summary_newAnnotation_%s.txt', expCondCheckFname), sep = '/')
     } else {
-      cellnoFname                  <- paste(resDir, sprintf('cellNo_summary_orgClusterAnnotation_expCond_%s.txt', expCondSepName), sep = '/')
+      cellnoFname                  <- paste(resDir, sprintf('cellNo_summary_orgClusterAnnotation_%s.txt', expCondCheckFname), sep = '/')
     }
     write.table(x = clusterCellNoComb, file = cellnoFname, quote = F, row.names = F, col.names = T, sep = '\t')
     print(sprintf('END step2.1: summarizing on identified cell no. in each cluster'))

@@ -28,11 +28,11 @@ getHippoRes(
 
 \item{newAnnotationRscriptName}{if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.}
 
-\item{expCondCheck}{3 options: 'sample', 'expCond1', or 'expCond2' to specify which experimental conditions to be explored with this function.}
+\item{expCondCheck}{specify which experimental conditions to be explored, including sample or expCond1/2/....}
 
-\item{cellcluster}{specify cell clusters to be displayed on the dot plot}
+\item{cellcluster}{specify cell clusters (idents) to be conducted with hippo analysis.}
 
-\item{expCond}{specify the specific experimental conditions to be plotted.}
+\item{expCond}{specify the specific experimental conditions to be conducted with hippo analysis.}
 
 \item{noClusters}{number of clusters for hippo to identify, default = 3.}
 
@@ -56,6 +56,6 @@ getHippoRes() Function
 This function is used to run hippo analysis and save hippo results into Rdata.
 }
 \examples{
-getHippoRes()
+getHippoRes(rds,  expCondCheck='sample/expCond*', cellcluster)
 }
 \keyword{getHippoRes}

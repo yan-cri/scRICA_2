@@ -10,8 +10,7 @@ getClusterExpCondDe(
   newAnnotation = F,
   newAnnotationRscriptName = NULL,
   expCondCheck = "sample",
-  expCondSepName = NULL,
-  expCondName2change = NULL,
+  expCondCheckFname = NULL,
   compGroup,
   deMethod = "wilcox",
   pAdjValCutoff = 0.05,
@@ -27,11 +26,9 @@ getClusterExpCondDe(
 
 \item{newAnnotationRscriptName}{if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.}
 
-\item{expCondCheck}{3 options: 'sample', 'expCond1', or 'expCond2' to specify which experimental conditions to be explored with this function.}
+\item{expCondCheck}{specify which experimental conditions to be explored, including sample, idents, or expCond1/2/....}
 
-\item{expCondSepName}{part of file name string to specify the analysis results folder name.}
-
-\item{expCondName2change}{character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.}
+\item{expCondCheckFname}{suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.}
 
 \item{compGroup}{specify either 1 or 2 group names seperated by '/' for comparisons, these group names is corresponding to experimental condition factor levels. If only 1 group named is specified, it makes comparison between this specified group with all others.}
 

@@ -44,7 +44,7 @@
 #' @importFrom utils write.table
 #'
 #' @keywords getClusterMarkers, seuratIntegrate
-#' @examples getClusterMarkers()
+#' @examples getClusterMarkers(qcProcessedResults)
 #' @export
 #' @return
 #' the entire integration analysis results in the defined 'resDirName' inherited from 'processQC()'.
@@ -69,11 +69,12 @@ getClusterMarkers <- function(qcProcessedResults, integrationMethod = 'CCA', nfe
     if (!dir.exists(resDir)) dir.create(resDir)
   }
   resDirName                  <- basename(resDir)
-  ## ---
+  ##--------------------------------------------------------------------------------------##
   ## intermediate RDS result dir
   rdsDir                        <- paste(resDir, 'RDS_Dir', sep = '/')
   if (!dir.exists(rdsDir)) dir.create(rdsDir)
-  ## setup custom theme for plotting
+  print(sprintf('Integration results will be saved in %s', resDir))
+  ##--------------------------------------------------------------------------------------##
   theme1noLegend       <- theme(plot.title = element_text(size = 16, hjust = 0.5),
                                 # legend.key.size = unit(0.7, "cm"),
                                 axis.title = element_text(size = 20),
@@ -86,9 +87,7 @@ getClusterMarkers <- function(qcProcessedResults, integrationMethod = 'CCA', nfe
                                 axis.text = element_text(size = 25),
                                 legend.position="bottom",
                                 legend.text = element_text(size = 14) )
-  ## ------------------
-  print(sprintf('Integration results will be saved in %s', resDir))
-  ## ---
+  ##--------------------------------------------------------------------------------------##
   if (length(qcProcessedSeuratObjList) == 1) {
     ## ---
     print("No integration is needed, only 1 Seurat object is provided.")
@@ -96,6 +95,7 @@ getClusterMarkers <- function(qcProcessedResults, integrationMethod = 'CCA', nfe
     seuratObjIntegrated         <-  qcProcessedSeuratObjList[[1]]
   } else {
     ## 3. Integration
+    ##--------------------------------------------------------------------------------------##
     ## 3.1 Finding anchors, by default running CCA
     print(sprintf('Step 1: Process data integration at %s', Sys.time()))
     print(sprintf('%s samples will be integrated', length(qcProcessedSeuratObjList)))
@@ -107,7 +107,16 @@ getClusterMarkers <- function(qcProcessedResults, integrationMethod = 'CCA', nfe
         x <- Seurat::NormalizeData(x, normalization.method = "LogNormalize", scale.factor = 10000)
         x <- Seurat::FindVariableFeatures(x, selection.method = 'vst', nfeatures = nfeatures)
       })
+    } else if (any(unlist(lapply(qcProcessedSeuratObjList, function(x) length(Seurat::VariableFeatures(x))<nfeatures)))) {
+      print("Note: some input data in 'qcProcessedResults' has fewer number of detected varialbe features requested in 'nfeatures' for integration, before integration, conducing normalization again")
+      qcProcessedSeuratObjList <- lapply(X = qcProcessedSeuratObjList, FUN = function(x) {
+        x <- Seurat::NormalizeData(x, normalization.method = "LogNormalize", scale.factor = 10000)
+        x <- Seurat::FindVariableFeatures(x, selection.method = 'vst', nfeatures = nfeatures)
+      })
+    } else {
+      print("Note: input data in 'qcProcessedResults' has been appropriately normalized, no need to normalize before integration.")
     }
+    ##--------------------------------------------------------------------------------------##
     features                    <- SelectIntegrationFeatures(object.list = qcProcessedSeuratObjList, nfeatures = nfeatures)
     if (integrationMethod == 'RPCA') {
       # normalize and identify variable features for each dataset independently
@@ -124,19 +133,21 @@ getClusterMarkers <- function(qcProcessedResults, integrationMethod = 'CCA', nfe
       anchors                     <- FindIntegrationAnchors(object.list = qcProcessedSeuratObjList,
                                                             anchor.features = features )
     }
+    ##--------------------------------------------------------------------------------------##
     ## 3.2 Integrating data based on found anchors above
     seuratObjIntegrated         <- IntegrateData(anchorset = anchors)
     print(sprintf('End Step 1: data integration at %s', Sys.time()))
     print('---===---===---===---===---===---')
-    ## ---
+    ##--------------------------------------------------------------------------------------##
     print(sprintf('Start: Step 2 tSNE and UMP clustering at %s.', Sys.time()))
     ## 4. dimensional reduction with PCA, KNN/clusters, tsne/umap
     ## 4.1 scale top 2000 identified variable features with default liner model in 'model.use' option
     ##     The results of this are stored in seuratObjFinal[["RNA"]]@scale.data for sep & seuratObjFinal[["integrated"]]@scale.data for integrated data
     Seurat::DefaultAssay(seuratObjIntegrated) <- "integrated"
   }
-  ## ---
+  ##--------------------------------------------------------------------------------------##
   seuratObjFinal                <- ScaleData(object = seuratObjIntegrated)
+  ##--------------------------------------------------------------------------------------##
   ## 4.2 PCA
   seuratObjFinal                <- RunPCA(object = seuratObjFinal)
   ## 4.2.2 determine the 'dimensinality' of the dataset
@@ -148,6 +159,7 @@ getClusterMarkers <- function(qcProcessedResults, integrationMethod = 'CCA', nfe
   seuratObjFinal                <- FindNeighbors(seuratObjFinal, reduction = "pca", dims = 1:20)
   seuratObjFinal                <- FindClusters(seuratObjFinal, resolution = 0.5)
   seuratObjFinal                <- RunTSNE(object = seuratObjFinal, dims = 1:20)
+  ##--------------------------------------------------------------------------------------##
   ## PCA plot
   pcaCluster  <- DimPlot(seuratObjFinal, reduction = "pca") + labs(title = 'PCA clustering', x = "PC 1", y = 'PC 2')
   pcaExpCond  <- DimPlot(seuratObjFinal, reduction = "pca", group.by = 'expCond') + labs(title = 'PCA clustering', x = "PC 1", y = 'PC2')
@@ -155,6 +167,7 @@ getClusterMarkers <- function(qcProcessedResults, integrationMethod = 'CCA', nfe
   pdf(file = file.path(resDir, 'pca_plot.pdf'), width = 10, height = 6)
   grid.arrange(pcaCluster + theme1wLegend, pcaExpCond + theme1wLegend, ncol = 2, nrow = 1)
   dev.off()
+  ##--------------------------------------------------------------------------------------##
   ## UMAP plot
   umapCluster <- DimPlot(seuratObjFinal, reduction = "umap", label = T, repel = T) + labs(title = 'UMAP clustering', x = "UMAP 1", y = 'UMAP 2')
   umapExpCond <- DimPlot(seuratObjFinal, reduction = "umap", group.by = 'expCond') + labs(title = 'UMAP clustering', x = "UMAP 1", y = 'UMAP 2')
@@ -169,7 +182,7 @@ getClusterMarkers <- function(qcProcessedResults, integrationMethod = 'CCA', nfe
   pdf(file = file.path(resDir, 'umap_plot_samplSep.pdf'), width = 4.5*length(qcProcessedSeuratObjList), height = 6)
   grid.arrange(umapSplit + theme1noLegend)
   dev.off()
-
+  ##--------------------------------------------------------------------------------------##
   ## tsne plot
   tsneExpCond <- DimPlot(seuratObjFinal, reduction = "tsne", group.by = 'expCond') + labs(title = 'tSNE clustering', x = "tSNE 1", y = 'tSNE 2')
   tsneCluster <- DimPlot(seuratObjFinal, reduction = "tsne", label = T, repel = T) + labs(title = 'tSNE clustering', x = "tSNE 1", y = 'tSNE 2')
@@ -190,8 +203,8 @@ getClusterMarkers <- function(qcProcessedResults, integrationMethod = 'CCA', nfe
   saveRDS(seuratObjFinal, file = file.path(rdsDir, sprintf("%s.rds", resDirName)) )
   print('Complete save RDS')
   print('---===---')
+  ##--------------------------------------------------------------------------------------##
   ## 5. 1. Find all marker
-  ## -
   print('Start: Step 3 finding positive regulated cluster marker genes')
   allPosMarkers        <- FindAllMarkers(seuratObjFinal, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
   write.table(x = allPosMarkers, file = file.path(resDir, 'allCluster_pos_markers.txt'), quote = F, sep = '\t', row.names = T, col.names = NA)
@@ -209,35 +222,10 @@ getClusterMarkers <- function(qcProcessedResults, integrationMethod = 'CCA', nfe
   pdf(file = file.path(resDir, sprintf('cluster_heatmap_top%sPosMarkers.pdf', topN)), width = 25, height = 20)
   print(cluterTop10heatmap)
   dev.off()
-  # top10                 <- allPosMarkers %>% group_by(cluster) %>% top_n(n = 10, wt = avg_log2FC) %>% as.data.frame()
-  # write.table(x = top10, file = file.path(resDir, 'allCluster_pos_markers_top10.txt'), quote = F, sep = '\t', row.names = T, col.names = NA)
-  # cluterTop10heatmap    <- DoHeatmap(seuratObjFinal, features = top10$gene) + NoLegend()
-  # pdf(file = file.path(resDir, 'cluster_heatmap_top10PosMarkers.pdf'), width = 25, height = 20)
-  # print(cluterTop10heatmap)
-  # dev.off()
-  # ## -
-  # top20                 <- allPosMarkers %>% group_by(cluster) %>% top_n(n = 20, wt = avg_log2FC) %>% as.data.frame()
-  # write.table(x = top20, file = file.path(resDir, 'allCluster_pos_markers_top20.txt'), quote = F, sep = '\t', row.names = T, col.names = NA)
-  # cluterTop20heatmap    <- DoHeatmap(seuratObjFinal, features = top20$gene) + NoLegend()
-  # pdf(file = file.path(resDir, 'cluster_heatmap_top20PosMarkers.pdf'), width = 25, height = 20)
-  # print(cluterTop20heatmap)
-  # dev.off()
-  # ## -
-  # top50                 <- allPosMarkers %>% group_by(cluster) %>% top_n(n = 50, wt = avg_log2FC) %>% as.data.frame()
-  # write.table(x = top50, file = file.path(resDir, 'allCluster_pos_markers_top50.txt'), quote = F, sep = '\t', row.names = T, col.names = NA)
-  # cluterTop50heatmap    <- DoHeatmap(seuratObjFinal, features = top50$gene) + NoLegend()
-  # pdf(file = file.path(resDir, 'cluster_heatmap_top50PosMarkers.pdf'), width = 25, height = 20)
-  # print(cluterTop50heatmap)
-  # dev.off()
-  # ## -
-  # top100                <- allPosMarkers %>% group_by(cluster) %>% top_n(n = 100, wt = avg_log2FC) %>% as.data.frame()
-  # write.table(x = top100, file = file.path(resDir, 'allCluster_pos_markers_top100.txt'), quote = F, sep = '\t', row.names = T, col.names = NA)
-  # cluterTop100heatmap   <- DoHeatmap(seuratObjFinal, features = top100$gene) + NoLegend()
-  # pdf(file = file.path(resDir, 'cluster_heatmap_top100PosMarkers.pdf'), width = 30, height = 25)
-  # print(cluterTop100heatmap)
-  # dev.off()
+  ##--------------------------------------------------------------------------------------##
   print('END: Step 4 making cluster marker genes heatmap plot')
   print('END===END===END')
+  ##--------------------------------------------------------------------------------------##
   return(list('resDir' = resDir, 'integratedObj' = seuratObjFinal, 'posMarkers' = allPosMarkers))
 }
 ##----------------------------------------------------------------------------------------

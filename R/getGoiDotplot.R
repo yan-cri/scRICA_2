@@ -8,11 +8,10 @@
 #' @param newAnnotationRscriptName if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.
 #' @param goiFname path to file, where a list of marker/features genes are provided in column 'Gene', if column 'Cell Type' is also provided, option 'geneTypeOrder' can be used to adjust orders.
 #' @param geneTypeOrder if column 'Cell Type' is provided in the 'goiFname' file, this option can be used to adjust the orders of marker gene's cell types, if not provided, marker gene's cell types will be sorted alphabetically.
-#' @param expCondCheck 3 options: 'sample', 'expCond1', or 'expCond2' to specify which experimental conditions to be explored with this function.
-#' @param expCondSepName suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.
-#' @param expCondName2change a character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.
+#' @param expCondCheck specify which experimental conditions to be explored, including sample, idents, or expCond1/2/....
+#' @param expCondCheckFname suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.
 #' @param expCondReorderLevels a character string of the corresponding experimental condition factor levels' orders presented on the y-axis of the dot-plot from bottom to top, if not defined, sorted numerically or alphabetically.
-#' @param expCondName specify an experimental condition corresponding to 'expCondCheck'/'expCondName2change' levels to be displayed on the dot plot
+#' @param expCondName subset the specified experimental condition corresponding to 'expCondCheck' levels to make the corresponding dot plot.
 #' @param cellcluster specify cell clusters to be displayed on the dot plot
 #' @param dotPlotFnamePrefix prefix of the dot plot file name, if not defined, by default = 'goiDotplots'.
 #' @param dotPlotMinExpCutoff minimum expression value threshold presented in the dot plot, if not defined, by default = 0.3.
@@ -48,7 +47,7 @@
 #' @importFrom grid unit
 #'
 #' @keywords GoiDotplot
-#' @examples getGoiDotplot()
+#' @examples getGoiDotplot(rds, goiFname, expCondCheck='sample/idents/expCond*')
 #' @export
 #' @return the dotplots of provided GOI(gene of interest) saved in '' inside the provided 'resDir'
 ## ---------------------------------------------------------------------------------------
@@ -57,7 +56,7 @@
 # library(grDevices)
 # library(tools)
 # library(xlsx)
-getGoiDotplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, goiFname, geneTypeOrder=NULL, expCondCheck='sample', expCondSepName = NULL, expCondName2change=NULL, expCondReorderLevels=NULL, expCondName = NULL, cellcluster = NULL, dotPlotFnamePrefix='goiDotplots', dotPlotMinExpCutoff=0.3, dotPlotMaxExpCutoff = 2.5, dotPlotWidth=NULL, dotPlotHeight=NULL, legendPer=NULL, genetypebarPer=NULL, fontsize.x = 24, fontsize.y = 18, fontangle.x = 90, fontangle.y = 90, fontsize.legend1 = 20, fontsize.legend2 = NULL, gridOn = as.logical(F), geneTypeLegendOn = as.logical(T) ){
+getGoiDotplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, goiFname, geneTypeOrder=NULL, expCondCheck='sample', expCondCheckFname = NULL, expCondReorderLevels=NULL, expCondName = NULL, cellcluster = NULL, dotPlotFnamePrefix='goiDotplots', dotPlotMinExpCutoff=0.3, dotPlotMaxExpCutoff = 2.5, dotPlotWidth=NULL, dotPlotHeight=NULL, legendPer=NULL, genetypebarPer=NULL, fontsize.x = 24, fontsize.y = 18, fontangle.x = 90, fontangle.y = 90, fontsize.legend1 = 20, fontsize.legend2 = NULL, gridOn = as.logical(F), geneTypeLegendOn = as.logical(T) ){
   ## ---
   newAnnotation           <- as.logical(newAnnotation)
   if (newAnnotation & is.null(newAnnotationRscriptName)) print("Option 'newAnnotation' is on, please provide corresponding option 'newAnnotationRscriptName'.")
@@ -92,7 +91,7 @@ getGoiDotplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationR
     resDir                <- paste(resDir, 'results_wOrgClusterAnnotation', sep = '/')
   }
   if (!dir.exists(resDir)) dir.create(resDir)
-  ## -------------------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
   if (newAnnotation) {
     ## Assign cell type identity to clusters
     ## redefine the level of Idents on the y-axis can be adjusted here by inputting order for cell annotation
@@ -102,44 +101,35 @@ getGoiDotplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationR
     print("After adding new annotation")
     print(table(Idents(seuratObjFinal)))
   }
-
-  ## -------------------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
   if (expCondCheck == 'sample') {
-    if (is.null(expCondSepName)) {
-      expCondSepName        <- 'expCond_sample'
+    if (is.null(expCondCheckFname)) {
+      expCondCheckFname        <- 'expCond_sample'
     } else {
-      expCondSepName        <- expCondSepName
+      expCondCheckFname        <- expCondCheckFname
     }
   } else {
-    if (is.null(expCondSepName)) {
-      expCondSepName        <- as.character(expCondCheck)
+    if (is.null(expCondCheckFname)) {
+      expCondCheckFname        <- as.character(expCondCheck)
     } else {
-      expCondSepName        <- expCondSepName
+      expCondCheckFname        <- expCondCheckFname
     }
   }
-  ## -------------------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
   ## create corresponding 'plotResDir' for feature-plot to save
-  plotResDir            <- paste(resDir, sprintf('dotplot_selected_markers_expCond_%s', expCondSepName), sep = '/')
+  plotResDir            <- paste(resDir, sprintf('dotplot_selected_markers_%s', expCondCheckFname), sep = '/')
   if (!dir.exists(plotResDir)) dir.create(plotResDir)
-  ## ------
+  ##--------------------------------------------------------------------------------------##
   ## update 'seuratObjFinal@meta.data$expCond'
   if (expCondCheck == 'sample') {
     seuratObjFinal                     <- seuratObjFinal
-  } else if (expCondCheck == 'comb') {
+  } else if (expCondCheck == 'idents') {
     seuratObjFinal@meta.data$expCond   <- Seurat::Idents(seuratObjFinal)
-  } else if (expCondCheck == 'expCond1') {
-    if (!'expCond1' %in% colnames(seuratObjFinal@meta.data)){
-      print("Note: 'expCond1' has not been included in the original integration analysis, using 'expCondName2change' to change 'expCond'.")
-      seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
+  } else {
+    if (!expCondCheck%in%colnames(seuratObjFinal@meta.data)) {
+      stop("ERROR: 'expCondCheck' does not exist in your 'rds' metadata.")
     } else {
-      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond1
-    }
-  } else if (expCondCheck == 'expCond2') {
-    if (!'expCond2' %in% colnames(seuratObjFinal@meta.data)){
-      print("Note: 'expCond2' has not been included in the original integration analysis, using 'expCondName2change' to change 'expCond'.")
-      seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
-    } else {
-      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond2
+      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data[, grep(as.character(expCondCheck), colnames(seuratObjFinal@meta.data))]
     }
   }
   # print('97979799')
@@ -147,7 +137,7 @@ getGoiDotplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationR
   # print(sprintf('4444 plotResDir is %s', plotResDir))
   if (!dir.exists(plotResDir)) dir.create(plotResDir)
   print(sprintf('GOI dot plots will be saved in %s', plotResDir))
-  ## -------------------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
   # print(table(seuratObjFinal@meta.data$expCond))
   expCondLevels = levels(factor(seuratObjFinal@meta.data$expCond))
   if (!is.null(expCondName)) {
@@ -163,7 +153,7 @@ getGoiDotplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationR
     print(sprintf('Subsetting %s specific cell clusters: %s', length(cellcluster), paste(cellcluster, collapse = ',')))
     seuratObjFinal                          <- subset(seuratObjFinal, idents = cellcluster )
   }
-  ## -----------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
   ## using column 'gene' as marker genes, if column 'geneType' exist, will be used to categorize the genes
   if (file_ext(basename(goiFname)) == 'xlsx') {
     markerGenesPrep         <- read.xlsx(file = as.character(goiFname), sheetIndex = 1, header = T)
@@ -202,24 +192,26 @@ getGoiDotplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationR
     }
   }
   ## Note: if column 'geneType' does not exist, markerGenesCat=NULL, NO 'markerGenesDf' exist
-  ## -------------------------------------------------------------------------------------
-  # dotplotFname           <- paste(plotResDir, 'selected_markerGenesV2_dotplot.pdf', sep = '/')
-  dotplotFname           <- file.path(plotResDir, sprintf('%s_markerGenes_dotplot_expCond_%s.pdf', dotPlotFnamePrefix, expCondSepName))
+  ##--------------------------------------------------------------------------------------##
+  dotplotFname           <- file.path(plotResDir, sprintf('%s_markerGenes_dotplot_%s.pdf', dotPlotFnamePrefix, expCondCheckFname))
   ## -
   print(sprintf("A total of %s marker genes will be used for downstream dotplot at '%s'. ", length(markerGenes), basename(dotplotFname) ))
   ## ---
   ## 2. make dotplot with provided gene markers; dot plot of all selected marker genes presented on x-axis
   SeuratObject::DefaultAssay(seuratObjFinal)   <- "RNA" ## suggested by Seurat tutorial at 'https://satijalab.org/seurat/articles/integration_introduction.html' using RNA slot for feature plot and dot plot and downstream analysis
-  ## SeuratObject::DefaultAssay(seuratObjFinal)   <- "integrated"
+  ## ---------
   ## adding expCond to the idents of identified clusters
+  ## '_' is used here to combine idents() with expCond' factor levels.
   if (all( names(Seurat::Idents(seuratObjFinal)) == names(seuratObjFinal$expCond) )) {
     ## re-define Seurat::Idents(seuratObjFinal) with level name: cluster + expCond if expCondCheck != 'comb'
     ## ---
     if (is.null(expCondReorderLevels)) {
       expCondReorderLevels          <- levels(factor(seuratObjFinal@meta.data$expCond))
     }
+    ## ---
     if ( !all(expCondReorderLevels %in% levels(factor(seuratObjFinal$expCond))) ) stop("Please provide correct corresponding 'expCondReorderLevels' to sort y-axis dot plot")
-    if (expCondCheck != 'comb') {
+    ## ---
+    if (expCondCheck != 'idents') {
       Seurat::Idents(seuratObjFinal)        <- factor( paste(Seurat::Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'),
                                                        levels = paste(rep(levels(Seurat::Idents(seuratObjFinal)), each = length(levels(factor(seuratObjFinal$expCond))) ), levels(factor(seuratObjFinal$expCond, levels = expCondReorderLevels)), sep = '_') )
     } else {
@@ -230,7 +222,7 @@ getGoiDotplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationR
   print(sprintf('Updated idents information with experimental condition are as below:'))
   print(table(Seurat::Idents(seuratObjFinal) ))
   print('"-=-=-=-=-=')
-  ## -----------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
   ## Currently Seurat::DotPlot() x-axis is based on Seurat::DotPlot()$data$features.plot levels after dropping off unused levels by droplevels()
   if (is.null(markerGenesCat)) {
     g1                <- Seurat::DotPlot(seuratObjFinal, features = markerGenes, cols = c('#D3D3D3', '#CC0000'), col.min = dotPlotMinExpCutoff, col.max = dotPlotMaxExpCutoff, scale = T, scale.by = 'size', dot.min = 0.01 ) + Seurat::RotatedAxis()
@@ -244,7 +236,7 @@ getGoiDotplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationR
   }
   # print(g1)
   # ggsave(filename = 'TEST1.pdf', plot = g1, width = 40, height = 15)
-  ## ------
+  ##--------------------------------------------------------------------------------------##
   print(sprintf('A total of %s genes displayed in GOI dot plot.', length(unique(g1$data$features.plot))))
   ## ---
   if (is.null(dotPlotWidth)) {
@@ -270,7 +262,7 @@ getGoiDotplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationR
     hjustVal = 0 ##left align
     vjustVal.y = 0.5
   }
-  ## -
+  ##--------------------------------------------------------------------------------------##
   if (is.null(markerGenesCat)) {
     pdf(file = dotplotFname, width = dotPlotWidth, height = dotPlotHeight )
     g1     <- g1 + theme(legend.text = element_text(color = "black", size = fontsize.legend1), axis.text.x = element_text(color = "black", size = fontsize.x, angle = fontangle.x, vjust = 0.5), axis.text.y = element_text(color = "black", size = fontsize.y, angle = fontangle.y, hjust = hjustVal, vjust = vjustVal.y), axis.title = element_blank() )
@@ -315,7 +307,7 @@ getGoiDotplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationR
       plotWlegend2        <- cowplot::plot_grid(plot, legend1, nrow = 1, align = 'h', axis = 'none', rel_widths = c((1-legendPer)*dotPlotWidth, legendPer*dotPlotWidth))
       ggplot2::ggsave(filename = dotplotFname, plot = plotWlegend2, width = dotPlotWidth, height = dotPlotHeight, limitsize = FALSE)
     }
-
   }
+  ##--------------------------------------------------------------------------------------##
 }
 ## ---------------------------------------------------------------------------------------

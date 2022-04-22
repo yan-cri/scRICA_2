@@ -6,9 +6,8 @@
 #' @param rdsFname User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.
 #' @param newAnnotation logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.
 #' @param newAnnotationRscriptName if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.
-#' @param expCondCheck 3 options: 'sample', 'expCond1', or 'expCond2' to specify which experimental conditions to be explored with this function.
-#' @param expCondSepName part of file name string to specify the analysis results folder name.
-#' @param expCondName2change character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.
+#' @param expCondCheck specify which experimental conditions to be explored, including sample, idents, or expCond1/2/....
+#' @param expCondCheckFname suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.
 #' @param compGroup specify either 1 or 2 group names seperated by '/' for comparisons, these group names is corresponding to experimental condition factor levels. If only 1 group named is specified, it makes comparison between this specified group with all others.
 #' @param deMethod DE test method with options: 'wilcox', 't', 'negbinom', 'poisson', 'MAST', 'DESeq2', by default = 'wilcox'.
 #' @param pAdjValCutoff adjusted p-value cutoff for significant DEGs detection, by default = 0.05.
@@ -30,7 +29,7 @@
 #' 2. 'clusterDeResSummary'
 #' 3. 'clusterTopDeMarkers'
 ## ---------------------------------------------------------------------------------------
-getClusterExpCondDe <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, expCondCheck='sample', expCondSepName = NULL, expCondName2change=NULL, compGroup, deMethod = 'wilcox', pAdjValCutoff = 0.05, topNo = 10) {
+getClusterExpCondDe <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, expCondCheck='sample', expCondCheckFname = NULL, compGroup, deMethod = 'wilcox', pAdjValCutoff = 0.05, topNo = 10) {
   options(java.parameters = "-Xmx32000m")
   ## ---
   if (missing(compGroup)) stop("Please provide option 'compGroup' to specify which 2 groups in your updated experimental condition levels with 'expCondCheck' for comparision.")
@@ -69,48 +68,42 @@ getClusterExpCondDe <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, new
     ## redefine the level of Idents on the y-axis can be adjusted here by inputting order for cell annotation
     source(as.character(newAnnotationRscriptName))
   }
-  ## -------------------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
   if (expCondCheck == 'sample') {
-    if (is.null(expCondSepName)) {
-      expCondSepName        <- 'expCond_sample'
+    if (is.null(expCondCheckFname)) {
+      expCondCheckFname        <- 'expCond_sample'
     } else {
-      expCondSepName        <- expCondSepName
+      expCondCheckFname        <- expCondCheckFname
     }
   } else {
-    if (is.null(expCondSepName)) {
-      expCondSepName        <- as.character(expCondCheck)
+    if (is.null(expCondCheckFname)) {
+      expCondCheckFname        <- as.character(expCondCheck)
     } else {
-      expCondSepName        <- expCondSepName
+      expCondCheckFname        <- expCondCheckFname
     }
   }
+  ##--------------------------------------------------------------------------------------##
   ## update 'resDir' to ceate dir under 'result_wNewAnnotation' or 'results_wOrgClusterAnnotation'
-  resDir                  <- paste(sprintf('%s/DEG_%s_comp_%s', resDir, expCondSepName, deMethod))
+  resDir                  <- paste(sprintf('%s/DEG_%s_comp_%s', resDir, expCondCheckFname, deMethod))
   if (!dir.exists(resDir)) dir.create(resDir)
-  ## -------------------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
   ## update 'seuratObjFinal@meta.data$expCond' and create corresponding updated 'resDir' for new tSNE/UMAP plots to save
-  resDir                  <- paste(resDir, sprintf('DEG_%s_comp_%s_%s', expCondSepName, gsub('/', '-', compGroup), deMethod ), sep = '/')
+  resDir                  <- paste(resDir, sprintf('DEG_%s_comp_%s_%s', expCondCheckFname, gsub('/', '-', compGroup), deMethod ), sep = '/')
   if (!dir.exists(resDir)) dir.create(resDir)
-  ## -------------------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
+  ## update 'seuratObjFinal@meta.data$expCond'
   if (expCondCheck == 'sample') {
     seuratObjFinal                     <- seuratObjFinal
-  } else if (expCondCheck == 'comb') {
+  } else if (expCondCheck == 'idents') {
     seuratObjFinal@meta.data$expCond   <- Seurat::Idents(seuratObjFinal)
-  } else if (expCondCheck == 'expCond1') {
-    if (!'expCond1' %in% colnames(seuratObjFinal@meta.data)){
-      print("Error: 'expCond1' has not been included in the original integration analysis.")
-      seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
+  } else {
+    if (!expCondCheck%in%colnames(seuratObjFinal@meta.data)) {
+      stop("ERROR: 'expCondCheck' does not exist in your 'rds' metadata.")
     } else {
-      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond1
-    }
-  } else if (expCondCheck == 'expCond2') {
-    if (!'expCond2' %in% colnames(seuratObjFinal@meta.data)){
-      print("Error: 'expCond2' has not been included in the original integration analysis.")
-      seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
-    } else {
-      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond2
+      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data[, grep(as.character(expCondCheck), colnames(seuratObjFinal@meta.data))]
     }
   }
-  ## -------------------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
   # Seurat::DefaultAssay(seuratObjFinal)   <- "RNA"
   Seurat::DefaultAssay(seuratObjFinal) <- "integrated"
   ## ---
