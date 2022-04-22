@@ -13,9 +13,7 @@
 #' @param rdsFname User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.
 #' @param newAnnotation logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.
 #' @param newAnnotationRscriptName if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.
-#' @param expCondCheck 3 options: 'sample', 'expCond1', or 'expCond2' to specify which experimental conditions to be explored with this function.
-#' @param expCondSepName part of file name string to specify the analysis results folder name.
-#' @param expCondName2change character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.
+#' @param expCondCheck specify which experimental conditions to be explored, including sample, idents, or expCond1/2/....
 #' @param pAdjValCutoff adjusted p-value cutoff for significant positively expressed cluster markers, by default = 0.05.
 #' @param topNo specify the top number of up and down significant positively expressed cluster markers in each identified/annotated clusters, by default = 10.
 #'
@@ -40,14 +38,14 @@
 #' @return
 #' a list item including 3 elements:
 ## -------------------------------------------------------------------------------------- ##
-getExpCondClusterMarkers <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, expCondCheck='sample', expCondSepName = NULL, expCondName2change=NULL, pAdjValCutoff = 0.05, topNo = 10) {
+getExpCondClusterMarkers <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, expCondCheck='sample', expCondSepName = NULL, pAdjValCutoff = 0.05, topNo = 10) {
   options(java.parameters = "-Xmx32000m")
-  ## ---
+  ###--------------------------------------------------------------------------------------##
   pAdjValCutoff           <- as.numeric(pAdjValCutoff)
   topNo                   <- as.numeric(topNo)
   newAnnotation           <- as.logical(newAnnotation)
   if (newAnnotation & is.null(newAnnotationRscriptName)) print("Option 'newAnnotation' is on, please provide corresponding option 'newAnnotationRscriptName'.")
-  ## ---
+  ##--------------------------------------------------------------------------------------##
   if (is.null(resDir) & !is.null(rdsFname)) {
     rdsFname              <- rdsFname
     resDir                <- getwd()
@@ -57,14 +55,14 @@ getExpCondClusterMarkers <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F
   } else {
     stop("Error: please provide either option 'resDir' or 'rdsFname'. ")
   }
-  ## ---
+  ##--------------------------------------------------------------------------------------##
   if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
   seuratObjFinal          <<- readRDS(file = as.character(rdsFname))
   print('Done for RDS readin')
   # if (clusterReOrder) {
   #   if (length(reorderedClusters)!=length(levels(Idents(seuratObjFinal)))) stop("Please provide corresponding reorderedClusters options")
   # }
-  ## -------------------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
   ## update results directory if new annotation is used
   if (newAnnotation) {
     resDir <- paste(resDir, 'clusterMarkerGenes_results_wNewAnnotation', sep = '/')
@@ -77,60 +75,45 @@ getExpCondClusterMarkers <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F
     # }
   }
   if (!dir.exists(resDir)) dir.create(resDir)
-  ## -------------------------------------------------------------------------------------
-  if (expCondCheck == 'sample') {
-    if (is.null(expCondSepName)) {
-      expCondSepName        <- 'expCond_sample'
-    } else {
-      expCondSepName        <- expCondSepName
-    }
-  } else {
-    if (is.null(expCondSepName)) {
-      expCondSepName        <- as.character(expCondCheck)
-    } else {
-      expCondSepName        <- expCondSepName
-    }
-  }
-  ## ---
+  # ##--------------------------------------------------------------------------------------##
+  # if (expCondCheck == 'sample') {
+  #   if (is.null(expCondCheckFname)) {
+  #     expCondCheckFname        <- 'expCond_sample'
+  #   } else {
+  #     expCondCheckFname        <- expCondCheckFname
+  #   }
+  # } else {
+  #   if (is.null(expCondCheckFname)) {
+  #     expCondCheckFname        <- as.character(expCondCheck)
+  #   } else {
+  #     expCondCheckFname        <- expCondCheckFname
+  #   }
+  # }
+  ##--------------------------------------------------------------------------------------##
   print(sprintf('Cluster marker genes identification on cell clusters with respect experimental condition %s will be saved at %s', expCondSepName, resDir))
   resDir                <- paste(sprintf('%s/%s', resDir, expCondSepName ))
   if (!dir.exists(resDir)) dir.create(resDir)
-  ## -------------------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
   if (newAnnotation) {
     ## Assign cell type identity to clusters
     ## redefine the level of Idents on the y-axis can be adjusted here by inputting order for cell annotation
     source(as.character(newAnnotationRscriptName))
   }
   print(table(Idents(seuratObjFinal)))
-  # else {
-  #   if (clusterReOrder) {
-  #     # seuratObjFinal2@active.ident <- factor(seuratObjFinal2@active.ident, levels = reorderedClusters)
-  #     Seurat::Idents(seuratObjFinal) <- factor(Seurat::Idents(seuratObjFinal), levels = as.character(reorderedClusters))
-  #     print('Identified cell clusters are re-ordered as below:')
-  #   } else {
-  #     print('Identified cell clusters are sorted as orginal below:')
-  #   }
-  #   print(table(Idents(seuratObjFinal)))
-  # }
-  ## -------------------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
+  ## update 'seuratObjFinal@meta.data$expCond'
   if (expCondCheck == 'sample') {
     seuratObjFinal                     <- seuratObjFinal
-  } else if (expCondCheck == 'expCond1') {
-    if (!'expCond1' %in% colnames(seuratObjFinal@meta.data)){
-      print("Error: 'expCond1' has not been included in the original integration analysis.")
-      seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
+  } else if (expCondCheck == 'idents') {
+    seuratObjFinal@meta.data$expCond   <- Seurat::Idents(seuratObjFinal)
+  } else {
+    if (!expCondCheck%in%colnames(seuratObjFinal@meta.data)) {
+      stop("ERROR: 'expCondCheck' does not exist in your 'rds' metadata.")
     } else {
-      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond1
-    }
-  } else if (expCondCheck == 'expCond2') {
-    if (!'expCond2' %in% colnames(seuratObjFinal@meta.data)){
-      print("Error: 'expCond2' has not been included in the original integration analysis.")
-      seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
-    } else {
-      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond2
+      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data[, grep(as.character(expCondCheck), colnames(seuratObjFinal@meta.data))]
     }
   }
-  ## -------------------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
   ## updated expCond factor after above updating
   expCondLevels           <- levels(factor(seuratObjFinal@meta.data$expCond))
   ## ---
@@ -177,8 +160,8 @@ getExpCondClusterMarkers <- function(resDir=NULL, rdsFname=NULL, newAnnotation=F
   }
   names(expCondPosMarkers)    <- expCondLevels
   names(expCondSigPosMarkers) <- expCondLevels
-  ## -------------------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
   return(list('expCondPosMarkers' = expCondPosMarkers, 'expCondSigPosMarkers' = expCondSigPosMarkers))
-  ## -------------------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
 }
 ## -------------------------------------------------------------------------------------- ##

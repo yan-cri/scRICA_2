@@ -11,9 +11,8 @@
 #' @param resSaveFname whether to save re-scaled seurat object on the defined 'cellcluster' and 'expCond', by default it is 'NULL' without saving re-scaled RDS object.
 #' @param goiFname path to file, where a list of marker/features genes are provided in column 'Gene', if column 'Cell Type' is also provided, option 'geneTypeOrder' can be used to adjust orders.
 #' @param geneNames provide gene names directly with this option, if do not want to use option 'goiFname'
-#' @param expCondCheck 3 options: 'sample', 'expCond1', or 'expCond2' to specify which experimental conditions to be explored with this function.
-#' @param expCondSepName suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.
-#' @param expCondName2change a character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.
+#' @param expCondCheck specify which experimental conditions to be explored, including sample, idents, or expCond1/2/....
+#' @param expCondCheckFname suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.
 #' @param cellcluster specify cell clusters to be displayed on the dot plot
 #' @param expCond specify the specific experimental conditions to be plotted.
 #' @param expCondReorderLevels a character string of the corresponding experimental condition factor levels' orders shown on top color bar.
@@ -58,7 +57,7 @@
 #' @importFrom patchwork wrap_plots
 #'
 #' @keywords Heatmap
-#' @examples getGoiHeatmap()
+#' @examples getGoiHeatmap(rds, geneNames/goiFname, expCondCheck='sample/idents/expCond*')
 #' @export
 #' @return the Heatmap of provided GOI(gene of interest) provided by 'geneNames' directly or presented in 'goiFname'.
 #'
@@ -66,7 +65,7 @@
 getGoiHeatmap <- function(heatmap.view = 'ident', resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL,
                           resSaveFname = NULL, scaled = F,
                           goiFname = NULL, geneNames = NULL,
-                          expCondCheck='sample', expCondSepName = NULL, expCondName2change=NULL,
+                          expCondCheck='sample', expCondCheckFname = NULL,
                           cellcluster = NULL , expCond = NULL, expCondReorderLevels = NULL,
                           plotFnamePrefix='goiHeatmap', plotWidth=25, plotHeight = 20,
                           minVal = -2.5, maxVal = 2.5, fontsize.legend = 20,
@@ -134,25 +133,25 @@ getGoiHeatmap <- function(heatmap.view = 'ident', resDir=NULL, rds=NULL, newAnno
     resDir                <- paste(resDir, 'results_wOrgClusterAnnotation', sep = '/')
   }
   if (!dir.exists(resDir)) dir.create(resDir)
-  ## -------------------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
   if (expCondCheck == 'sample') {
-    if (is.null(expCondSepName)) {
-      expCondSepName        <- 'expCond_sample'
+    if (is.null(expCondCheckFname)) {
+      expCondCheckFname        <- 'expCond_sample'
     } else {
-      expCondSepName        <- expCondSepName
+      expCondCheckFname        <- expCondCheckFname
     }
   } else {
-    if (is.null(expCondSepName)) {
-      expCondSepName        <- as.character(expCondCheck)
+    if (is.null(expCondCheckFname)) {
+      expCondCheckFname        <- as.character(expCondCheck)
     } else {
-      expCondSepName        <- expCondSepName
+      expCondCheckFname        <- expCondCheckFname
     }
   }
-  ## ---
+  ##--------------------------------------------------------------------------------------##
   ## create corresponding 'plotResDir' for heatmap to save
-  plotResDir            <- paste(resDir, sprintf('heatmap_expCond_%s', expCondSepName), sep = '/')
+  plotResDir            <- paste(resDir, sprintf('heatmap_%s', expCondCheckFname), sep = '/')
   if (!dir.exists(plotResDir)) dir.create(plotResDir)
-  print(sprintf('Heatmap plots with %s experimental condition will be saved at %s', expCondSepName, plotResDir))
+  print(sprintf('Heatmap plots with %s experimental condition will be saved at %s', expCondCheckFname, plotResDir))
   ## -------------------------------------------------------------------------------------
   if (newAnnotation) {
     ## Assign cell type identity to clusters
@@ -163,27 +162,20 @@ getGoiHeatmap <- function(heatmap.view = 'ident', resDir=NULL, rds=NULL, newAnno
     print(table(Idents(seuratObjFinal)))
     print('-=-=-=-')
   }
-  ## -------------------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
+  ## update 'seuratObjFinal@meta.data$expCond'
   if (expCondCheck == 'sample') {
     seuratObjFinal                     <- seuratObjFinal
-  } else if (expCondCheck == 'comb') {
+  } else if (expCondCheck == 'idents') {
     seuratObjFinal@meta.data$expCond   <- Seurat::Idents(seuratObjFinal)
-  }else if (expCondCheck == 'expCond1') {
-    if (!'expCond1' %in% colnames(seuratObjFinal@meta.data)){
-      print("Note: 'expCond1' has not been included in the original integration analysis, option 'expCondName2change' used.")
-      seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
+  } else {
+    if (!expCondCheck%in%colnames(seuratObjFinal@meta.data)) {
+      stop("ERROR: 'expCondCheck' does not exist in your 'rds' metadata.")
     } else {
-      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond1
-    }
-  } else if (expCondCheck == 'expCond2') {
-    if (!'expCond2' %in% colnames(seuratObjFinal@meta.data)){
-      print("Note: 'expCond2' has not been included in the original integration analysis, option 'expCondName2change'.")
-      seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
-    } else {
-      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond2
+      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data[, grep(as.character(expCondCheck), colnames(seuratObjFinal@meta.data))]
     }
   }
-  ## -------------------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
   ## if provided, subset on 'cellcluster'
   clusterLevels <- levels(Seurat::Idents(seuratObjFinal))
   if (!is.null(cellcluster)) {
@@ -211,7 +203,7 @@ getGoiHeatmap <- function(heatmap.view = 'ident', resDir=NULL, rds=NULL, newAnno
       seuratObjFinal          <- seuratObjFinalPrep2
     }
   }
-  ## -------------------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
   Seurat::DefaultAssay(seuratObjFinal) <- "RNA"
   plotTheme <- ggplot2::theme(axis.text.y = element_text(color = "black", size = fontsize.y, angle = fontangle.y),
                               legend.text = element_text(color = "black", size = fontsize.legend),
@@ -287,9 +279,10 @@ getGoiHeatmap <- function(heatmap.view = 'ident', resDir=NULL, rds=NULL, newAnno
   }
   print('END: Making selected genes heatmap plot')
   print('********************')
-  ## -------------------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
 }
 
+##----------------------------------------------------------------------------------------- ##
 ## DoHeatmap2 adding 'vjust' to adjust top color legend bar text position from Seurat::DoHeatmap
 DoHeatmap2 <- function (object, features = NULL, cells = NULL, group.by = "ident",
           group.bar = TRUE, group.colors = NULL, disp.min = -2.5, disp.max = NULL,
@@ -439,3 +432,4 @@ DoHeatmap2 <- function (object, features = NULL, cells = NULL, group.by = "ident
   }
   return(plots)
 }
+##----------------------------------------------------------------------------------------- ##

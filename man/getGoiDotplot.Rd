@@ -12,8 +12,7 @@ getGoiDotplot(
   goiFname,
   geneTypeOrder = NULL,
   expCondCheck = "sample",
-  expCondSepName = NULL,
-  expCondName2change = NULL,
+  expCondCheckFname = NULL,
   expCondReorderLevels = NULL,
   expCondName = NULL,
   cellcluster = NULL,
@@ -47,15 +46,13 @@ getGoiDotplot(
 
 \item{geneTypeOrder}{if column 'Cell Type' is provided in the 'goiFname' file, this option can be used to adjust the orders of marker gene's cell types, if not provided, marker gene's cell types will be sorted alphabetically.}
 
-\item{expCondCheck}{3 options: 'sample', 'expCond1', or 'expCond2' to specify which experimental conditions to be explored with this function.}
+\item{expCondCheck}{specify which experimental conditions to be explored, including sample, idents, or expCond1/2/....}
 
-\item{expCondSepName}{suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.}
-
-\item{expCondName2change}{a character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.}
+\item{expCondCheckFname}{suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.}
 
 \item{expCondReorderLevels}{a character string of the corresponding experimental condition factor levels' orders presented on the y-axis of the dot-plot from bottom to top, if not defined, sorted numerically or alphabetically.}
 
-\item{expCondName}{specify an experimental condition corresponding to 'expCondCheck'/'expCondName2change' levels to be displayed on the dot plot}
+\item{expCondName}{subset the specified experimental condition corresponding to 'expCondCheck' levels to make the corresponding dot plot.}
 
 \item{cellcluster}{specify cell clusters to be displayed on the dot plot}
 
@@ -85,6 +82,6 @@ getGoiDotplot() Function
 This function is used to make dotplot of marker/features genes in provided 'goiFname'.
 }
 \examples{
-getGoiDotplot()
+getGoiDotplot(rds, goiFname, expCondCheck='sample/idents/expCond*')
 }
 \keyword{GoiDotplot}

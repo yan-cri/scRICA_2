@@ -15,8 +15,7 @@ getGoiHeatmap(
   goiFname = NULL,
   geneNames = NULL,
   expCondCheck = "sample",
-  expCondSepName = NULL,
-  expCondName2change = NULL,
+  expCondCheckFname = NULL,
   cellcluster = NULL,
   expCond = NULL,
   expCondReorderLevels = NULL,
@@ -54,11 +53,9 @@ getGoiHeatmap(
 
 \item{geneNames}{provide gene names directly with this option, if do not want to use option 'goiFname'}
 
-\item{expCondCheck}{3 options: 'sample', 'expCond1', or 'expCond2' to specify which experimental conditions to be explored with this function.}
+\item{expCondCheck}{specify which experimental conditions to be explored, including sample, idents, or expCond1/2/....}
 
-\item{expCondSepName}{suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.}
-
-\item{expCondName2change}{a character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.}
+\item{expCondCheckFname}{suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.}
 
 \item{cellcluster}{specify cell clusters to be displayed on the dot plot}
 
@@ -90,6 +87,6 @@ getGoiHeatmap() Function
 This function is used to make heat-map of marker/features genes in provided 'goiFname' or geneNames.
 }
 \examples{
-getGoiHeatmap()
+getGoiHeatmap(rds, geneNames/goiFname, expCondCheck='sample/idents/expCond*')
 }
 \keyword{Heatmap}

@@ -12,7 +12,6 @@ getExpCondClusterPseudotime(
   newAnnotationRscriptName = NULL,
   expCondCheck = "sample",
   expCondSepName = NULL,
-  expCondName2change = NULL,
   expCond = NULL,
   cellcluster = NULL
 )
@@ -24,7 +23,6 @@ getExpCondClusterPseudotime(
   newAnnotationRscriptName = NULL,
   expCondCheck = "sample",
   expCondSepName = NULL,
-  expCondName2change = NULL,
   expCond = NULL,
   cellcluster = NULL
 )
@@ -38,15 +36,13 @@ getExpCondClusterPseudotime(
 
 \item{newAnnotationRscriptName}{if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.}
 
-\item{expCondCheck}{3 options: 'sample', 'expCond1', or 'expCond2' to specify which experimental conditions to be explored with this function.}
-
-\item{expCondSepName}{part of file name string to specify the analysis results folder name.}
-
-\item{expCondName2change}{character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.}
+\item{expCondCheck}{specify which experimental conditions to be explored, including sample, idents, or expCond1/2/....}
 
 \item{expCond}{specify the specific experimental condition for pseudo time trajectory analysis, if not specified, all experimental conditions will be performed .}
 
 \item{cellcluster}{specify the specific cell cluster name for pseudo time trajectory analysis, if not specified, all cell clusters will be performed .}
+
+\item{expCondCheckFname}{suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.}
 }
 \value{
 a SingleCellExperiment where 3 methods functional pseudotime analysis results are saved in colData

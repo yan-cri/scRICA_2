@@ -1,4 +1,4 @@
-#' updateIdents() Function
+#' updateHippoIdents() Function
 #' @details
 #' This function is used to update seurat object's idents based on provided hippo clustering results.
 #'
@@ -12,13 +12,13 @@
 #' @importFrom Seurat Idents
 #' @importFrom SeuratObject DefaultAssay
 #'
-#' @keywords updateIdents
-#' @examples updateIdents()
+#' @keywords updateHippoIdents
+#' @examples updateHippoIdents(rds, hippoResList)
 #' @export
 #' @return seurat object with updated idents from hippo results
 #'
 ## ------------------------------------------------------------------------------------ ##
-updateIdents <- function(resDir = NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, resSaveFname = NULL, hippoResList, hippoResNames = NULL, hippoResK, lightHippo = T) {
+updateHippoIdents <- function(resDir = NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, resSaveFname = NULL, hippoResList, hippoResNames = NULL, hippoResK, lightHippo = T) {
   ## ----------------------------------------------------- ##
   newAnnotation           <- as.logical(newAnnotation)
   if (newAnnotation & is.null(newAnnotationRscriptName)) stop("Option 'newAnnotation' is on, please provide corresponding option 'newAnnotationRscriptName'.")

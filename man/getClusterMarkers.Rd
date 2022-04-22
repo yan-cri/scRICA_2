@@ -39,7 +39,7 @@ This function is used to integrate Seurat objects with identified anchor via Seu
 followed with clustering analysis, and cluster markers identification.
 }
 \examples{
-getClusterMarkers()
+getClusterMarkers(qcProcessedResults)
 }
 \keyword{getClusterMarkers,}
 \keyword{seuratIntegrate}

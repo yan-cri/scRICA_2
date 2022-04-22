@@ -10,8 +10,7 @@ getGoiFeatureplot(
   newAnnotation = F,
   newAnnotationRscriptName = NULL,
   expCondCheck = "sample",
-  expCondSepName = NULL,
-  expCondName2change = NULL,
+  expCondCheckFname = NULL,
   expCondReorderLevels = NULL,
   cellcluster = NULL,
   goiFname,
@@ -30,11 +29,9 @@ getGoiFeatureplot(
 
 \item{newAnnotationRscriptName}{if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.}
 
-\item{expCondCheck}{required, 4 options: 'sample', 'expCond1', 'expCond2' or 'comb' to specify which experimental conditions to be explored with this function.}
+\item{expCondCheck}{specify which experimental conditions to be explored, including sample, idents, or expCond1/2/....}
 
-\item{expCondSepName}{optional, part of file name string to specify the analysis results folder name.}
-
-\item{expCondName2change}{optional, character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.}
+\item{expCondCheckFname}{suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.}
 
 \item{cellcluster}{optional, if needed, this option can be used to specify cell clusters to be displayed on the feature plot}
 
@@ -56,6 +53,6 @@ getGoiFeatureplot() Function
 This function is used to make dotplot of marker/features genes in provided 'goiFname'.
 }
 \examples{
-getGoiFeatureplot()
+getGoiFeatureplot(rds, goiFname, expCondCheck='sample/idents/expCond*')
 }
 \keyword{GoiFeatureplot}

@@ -6,9 +6,8 @@
 #' @param rds User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.
 #' @param newAnnotation logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.
 #' @param newAnnotationRscriptName if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.
-#' @param expCondCheck required, 4 options: 'sample', 'expCond1', 'expCond2' or 'comb' to specify which experimental conditions to be explored with this function.
-#' @param expCondSepName optional, part of file name string to specify the analysis results folder name.
-#' @param expCondName2change optional, character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.
+#' @param expCondCheck specify which experimental conditions to be explored, including sample, idents, or expCond1/2/....
+#' @param expCondCheckFname suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.
 #' @param cellcluster optional, if needed, this option can be used to specify cell clusters to be displayed on the feature plot
 #' @param goiFname path to file, where a list of marker/features genes are provided in column 'Gene', if column 'Cell Type' is also provided, option 'geneCellTypeOrder' can be used to adjust orders.
 #' @param featurePlotMinExpCutoff feature plot minimum expression value threshold, by default = 0.3.
@@ -39,29 +38,15 @@
 #' @importFrom xlsx read.xlsx
 #'
 #' @keywords GoiFeatureplot
-#' @examples getGoiFeatureplot()
+#' @examples getGoiFeatureplot(rds, goiFname, expCondCheck='sample/idents/expCond*')
 #' @export
 #' @return the dotplots of provided GOI(gene of interest) saved in '' inside the provided 'resDir'
 ## ---------------------------------------------------------------------------------------
-getGoiFeatureplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL,  expCondCheck='sample', expCondSepName = NULL, expCondName2change=NULL, expCondReorderLevels = NULL, cellcluster = NULL, goiFname, featurePlotMinExpCutoff=0.3, featurePlotMaxExpCutoff=NULL, featurePlotReductionMethod='umap', featurePlotFnamePrefix='goiFeaturePlot' ){
-  ## ---
+getGoiFeatureplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL,  expCondCheck='sample', expCondCheckFname = NULL, expCondReorderLevels = NULL, cellcluster = NULL, goiFname, featurePlotMinExpCutoff=0.3, featurePlotMaxExpCutoff=NULL, featurePlotReductionMethod='umap', featurePlotFnamePrefix='goiFeaturePlot' ){
+  ##--------------------------------------------------------------------------------------##
   newAnnotation           <- as.logical(newAnnotation)
   if (newAnnotation & is.null(newAnnotationRscriptName)) print("Option 'newAnnotation' is on, please provide corresponding option 'newAnnotationRscriptName'.")
-  ## ---
-  # if (is.null(resDir) & !is.null(rdsFname)) {
-  #   rdsFname              <- rdsFname
-  #   resDir                <- getwd()
-  # } else if (!is.null(resDir) & is.null(rdsFname)) {
-  #   rdsFname              <- sprintf('%s/RDS_Dir/%s.rds', resDir, basename(resDir))
-  #   resDir                <- resDir
-  # } else {
-  #   stop("Error: please provide either option 'resDir' or 'rdsFname'. ")
-  # }
-  # ## ---
-  # if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
-  # seuratObjFinal          <<- readRDS(file = as.character(rdsFname))
-  # print('Done for RDS read in')
-  ## ---
+  ##--------------------------------------------------------------------------------------##
   if (is.null(resDir) & !is.null(rds)) {
     if (class(rds)=='Seurat') {
       seuratObjFinal      <<- rds
@@ -84,7 +69,7 @@ getGoiFeatureplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotat
   } else {
     stop("Error: please provide either option 'resDir' or 'rdsFname'. ")
   }
-  ## ------
+  ##--------------------------------------------------------------------------------------##
   ## update results directory if new annotation is used
   if (newAnnotation) {
     resDir                <- paste(resDir, 'results_wNewAnnotation', sep = '/')
@@ -92,13 +77,13 @@ getGoiFeatureplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotat
     resDir                <- paste(resDir, 'results_wOrgClusterAnnotation', sep = '/')
   }
   if (!dir.exists(resDir)) dir.create(resDir)
-  ## -------------------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
   if (newAnnotation) {
     ## Assign cell type identity to clusters
     ## redefine the level of Idents on the y-axis can be adjusted here by inputting order for cell annotation
     source(as.character(newAnnotationRscriptName))
   }
-  ## -------------------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
   # setup custom theme for plotting
   theme1noLegend <- theme(plot.title = element_text(size = 16, hjust = 0.5),
                           # legend.key.size = unit(0.7, "cm"),
@@ -118,49 +103,41 @@ getGoiFeatureplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotat
                               axis.text = element_text(size = 25),
                               legend.position="right",
                               legend.text = element_text(size = 14) )
-  ## -------------------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
   if (expCondCheck == 'sample') {
-    if (is.null(expCondSepName)) {
-      expCondSepName        <- 'expCond_sample'
+    if (is.null(expCondCheckFname)) {
+      expCondCheckFname        <- 'expCond_sample'
     } else {
-      expCondSepName        <- expCondSepName
+      expCondCheckFname        <- expCondCheckFname
     }
   } else {
-    if (is.null(expCondSepName)) {
-      expCondSepName        <- as.character(expCondCheck)
+    if (is.null(expCondCheckFname)) {
+      expCondCheckFname        <- as.character(expCondCheck)
     } else {
-      expCondSepName        <- expCondSepName
+      expCondCheckFname        <- expCondCheckFname
     }
   }
-  ## -------------------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
   ## update 'seuratObjFinal@meta.data$expCond' and create corresponding 'plotResDir' for feature-plot to save
-  plotResDir            <- paste(resDir, sprintf('featurePlot_selected_markers_ExpCond_%s', expCondSepName), sep = '/')
+  plotResDir            <- paste(resDir, sprintf('featurePlot_selected_markers_%s', expCondCheckFname), sep = '/')
   if (!dir.exists(plotResDir)) dir.create(plotResDir)
   ## ---
   plotResDir            <- paste(plotResDir, featurePlotFnamePrefix, sep = '/')
   if (!dir.exists(plotResDir)) dir.create(plotResDir)
-  ## ------
+  ##--------------------------------------------------------------------------------------##
   ## update 'seuratObjFinal@meta.data$expCond'
   if (expCondCheck == 'sample') {
-    seuratObjFinal        <- seuratObjFinal
-  } else if (expCondCheck == 'comb') {
-    seuratObjFinal@meta.data$expCond   <- Idents(seuratObjFinal)
-  } else if (expCondCheck == 'expCond1') {
-    if (!'expCond1' %in% colnames(seuratObjFinal@meta.data)){
-      print("Note: 'expCond1' has not been included in the original integration analysis, using 'expCondName2change' to change 'expCond'.")
-      seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
+    seuratObjFinal                     <- seuratObjFinal
+  } else if (expCondCheck == 'idents') {
+    seuratObjFinal@meta.data$expCond   <- Seurat::Idents(seuratObjFinal)
+  } else {
+    if (!expCondCheck%in%colnames(seuratObjFinal@meta.data)) {
+      stop("ERROR: 'expCondCheck' does not exist in your 'rds' metadata.")
     } else {
-      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond1
-    }
-  } else if (expCondCheck == 'expCond2') {
-    if (!'expCond2' %in% colnames(seuratObjFinal@meta.data)){
-      print("Note: 'expCond2' has not been included in the original integration analysis, using 'expCondName2change' to change 'expCond'.")
-      seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
-    } else {
-      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond2
+      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data[, grep(as.character(expCondCheck), colnames(seuratObjFinal@meta.data))]
     }
   }
-  ## -----------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
   # print(table(Seurat::Idents(seuratObjFinal)))
   clusterLevels <- levels(Seurat::Idents(seuratObjFinal))
   if (!is.null(cellcluster)) {
@@ -168,7 +145,7 @@ getGoiFeatureplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotat
     print(sprintf('Subsetting %s specific cell clusters: %s', length(cellcluster), paste(cellcluster, collapse = ',')))
     seuratObjFinal                          <- subset(seuratObjFinal, idents = cellcluster )
   }
-  ## -----------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
   print('=====================================================')
   print(sprintf('START feature plot, the plots will be save at %s', plotResDir))
   print(table(Idents(seuratObjFinal)))
@@ -207,19 +184,19 @@ getGoiFeatureplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotat
     geneTypes             <- markerGenesPrep2[match(markerGenes, markerGenesPrep2[,1]), 1]
     colnames(geneTypes) <- c('Gene')
   }
-  ## ---
+  ##--------------------------------------------------------------------------------------##
   ## 2. make featurePlot for each above selected marker/features
   Seurat::DefaultAssay(seuratObjFinal)   <- "RNA"
   # Seurat::DefaultAssay(seuratObjFinal) <- "integrated"
   # featurePlotMinExpCutoff        = 0.3
   # featurePlotReductionMethod     = 'umap'
   # # featurePlotReductionMethod     = 'tsne'
-  if (expCondCheck == 'comb') {
+  if (expCondCheck == 'idents') {
     expValSummary       <- matrix(NA, ncol = 6, nrow = length(markerGenes))
   } else {
     maxExpValSummary    <- matrix(NA, ncol = length(levels(as.factor(seuratObjFinal@meta.data$expCond))), nrow = length(markerGenes))
   }
-  ## ---
+  ##--------------------------------------------------------------------------------------##
   for (i in 1:length(markerGenes)) {
     print(sprintf('%s. START feature plot for gene marker %s', i, markerGenes[i]))
     # if (seuratObjFinal@active.assay == 'RNA' & markerGenes[i] %in% rownames(seuratObjFinal@assays$RNA@data)) {
@@ -228,7 +205,7 @@ getGoiFeatureplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotat
       if ( max(Seurat::FetchData(seuratObjFinal, markerGenes[i]))<featurePlotMinExpCutoff ) {
         print(sprintf("maximum %s expression values is less than overall defined 'featurePlotMinExpCutoff'=%s, no feature plot is generated", markerGenes[i], featurePlotMinExpCutoff))
       } else {
-        if (expCondCheck == 'comb') {
+        if (expCondCheck == 'idents') {
           # -
           maxExpVals      <- summary(Seurat::FetchData(seuratObjFinal, markerGenes[i]))
           print(sprintf('summary expression values for gene marker %s at combined expCond are as below: ', markerGenes[i] ))
@@ -264,7 +241,7 @@ getGoiFeatureplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotat
           ## -
         } else {
           ## ---
-          ## separate feature plots by updated expCond except for expCondCheck == 'comb'
+          ## separate feature plots by updated expCond except for expCondCheck == 'idents'
           if (!is.null(expCondReorderLevels)){
             seuratObjFinal@meta.data$expCond <- factor(seuratObjFinal@meta.data$expCond, levels = expCondReorderLevels)
           }
@@ -313,9 +290,9 @@ getGoiFeatureplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotat
                                                  max.cutoff = featurePlotMaxExpCutoff)
           }
           if ('geneType' %in% colnames(geneTypes)) {
-            pdf(file = file.path(sprintf('%s/%s_featurePlot_%s_%s_expCond%s.pdf', plotResDir, featurePlotReductionMethod, gsub('/', '_', geneTypes$geneType[match(markerGenes[i], geneTypes$Gene)]), markerGenes[i], expCondSepName)), width = 5.5*length(expCondLevelsUpdate), height = 6)
+            pdf(file = file.path(sprintf('%s/%s_featurePlot_%s_%s_%s.pdf', plotResDir, featurePlotReductionMethod, gsub('/', '_', geneTypes$geneType[match(markerGenes[i], geneTypes$Gene)]), markerGenes[i], expCondCheckFname)), width = 5.5*length(expCondLevelsUpdate), height = 6)
           } else {
-            pdf(file = file.path(sprintf('%s/%s_featurePlot_%s_expCond%s.pdf', plotResDir, featurePlotReductionMethod, markerGenes[i], expCondSepName)), width = 5.5*length(expCondLevelsUpdate), height = 6)
+            pdf(file = file.path(sprintf('%s/%s_featurePlot_%s_%s.pdf', plotResDir, featurePlotReductionMethod, markerGenes[i], expCondCheckFname)), width = 5.5*length(expCondLevelsUpdate), height = 6)
           }
           print(featurePlotExpSplit+theme1wLegend)
           dev.off()
@@ -330,25 +307,25 @@ getGoiFeatureplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotat
     print(sprintf('%s. Complete featureplot for gene marker %s', i, markerGenes[i]))
     print('======')
   }
-  ## ---
-  if (expCondCheck == 'comb') {
+  ##--------------------------------------------------------------------------------------##
+  if (expCondCheck == 'idents') {
     colnames(expValSummary) <- sapply(strsplit(summary(Seurat::FetchData(seuratObjFinal, markerGenes[i])), split = ':'), '[[', 1)
     rownames(expValSummary) <- markerGenes
     print(head(expValSummary))
-    write.table(x = expValSummary, file = file.path(sprintf('%s/%s_expValSummary_expCond%s.txt', plotResDir, featurePlotReductionMethod, expCondSepName)), quote = F, col.names = NA, row.names = T, sep = '\t' )
+    write.table(x = expValSummary, file = file.path(sprintf('%s/%s_expValSummary_%s.txt', plotResDir, featurePlotReductionMethod, expCondCheckFname)), quote = F, col.names = NA, row.names = T, sep = '\t' )
   } else {
     print(head(maxExpValSummary))
     colnames(maxExpValSummary) <- names(maxExpVals)
     rownames(maxExpValSummary) <- markerGenes
-    write.table(x = maxExpValSummary, file = file.path(sprintf('%s/%s_expMaxValSummary_expCond%s.txt', plotResDir, featurePlotReductionMethod, expCondSepName)), quote = F, col.names = NA, row.names = T, sep = '\t' )
+    write.table(x = maxExpValSummary, file = file.path(sprintf('%s/%s_expMaxValSummary_%s.txt', plotResDir, featurePlotReductionMethod, expCondCheckFname)), quote = F, col.names = NA, row.names = T, sep = '\t' )
   }
   print(sprintf('END feature plot, the plots were saved at %s', plotResDir))
   print('=========')
-  ## ---------
+  ##--------------------------------------------------------------------------------------##
 }
 
 ##---
-## update Seurat::FeaturePlot into FeaturePlot2
+## update Seurat::FeaturePlot into FeaturePlot2 on low ('min.cutoff') and high 'max.cutoff'
 FeaturePlot2 <- function (object, features, dims = c(1, 2), cells = NULL, cols = if (blend) {c("lightgrey", "#ff0000", "#00ff00")} else { c("lightgrey", "blue")}, pt.size = NULL, order = FALSE, min.cutoff = NA, max.cutoff = NA, reduction = NULL, split.by = NULL, keep.scale = "feature", shape.by = NULL, slot = "data", blend = FALSE, blend.threshold = 0.5, label = FALSE, label.size = 4, label.color = "black", repel = FALSE, ncol = NULL, coord.fixed = FALSE, by.col = TRUE, sort.cell = NULL, interactive = FALSE, combine = TRUE, raster = NULL, raster.dpi = c(512, 512)) {
   if (!is.null(x = sort.cell)) {
     warning("The sort.cell parameter is being deprecated. Please use the order ",
@@ -667,7 +644,7 @@ FeaturePlot2 <- function (object, features, dims = c(1, 2), cells = NULL, cols =
         !blend) {
       max.feature.value <- max(data[, features])
       min.feature.value <- min(data[, features])
-      print(sprintf("22222. max.cutoff is %s, min.cutoff is %s", max.cutoff, min.cutoff))
+      # print(sprintf("22222. max.cutoff is %s, min.cutoff is %s", max.cutoff, min.cutoff)) ## for debug
       if (is.na(min.cutoff) & is.na(max.cutoff)) {
         plot <- suppressMessages(plot & scale_color_gradientn(colors = cols, limits = c(min.feature.value, max.feature.value)))
       } else {

@@ -52,6 +52,6 @@ processQC() Function
 This function is used to read-in cellranger results into Seurat object by defining w/wo doublets removal.
 }
 \examples{
-processQC()
+processQC(metadata = metadata, resDirName = 'my_integration_results')
 }
 \keyword{processQC}

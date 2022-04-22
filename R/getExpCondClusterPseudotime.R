@@ -8,9 +8,8 @@
 #' @param rdsFname User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.
 #' @param newAnnotation logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.
 #' @param newAnnotationRscriptName if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.
-#' @param expCondCheck 3 options: 'sample', 'expCond1', or 'expCond2' to specify which experimental conditions to be explored with this function.
-#' @param expCondSepName part of file name string to specify the analysis results folder name.
-#' @param expCondName2change character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.
+#' @param expCondCheck specify which experimental conditions to be explored, including sample, idents, or expCond1/2/....
+#' @param expCondCheckFname suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.
 #' @param expCond specify the specific experimental condition for pseudo time trajectory analysis, if not specified, all experimental conditions will be performed .
 #' @param cellcluster specify the specific cell cluster name for pseudo time trajectory analysis, if not specified, all cell clusters will be performed .
 #'
@@ -25,11 +24,11 @@
 #' @return
 #' a SingleCellExperiment where 3 methods functional pseudotime analysis results are saved in colData
 ## ------------------------------------------------------------------------------------ ##
-getExpCondClusterPseudotime <- function(resDir=NULL, rdsFname=NULL, newAnnotation = 'F', newAnnotationRscriptName = NULL, expCondCheck='sample', expCondSepName = NULL, expCondName2change=NULL, expCond = NULL, cellcluster = NULL){
-  ## ---
+getExpCondClusterPseudotime <- function(resDir=NULL, rdsFname=NULL, newAnnotation = 'F', newAnnotationRscriptName = NULL, expCondCheck='sample', expCondSepName = NULL, expCond = NULL, cellcluster = NULL){
+  ##--------------------------------------------------------------------------------------##
   newAnnotation             <- as.logical(newAnnotation)
   if (newAnnotation & is.null(newAnnotationRscriptName)) stop("Please provide corresponding 'newAnnotationRscriptName', becasue 'newAnnotation' == True.")
-  ## ---
+  ##--------------------------------------------------------------------------------------##
   if (is.null(resDir) & !is.null(rdsFname)) {
     rdsFname              <- rdsFname
     resDir                <- getwd()
@@ -43,8 +42,7 @@ getExpCondClusterPseudotime <- function(resDir=NULL, rdsFname=NULL, newAnnotatio
   if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
   seuratObjFinal            <<- readRDS(file = as.character(rdsFname))
   print('Done for RDS readin')
-  ## ------
-  ## ------
+  ##--------------------------------------------------------------------------------------##
   ## update results directory if new annotation is used
   if (newAnnotation) {
     resDir <- paste(resDir, 'results_wNewAnnotation_pseudoTime', sep = '/')
@@ -52,25 +50,25 @@ getExpCondClusterPseudotime <- function(resDir=NULL, rdsFname=NULL, newAnnotatio
     resDir <- paste(resDir, 'results_wOrgClusterAnnotation_pseudoTime', sep = '/')
   }
   if (!dir.exists(resDir)) dir.create(resDir)
-  ## -
+  ##--------------------------------------------------------------------------------------##
   if (expCondCheck == 'sample') {
-    if (is.null(expCondSepName)) {
-      expCondSepName        <- 'expCond_sample'
+    if (is.null(expCondCheckFname)) {
+      expCondCheckFname        <- 'expCond_sample'
     } else {
-      expCondSepName        <- expCondSepName
+      expCondCheckFname        <- expCondCheckFname
     }
   } else {
-    if (is.null(expCondSepName)) {
-      expCondSepName        <- as.character(expCondCheck)
+    if (is.null(expCondCheckFname)) {
+      expCondCheckFname        <- as.character(expCondCheck)
     } else {
-      expCondSepName        <- expCondSepName
+      expCondCheckFname        <- expCondCheckFname
     }
   }
-  ## -
+  ##--------------------------------------------------------------------------------------##
   resDir                <- paste(sprintf('%s/%s', resDir, expCondSepName ))
   if (!dir.exists(resDir)) dir.create(resDir)
   print(sprintf('Pseudotime analysis results will be saved at %s', resDir))
-  ## -------------------------------------------------------------------------------------
+  ##--------------------------------------------------------------------------------------##
   if (newAnnotation) {
     ## Assign cell type identity to originally identified cell clusters
     source(as.character(newAnnotationRscriptName))
@@ -78,30 +76,20 @@ getExpCondClusterPseudotime <- function(resDir=NULL, rdsFname=NULL, newAnnotatio
   print(sprintf("Current idents in 'seuratObjFinal' are as below:"))
   print(table(Seurat::Idents(seuratObjFinal)))
   print('*******************')
-  ## --------------------------------------------
+  ##--------------------------------------------------------------------------------------##
+  ## update 'seuratObjFinal@meta.data$expCond'
   if (expCondCheck == 'sample') {
     seuratObjFinal                     <- seuratObjFinal
-  } else if (expCondCheck == 'expCond1') {
-    if (!'expCond1' %in% colnames(seuratObjFinal@meta.data)){
-      print("Error: 'expCond1' has not been included in the original integration analysis.")
-      seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
+  } else if (expCondCheck == 'idents') {
+    seuratObjFinal@meta.data$expCond   <- Seurat::Idents(seuratObjFinal)
+  } else {
+    if (!expCondCheck%in%colnames(seuratObjFinal@meta.data)) {
+      stop("ERROR: 'expCondCheck' does not exist in your 'rds' metadata.")
     } else {
-      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond1
-    }
-  } else if (expCondCheck == 'expCond2') {
-    if (!'expCond2' %in% colnames(seuratObjFinal@meta.data)){
-      print("Error: 'expCond2' has not been included in the original integration analysis.")
-      seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
-    } else {
-      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data$expCond2
+      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data[, grep(as.character(expCondCheck), colnames(seuratObjFinal@meta.data))]
     }
   }
-  # if (expCondSepName == 'org') {
-  #   seuratObjFinal        <- seuratObjFinal
-  # } else {
-  #   seuratObjFinal@meta.data$expCond <- gsub(pattern = as.character(expCondName2change), replacement = '', x = seuratObjFinal@meta.data$expCond)
-  # }
-  ## --------------------------------------------
+  ##--------------------------------------------------------------------------------------##
   print(sprintf('Start preparing to conduct pseudotime analysis on all identfied unsupervise/annotated cell clusters on experimental condition %s', expCondSepName))
   print(sprintf("Current experimental condition levels cell clusters partition in 'seuratObjFinal' are as below:"))
   print(table(seuratObjFinal@meta.data$expCond))

@@ -14,8 +14,7 @@ getClusterSummaryReplot(
   colors = NULL,
   cellcluster = NULL,
   expCondCheck = "sample",
-  expCondSepName = NULL,
-  expCondName2change = NULL,
+  expCondCheckFname = NULL,
   fpClusterOrder = NULL,
   perClusterOrder = NULL,
   perPlotVertical = F,
@@ -41,11 +40,9 @@ getClusterSummaryReplot(
 
 \item{cellcluster}{by default it is null, all cell clusters will be plot, otherwise, cell clusters presented in the plots (UMAP/tSNE and percentage plots) can be specified with this option.}
 
-\item{expCondCheck}{3 options: 'sample', 'expCond1', or 'expCond2' to specify which experimental conditions to be explored with this function.}
+\item{expCondCheck}{specify which experimental conditions to be explored, including sample, idents, or expCond1/2/....}
 
-\item{expCondSepName}{part of file name string to specify the analysis results folder name.}
-
-\item{expCondName2change}{character string to indicate part of characters specified here can be removed from sample name defined in the metadata table, if additional samples combination needs to be explored which has not been specified in the column of 'expCond1' or 'expCond2'.}
+\item{expCondCheckFname}{suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.}
 
 \item{fpClusterOrder}{character string of cell clusters orders to specify the cell clusters orders corresponding to the color scheme, if not defined, sorted numerically, alphabetically, or the orders shown in the annotation R script.}
 
@@ -63,6 +60,6 @@ getClusterSummaryReplot() Function
 This function is used to 1). summarize the number of cells in each originally identified/annotated cells clusters; 2). re-make clustering reduction UMAP/tSNE plots; 3). make the cells percentage plot based on experimental condition levels specified in the metadata table.
 }
 \examples{
-clusterSummary()
+clusterSummary(rds, expCondCheck='sample/idents/expCond*')
 }
 \keyword{clusterSummary}
