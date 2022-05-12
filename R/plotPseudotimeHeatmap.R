@@ -47,22 +47,16 @@ plotPseudotimeHeatmap   <- function(pseudoRes, plotname = 'TEST') {
   # heatmap(heatdata, Colv = NA, scale = 'row',
   #         ColSideColors = brewer.pal(length(levels(factor(heatclus))),"Set1")[heatclus])
   par(lwd=1.5)
-  heatmap.2(as.matrix(heatdata), Rowv=T, Colv=F, distfun=dist,
-            scale="row", hclustfun =hclust, dendrogram="row",
-            # srtCol = 45, adjCol=c(1, 0.6),
-            cexCol=0.1, labCol = NULL,
-            # col=colorpanel(100, "#191970", "#FFF68F", "#EE7621"),
-            key.title= NA, key.xlab = 'scaled log counts',
-            key=TRUE, symkey=FALSE, keysize = 1,
-            key.par = list(cex.lab=1, cex.axis = 1),
-            density.info="none", trace="none", cexRow=1,
-            # margins= marginsVals,
-            ColSideColors= selectedcol[1:length(levels(factor(heatclus)))][heatclus],
-            # ColSideColors= RColorBrewer::brewer.pal(length(levels(factor(heatclus))),"Set1")[heatclus]
-            # ,lhei = heatmaplheiVals, lwid = heatmaplwidVals
-            )
-
+  hmRes <- heatmap.2(as.matrix(heatdata), Rowv=T, Colv=F, distfun=dist,
+                     scale="row", hclustfun =hclust, dendrogram="row",
+                     cexCol=0.1, labCol = NULL,
+                     key.title= NA, key.xlab = 'scaled log counts',
+                     key=TRUE, symkey=FALSE, keysize = 1,
+                     key.par = list(cex.lab=1, cex.axis = 1),
+                     density.info="none", trace="none", cexRow=1,
+                     ColSideColors= selectedcol[1:length(levels(factor(heatclus)))][heatclus])
   dev.off()
+  write.table(x = rownames(as.matrix(heatdata))[hmRes$rowInd], file =  sprintf('%s_ptGMM_GAMheatmapGenenames.txt', plotname), quote = F, sep = '\t', row.names = F, col.names = F)
   ## ---
 }
 ## -----------END-----------END-----------END-----------END-----------END-------------- ##

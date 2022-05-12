@@ -7,30 +7,32 @@
 \usage{
 getExpCondClusterPseudotime(
   resDir = NULL,
-  rdsFname = NULL,
+  rds = NULL,
   newAnnotation = "F",
   newAnnotationRscriptName = NULL,
   expCondCheck = "sample",
-  expCondSepName = NULL,
+  expCondCheckFname = NULL,
   expCond = NULL,
-  cellcluster = NULL
+  cellcluster = NULL,
+  slingshotclusterLabels = NULL,
+  topFeatureNo = 2000
 )
 
 getExpCondClusterPseudotime(
   resDir = NULL,
-  rdsFname = NULL,
+  rds = NULL,
   newAnnotation = "F",
   newAnnotationRscriptName = NULL,
   expCondCheck = "sample",
-  expCondSepName = NULL,
+  expCondCheckFname = NULL,
   expCond = NULL,
-  cellcluster = NULL
+  cellcluster = NULL,
+  slingshotclusterLabels = NULL,
+  topFeatureNo = 2000
 )
 }
 \arguments{
 \item{resDir}{full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.}
-
-\item{rdsFname}{User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.}
 
 \item{newAnnotation}{logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.}
 
@@ -38,11 +40,13 @@ getExpCondClusterPseudotime(
 
 \item{expCondCheck}{specify which experimental conditions to be explored, including sample, idents, or expCond1/2/....}
 
+\item{expCondCheckFname}{suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.}
+
 \item{expCond}{specify the specific experimental condition for pseudo time trajectory analysis, if not specified, all experimental conditions will be performed .}
 
 \item{cellcluster}{specify the specific cell cluster name for pseudo time trajectory analysis, if not specified, all cell clusters will be performed .}
 
-\item{expCondCheckFname}{suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.}
+\item{rdsFname}{User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.}
 }
 \value{
 a SingleCellExperiment where 3 methods functional pseudotime analysis results are saved in colData

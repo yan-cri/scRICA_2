@@ -2,6 +2,7 @@
 
 export(Improved_Seurat_Pre_Process)
 export(calcPCApseudo)
+export(compAnno)
 export(findDoublets)
 export(getClusterExpCondDe)
 export(getClusterMarkers)

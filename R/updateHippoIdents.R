@@ -47,6 +47,8 @@ updateHippoIdents <- function(resDir = NULL, rds=NULL, newAnnotation=F, newAnnot
   }
   rdsDir                <- sprintf('%s/RDS_Dir', resDir)
   if (!dir.exists(rdsDir)) dir.create(rdsDir)
+  hippoResDir <- sprintf('%s/hippo_results', resDir)
+  if (!dir.exists(hippoResDir)) dir.create(hippoResDir)
   ## ----------------------------------------------------- ##
   if (newAnnotation) {
     ## Assign cell type identity to clusters
@@ -86,6 +88,14 @@ updateHippoIdents <- function(resDir = NULL, rds=NULL, newAnnotation=F, newAnnot
     seuratObjHippo$seurat_clusters  = seuratObjHippo$seurat_clusters2
     Seurat::Idents(seuratObjHippo) = seuratObjHippo$seurat_clusters
     print(table(Seurat::Idents(seuratObjHippo)))
+    ## ---------
+    if (lightHippo) {
+      pdf(file = file.path(hippoResDir, sprintf('%s_hierarchy_k%s.pdf', names(hippoResList)[h], hippoResK[h])), width = 8, height = 5)
+      newcut.lightHippoRes <- lightHippo::cut_hierarchy(lightHippoRes, K = hippoResK[h], cut_sequence = T)
+      lightHippo::visualize_hippo_hierarchy(newcut.lightHippoRes)
+      dev.off()
+    }
+    ## ---------
     print('-=-=-=-=-=-=-')
   }
   if (!is.null(resSaveFname)) saveRDS(object = seuratObjHippo, file = file.path(rdsDir, sprintf('%s.rds', resSaveFname)))

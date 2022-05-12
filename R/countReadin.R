@@ -109,7 +109,7 @@ processQC <- function(metadata, multiomics = F, extraFilter=F, resDirName=NULL, 
       md4doublet                 <- metadataOrg %>% dplyr::filter(doubletsRmMethod != 'None' ) %>% dplyr::filter(doubletsRmMethod != 'none' ) %>% dplyr::filter(doubletsRmMethod != 'NONE' )
       print('===================================================================')
       print('START: Doublets identification analysis before processing to the next step.')
-      doubletsRes                <- findDoublets(metadata = md4doublet, genomeSpecies = genomeSpecies, resFilename = paste(resDirName, 'doublet_results', sep = '/') )
+      doubletsRes                <- findDoublets(metadata = md4doublet, multiomics = multiomics, genomeSpecies = genomeSpecies, resFilename = paste(resDirName, 'doublet_results', sep = '/') )
       print('END: Doublets identification, process to next step QC.')
       print('===================================================================')
       md4doublet$doubletsResDir  <- rep(as.character(doubletsRes), length(md4doublet$sample))
