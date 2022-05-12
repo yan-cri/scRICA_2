@@ -132,9 +132,10 @@ getGoiDotplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationR
       seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data[, grep(as.character(expCondCheck), colnames(seuratObjFinal@meta.data))]
     }
   }
-  # print('97979799')
-  # print(table(seuratObjFinal@meta.data$expCond))
-  # print(sprintf('4444 plotResDir is %s', plotResDir))
+  print('97979799')
+  print(table(seuratObjFinal@meta.data$expCond))
+  print(head(seuratObjFinal))
+  print(sprintf('4444 plotResDir is %s', plotResDir))
   if (!dir.exists(plotResDir)) dir.create(plotResDir)
   print(sprintf('GOI dot plots will be saved in %s', plotResDir))
   ##--------------------------------------------------------------------------------------##
@@ -208,12 +209,21 @@ getGoiDotplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationR
     if (is.null(expCondReorderLevels)) {
       expCondReorderLevels          <- levels(factor(seuratObjFinal@meta.data$expCond))
     }
+    print(levels(factor(seuratObjFinal@meta.data$expCond)))
     ## ---
     if ( !all(expCondReorderLevels %in% levels(factor(seuratObjFinal$expCond))) ) stop("Please provide correct corresponding 'expCondReorderLevels' to sort y-axis dot plot")
     ## ---
     if (expCondCheck != 'idents') {
-      Seurat::Idents(seuratObjFinal)        <- factor( paste(Seurat::Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'),
-                                                       levels = paste(rep(levels(Seurat::Idents(seuratObjFinal)), each = length(levels(factor(seuratObjFinal$expCond))) ), levels(factor(seuratObjFinal$expCond, levels = expCondReorderLevels)), sep = '_') )
+
+      if (newAnnotation) {
+        Seurat::Idents(seuratObjFinal)        <- factor( paste(Seurat::Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'),
+                                                         levels = paste(rep(levels(Seurat::Idents(seuratObjFinal)), each = length(levels(factor(seuratObjFinal$expCond))) ), levels(factor(seuratObjFinal$expCond, levels = expCondReorderLevels)), sep = '_') )
+
+      }else {
+        Seurat::Idents(seuratObjFinal)        <- factor( seuratObjFinal$expCond, levels = expCondReorderLevels )
+
+      }
+
     } else {
       Seurat::Idents(seuratObjFinal)        <- factor(Seurat::Idents(seuratObjFinal), levels = expCondReorderLevels)
     }

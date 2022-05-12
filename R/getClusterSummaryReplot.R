@@ -417,8 +417,8 @@ getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newA
       g1 <- g1 + theme(plot.title = element_text(color="black", size=20, face="bold.italic"),
                        axis.title.x = element_text(color="black", size=16, face="bold"),
                        axis.title.y = element_text(color="black", size=16, face="bold"))
-      g1 <- g1 + theme(axis.text.x = element_text(face="plain", color="black", size=20, angle=0),
-                       axis.text.y = element_text(face="plain", color="#000000", size=20, angle=0))
+      g1 <- g1 + theme(axis.text.x = element_text(face="plain", color="black", size=20, angle=0 ),
+                       axis.text.y = element_text(face="plain", color="#000000", size=20, angle=0, hjust=0))
       g1 <- g1 + theme(legend.title = element_text(color = "black", size = 18),
                        legend.text = element_text(color = "black", size = 18) )
       if (dim(clusterCellExpNoWidePer)[1] > 10) {

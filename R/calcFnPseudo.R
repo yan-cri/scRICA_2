@@ -24,7 +24,7 @@
 #' @return
 #' a SingleCellExperiment where 3 methods functional pseudo time analysis results are saved in colData
 ## ------------------------------------------------------------------------------------ ##
-calcPCApseudo <- function(obj, slingshotclusterLabels = NULL, resSave = 'F', resFnamePrefix = 'TEST') {
+calcPCApseudo <- function(obj, slingshotclusterLabels = NULL, topFeatureNo = 2000, resSave = 'F', resFnamePrefix = 'TEST') {
   ## ------
   ## This analysis is based on RNA assay regardless whether integrative assay has been implemented
   ## 0. decide the obj input and change into 'SingleCellExperiment' object
@@ -32,9 +32,12 @@ calcPCApseudo <- function(obj, slingshotclusterLabels = NULL, resSave = 'F', res
     Seurat::DefaultAssay(obj) <- "RNA"
     print(sprintf("currently is operating on %s assay", Seurat::DefaultAssay(obj) ))
     seuratObj     <- NormalizeData(obj, normalization.method = "LogNormalize", scale.factor = 10000)
-    seuratObj     <- FindVariableFeatures(seuratObj, selection.method = 'vst', nfeatures = 2000)
+    seuratObj     <- FindVariableFeatures(seuratObj, selection.method = 'vst', nfeatures = topFeatureNo)
     seuratObj     <- ScaleData(object = seuratObj)
     seuratVarFea  <- subset(seuratObj, features = VariableFeatures(object = seuratObj))
+    seuratVarFea  <- NormalizeData(seuratVarFea, normalization.method = "LogNormalize", scale.factor = 10000)
+    seuratVarFea  <- FindVariableFeatures(seuratVarFea, selection.method = 'vst', nfeatures = topFeatureNo)
+    seuratVarFea  <- ScaleData(object = seuratVarFea)
     sceObj        <- Seurat::as.SingleCellExperiment( seuratVarFea )
     # head(assays(sceObj)$logcounts[,1:3])
   } else if (class(obj) == "SingleCellExperiment") {
@@ -90,7 +93,7 @@ calcPCApseudo <- function(obj, slingshotclusterLabels = NULL, resSave = 'F', res
     ## Note: expCond level cannot be used with 'seurat_clusters'
     # sce2seurat     <- as.Seurat(sceObj, counts = "counts", data = "logcounts")
     # library(mclust, quietly = TRUE)
-    mc               <- mclust::Mclust(reducedDims(sceObj)$PCA[,1:2])$classification
+    mc               <- mclust::Mclust(SingleCellExperiment::reducedDims(sceObj)$PCA[,1:2])$classification
     sceObj$GMM       <- mc
     slingshotRes     <- sceObj
     slingshotRes     <- slingshot::slingshot(sceObj, clusterLabels = 'GMM', reducedDim = 'PCA')
