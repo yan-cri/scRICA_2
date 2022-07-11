@@ -17,6 +17,7 @@ getGoiFeatureplot(
   featurePlotMinExpCutoff = 0.3,
   featurePlotMaxExpCutoff = NULL,
   featurePlotReductionMethod = "umap",
+  featurePlotLabel = T,
   featurePlotFnamePrefix = "goiFeaturePlot"
 )
 }
@@ -39,9 +40,11 @@ getGoiFeatureplot(
 
 \item{featurePlotMinExpCutoff}{feature plot minimum expression value threshold, by default = 0.3.}
 
-\item{featurePlotReductionMethod}{feature plot clustering reduction methods 'tsne' or 'umap', by default 'umap'}
+\item{featurePlotReductionMethod}{feature plot clustering reduction methods 'tsne' or 'umap', by default 'umap'.}
 
-\item{featurePlotFnamePrefix}{feature plot file name prefix, if not defined, by default 'goiFeaturePlot'}
+\item{featurePlotLabel}{whether to label feature plot cell types, by default True.}
+
+\item{featurePlotFnamePrefix}{feature plot file name prefix, if not defined, by default 'goiFeaturePlot'.}
 }
 \value{
 the dotplots of provided GOI(gene of interest) saved in '' inside the provided 'resDir'

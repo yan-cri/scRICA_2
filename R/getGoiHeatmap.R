@@ -5,9 +5,9 @@
 #' @param heatmap.view 3 options: 'ident', 'expCond', and 'expCond.ident' to make heatmap, by default 'idents'.
 #' @param resDir full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.
 #' @param rds User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.
-#' @param scaled whether input rds is scaled, by default False, will scale data based on selected 'cellcluster' and 'expCond'.
 #' @param newAnnotation logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.
 #' @param newAnnotationRscriptName if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.
+#' @param scaled whether input rds is scaled, by default False, will scale data based on selected 'cellcluster' and 'expCond'.
 #' @param resSaveFname whether to save re-scaled seurat object on the defined 'cellcluster' and 'expCond', by default it is 'NULL' without saving re-scaled RDS object.
 #' @param goiFname path to file, where a list of marker/features genes are provided in column 'Gene', if column 'Cell Type' is also provided, option 'geneTypeOrder' can be used to adjust orders.
 #' @param geneNames provide gene names directly with this option, if do not want to use option 'goiFname'
@@ -63,7 +63,7 @@
 #'
 ## ---------------------------------------------------------------------------------------
 getGoiHeatmap <- function(heatmap.view = 'ident', resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL,
-                          resSaveFname = NULL, scaled = F,
+                          scaled = F, resSaveFname = NULL,
                           goiFname = NULL, geneNames = NULL,
                           expCondCheck='sample', expCondCheckFname = NULL,
                           cellcluster = NULL , expCond = NULL, expCondReorderLevels = NULL,
@@ -120,8 +120,20 @@ getGoiHeatmap <- function(heatmap.view = 'ident', resDir=NULL, rds=NULL, newAnno
     if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
     seuratObjFinal          <<- readRDS(file = as.character(rdsFname))
     print('Done for RDS read in')
-  } else {
-    stop("Error: please provide either option 'resDir' or 'rdsFname'. ")
+  } else if (is.null(resDir) & is.null(rds)){
+    stop("Error: please provide either option 'resDir' or 'rds', or both. ")
+  } else if (!is.null(resDir) & !is.null(rds)){
+    if (class(rds)=='Seurat') {
+      seuratObjFinal      <<- rds
+      print('RDS is provided with rds option')
+    } else {
+      rdsFname            <- rds
+      ## ---
+      if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
+      seuratObjFinal      <<- readRDS(file = as.character(rdsFname))
+      print('Done for RDS read in')
+    }
+    resDir                <- resDir
   }
   rdsDir                <- sprintf('%s/RDS_Dir', resDir)
   if (!dir.exists(rdsDir)) dir.create(rdsDir)

@@ -1,5 +1,6 @@
 #' pdHeatmap() Function modified from heatmap.3 to include extra ColSideColors factors.
 #' @details
+#' Intermediate function to make heat-map of pseudo-time trajectory analysis results
 #'
 #' @inheritParams stats::heatmap
 #' @param x to ADD
@@ -15,7 +16,6 @@
 #' @keywords pdHeatmap
 #' @examples pdHeatmap()
 #' @export
-#' @return
 ## ---------------------------------------------------------------------------------------
 
 pdHeatmap <- function(x, Rowv = TRUE, Colv = if (symm) "Rowv" else TRUE, distfun = dist,

@@ -50,9 +50,6 @@ getClusterSummaryReplot(
 
 \item{expCondNameOrder}{character string of the corresponding experimental condition factor levels' orders presented in the percentage bar plot, if not defined, sorted numerically or alphabetically.}
 }
-\value{
-
-}
 \description{
 getClusterSummaryReplot() Function
 }

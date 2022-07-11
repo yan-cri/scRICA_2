@@ -6,21 +6,32 @@
 \usage{
 getClusterExpCondDe(
   resDir = NULL,
-  rdsFname = NULL,
+  rds = NULL,
   newAnnotation = F,
   newAnnotationRscriptName = NULL,
   expCondCheck = "sample",
   expCondCheckFname = NULL,
+  cellcluster = NULL,
   compGroup,
   deMethod = "wilcox",
+  covariateVarName = NULL,
+  deseq2bulk.metaCovariateInput = NULL,
+  covariateVarLevels = NULL,
+  median.norm = 1,
+  min.cells.group = 10,
+  min.pct = 0.1,
+  logfc.threshold = 0.25,
   pAdjValCutoff = 0.05,
-  topNo = 10
+  topNo = 10,
+  verbose = T,
+  debug = F,
+  outputExcel = as.logical(T)
 )
 }
 \arguments{
 \item{resDir}{full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.}
 
-\item{rdsFname}{User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.}
+\item{rds}{User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.}
 
 \item{newAnnotation}{logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.}
 
@@ -30,13 +41,27 @@ getClusterExpCondDe(
 
 \item{expCondCheckFname}{suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.}
 
+\item{cellcluster}{specify the specific cell cluster names for DE analysis, if not specified, all cell clusters will be performed .}
+
 \item{compGroup}{specify either 1 or 2 group names seperated by '/' for comparisons, these group names is corresponding to experimental condition factor levels. If only 1 group named is specified, it makes comparison between this specified group with all others.}
 
-\item{deMethod}{DE test method with options: 'wilcox', 't', 'negbinom', 'poisson', 'MAST', 'DESeq2', by default = 'wilcox'.}
+\item{deMethod}{DE test method with options: 'wilcox', 't', 'negbinom', 'poisson', 'MAST', 'DESeq2', 'DESeq2.bulk', by default = 'wilcox'.}
+
+\item{covariateVarName}{this option is only used when deMethod = 'MIST' with this specified column for covariate correction.}
+
+\item{deseq2bulk.metaCovariateInput}{when deMethod = 'DESeq2.bulk', use this option to provide the meta data table for covariate correction. This input should be a data frame object with all corresponding sample items in rows and corresponding group information on columns.}
+
+\item{min.cells.group}{Minimum number of cells in one of the comparison groups.}
+
+\item{min.pct}{only test genes that are detected in this specified minimum fraction of cells in either of these 2 comparison populations, default is 0.1.}
+
+\item{logfc.threshold}{only test genes that are detected in this specified X-fold difference (log-scale) between these 2 comparison populations cells, default is 0.25 (around 1.19 FC).}
 
 \item{pAdjValCutoff}{adjusted p-value cutoff for significant DEGs detection, by default = 0.05.}
 
 \item{topNo}{specify the top number of up and down significant DEGs in each identified/annotated cell clusters, by default = 10.}
+
+\item{verbose}{whether to turn on for debug check, by default FALSE (turned off).}
 }
 \value{
 a list item including 3 elements:

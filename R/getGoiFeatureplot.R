@@ -11,8 +11,9 @@
 #' @param cellcluster optional, if needed, this option can be used to specify cell clusters to be displayed on the feature plot
 #' @param goiFname path to file, where a list of marker/features genes are provided in column 'Gene', if column 'Cell Type' is also provided, option 'geneCellTypeOrder' can be used to adjust orders.
 #' @param featurePlotMinExpCutoff feature plot minimum expression value threshold, by default = 0.3.
-#' @param featurePlotReductionMethod feature plot clustering reduction methods 'tsne' or 'umap', by default 'umap'
-#' @param featurePlotFnamePrefix feature plot file name prefix, if not defined, by default 'goiFeaturePlot'
+#' @param featurePlotReductionMethod feature plot clustering reduction methods 'tsne' or 'umap', by default 'umap'.
+#' @param featurePlotLabel whether to label feature plot cell types, by default True.
+#' @param featurePlotFnamePrefix feature plot file name prefix, if not defined, by default 'goiFeaturePlot'.
 #'
 #' @importFrom ggplot2 theme
 #' @importFrom ggplot2 guides
@@ -42,7 +43,7 @@
 #' @export
 #' @return the dotplots of provided GOI(gene of interest) saved in '' inside the provided 'resDir'
 ## ---------------------------------------------------------------------------------------
-getGoiFeatureplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL,  expCondCheck='sample', expCondCheckFname = NULL, expCondReorderLevels = NULL, cellcluster = NULL, goiFname, featurePlotMinExpCutoff=0.3, featurePlotMaxExpCutoff=NULL, featurePlotReductionMethod='umap', featurePlotFnamePrefix='goiFeaturePlot' ){
+getGoiFeatureplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL,  expCondCheck='sample', expCondCheckFname = NULL, expCondReorderLevels = NULL, cellcluster = NULL, goiFname, featurePlotMinExpCutoff=0.3, featurePlotMaxExpCutoff=NULL, featurePlotReductionMethod='umap', featurePlotLabel = T, featurePlotFnamePrefix='goiFeaturePlot' ){
   ##--------------------------------------------------------------------------------------##
   newAnnotation           <- as.logical(newAnnotation)
   if (newAnnotation & is.null(newAnnotationRscriptName)) print("Option 'newAnnotation' is on, please provide corresponding option 'newAnnotationRscriptName'.")
@@ -66,8 +67,20 @@ getGoiFeatureplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotat
     if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
     seuratObjFinal          <<- readRDS(file = as.character(rdsFname))
     print('Done for RDS read in')
-  } else {
-    stop("Error: please provide either option 'resDir' or 'rdsFname'. ")
+  } else if (is.null(resDir) & is.null(rds)){
+    stop("Error: please provide either option 'resDir' or 'rds', or both. ")
+  } else if (!is.null(resDir) & !is.null(rds)){
+    if (class(rds)=='Seurat') {
+      seuratObjFinal      <<- rds
+      print('RDS is provided with rds option')
+    } else {
+      rdsFname            <- rds
+      ## ---
+      if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
+      seuratObjFinal      <<- readRDS(file = as.character(rdsFname))
+      print('Done for RDS read in')
+    }
+    resDir                <- resDir
   }
   ##--------------------------------------------------------------------------------------##
   ## update results directory if new annotation is used
@@ -215,25 +228,52 @@ getGoiFeatureplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotat
           expValSummary[i,] <- sapply(strsplit(summary(Seurat::FetchData(seuratObjFinal, markerGenes[i])), split = ':'), '[[', 2)
           ## -
           if (is.null(featurePlotMaxExpCutoff)) {
-            featurePlot     <- FeaturePlot2(object = seuratObjFinal, features = markerGenes[i], reduction = featurePlotReductionMethod,
-                                            order = T, label = T, pt.size = 0.5, ncol = 1, label.size = 5,
-                                            # split.by = 'expCond',
-                                            cols = c('#D3D3D3', '#CC0000'),
-                                            min.cutoff = featurePlotMinExpCutoff )
+            if (featurePlotLabel) {
+              featurePlot     <- FeaturePlot2(object = seuratObjFinal, features = markerGenes[i], reduction = featurePlotReductionMethod,
+                                              order = T, label = T, pt.size = 0.5, ncol = 1, label.size = 5,
+                                              # split.by = 'expCond',
+                                              cols = c('#D3D3D3', '#CC0000'),
+                                              min.cutoff = featurePlotMinExpCutoff )
+            } else {
+              featurePlot     <- FeaturePlot2(object = seuratObjFinal, features = markerGenes[i], reduction = featurePlotReductionMethod,
+                                              order = T, label = F, pt.size = 0.5, ncol = 1, label.size = 5,
+                                              # split.by = 'expCond',
+                                              cols = c('#D3D3D3', '#CC0000'),
+                                              min.cutoff = featurePlotMinExpCutoff )
+            }
+
           } else {
-            featurePlot     <- FeaturePlot2(object = seuratObjFinal, features = markerGenes[i], reduction = featurePlotReductionMethod,
-                                            order = T, label = T, pt.size = 0.5, ncol = 1, label.size = 5,
-                                            # split.by = 'expCond',
-                                            cols = c('#D3D3D3', '#CC0000'),
-                                            min.cutoff = featurePlotMinExpCutoff,
-                                            max.cutoff = featurePlotMaxExpCutoff)
+            if (featurePlotLabel) {
+              featurePlot     <- FeaturePlot2(object = seuratObjFinal, features = markerGenes[i], reduction = featurePlotReductionMethod,
+                                              order = T, label = T, pt.size = 0.5, ncol = 1, label.size = 5,
+                                              # split.by = 'expCond',
+                                              cols = c('#D3D3D3', '#CC0000'),
+                                              min.cutoff = featurePlotMinExpCutoff,
+                                              max.cutoff = featurePlotMaxExpCutoff)
+            } else {
+              featurePlot     <- FeaturePlot2(object = seuratObjFinal, features = markerGenes[i], reduction = featurePlotReductionMethod,
+                                              order = T, label = F, pt.size = 0.5, ncol = 1, label.size = 5,
+                                              # split.by = 'expCond',
+                                              cols = c('#D3D3D3', '#CC0000'),
+                                              min.cutoff = featurePlotMinExpCutoff,
+                                              max.cutoff = featurePlotMaxExpCutoff)
+            }
+
           }
 
           if ('geneType' %in% colnames(geneTypes)) {
-            pdf(file = file.path(sprintf('%s/%s_featurePlot_%s_%s_expCondComb.pdf', plotResDir, featurePlotReductionMethod, gsub('/', '_', geneTypes$geneType[match(markerGenes[i], geneTypes$Gene)]), markerGenes[i])), width = 5.5, height = 6)
+            if (featurePlotLabel) {
+              pdf(file = file.path(sprintf('%s/%s_featurePlot_%s_%s_expCondComb.pdf', plotResDir, featurePlotReductionMethod, gsub('/', '_', geneTypes$geneType[match(markerGenes[i], geneTypes$Gene)]), markerGenes[i])), width = 5.5, height = 6)
+            } else {
+              pdf(file = file.path(sprintf('%s/%s_featurePlot_woLable_%s_%s_expCondComb.pdf', plotResDir, featurePlotReductionMethod, gsub('/', '_', geneTypes$geneType[match(markerGenes[i], geneTypes$Gene)]), markerGenes[i])), width = 5.5, height = 6)
+            }
 
           } else {
-            pdf(file = file.path(sprintf('%s/%s_featurePlot_%s_expCondComb.pdf', plotResDir, featurePlotReductionMethod, markerGenes[i])), width = 5.5, height = 6)
+            if (featurePlotLabel) {
+              pdf(file = file.path(sprintf('%s/%s_featurePlot_%s_expCondComb.pdf', plotResDir, featurePlotReductionMethod, markerGenes[i])), width = 5.5, height = 6)
+            } else {
+              pdf(file = file.path(sprintf('%s/%s_featurePlot_woLable_%s_expCondComb.pdf', plotResDir, featurePlotReductionMethod, markerGenes[i])), width = 5.5, height = 6)
+            }
 
           }
           print(featurePlot+theme1wLegend)
@@ -276,23 +316,52 @@ getGoiFeatureplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotat
           if (length(expCondLevelsUpdate) < length(expCondLevels)) print(sprintf('%s expCond (%s) is/are removed due to low expression value for gene marker %s', length(which(maxExpVals < featurePlotMinExpCutoff)), paste(as.character(expCondLevels[which(maxExpVals < featurePlotMinExpCutoff)]), collapse = ', '), markerGenes[i]))
           ## -
           if (is.null(featurePlotMaxExpCutoff)) {
-            featurePlotExpSplit  <- FeaturePlot(object = seuratObjFinalUpdate, features = markerGenes[i], reduction = featurePlotReductionMethod,
-                                                 order = T, label = T, pt.size = 0.5, ncol = 1, label.size = 5,
-                                                 split.by = 'expCond',
-                                                 cols = c('#D3D3D3', '#CC0000'),
-                                                 min.cutoff = featurePlotMinExpCutoff )
+            if (featurePlotLabel) {
+              featurePlotExpSplit  <- FeaturePlot(object = seuratObjFinalUpdate, features = markerGenes[i], reduction = featurePlotReductionMethod,
+                                                  order = T, label = T, pt.size = 0.5, ncol = 1, label.size = 5,
+                                                  split.by = 'expCond',
+                                                  cols = c('#D3D3D3', '#CC0000'),
+                                                  min.cutoff = featurePlotMinExpCutoff )
+            } else {
+              featurePlotExpSplit  <- FeaturePlot(object = seuratObjFinalUpdate, features = markerGenes[i], reduction = featurePlotReductionMethod,
+                                                  order = T, label = F, pt.size = 0.5, ncol = 1, label.size = 5,
+                                                  split.by = 'expCond',
+                                                  cols = c('#D3D3D3', '#CC0000'),
+                                                  min.cutoff = featurePlotMinExpCutoff )
+            }
+
           } else {
-            featurePlotExpSplit  <- FeaturePlot(object = seuratObjFinalUpdate, features = markerGenes[i], reduction = featurePlotReductionMethod,
-                                                 order = T, label = T, pt.size = 0.5, ncol = 1, label.size = 5,
-                                                 split.by = 'expCond',
-                                                 cols = c('#D3D3D3', '#CC0000'),
-                                                 min.cutoff = featurePlotMinExpCutoff,
-                                                 max.cutoff = featurePlotMaxExpCutoff)
+            if (featurePlotLabel){
+              featurePlotExpSplit  <- FeaturePlot(object = seuratObjFinalUpdate, features = markerGenes[i], reduction = featurePlotReductionMethod,
+                                                  order = T, label = T, pt.size = 0.5, ncol = 1, label.size = 5,
+                                                  split.by = 'expCond',
+                                                  cols = c('#D3D3D3', '#CC0000'),
+                                                  min.cutoff = featurePlotMinExpCutoff,
+                                                  max.cutoff = featurePlotMaxExpCutoff)
+            } else {
+              featurePlotExpSplit  <- FeaturePlot(object = seuratObjFinalUpdate, features = markerGenes[i], reduction = featurePlotReductionMethod,
+                                                  order = T, label = F, pt.size = 0.5, ncol = 1, label.size = 5,
+                                                  split.by = 'expCond',
+                                                  cols = c('#D3D3D3', '#CC0000'),
+                                                  min.cutoff = featurePlotMinExpCutoff,
+                                                  max.cutoff = featurePlotMaxExpCutoff)
+            }
+
           }
           if ('geneType' %in% colnames(geneTypes)) {
-            pdf(file = file.path(sprintf('%s/%s_featurePlot_%s_%s_%s.pdf', plotResDir, featurePlotReductionMethod, gsub('/', '_', geneTypes$geneType[match(markerGenes[i], geneTypes$Gene)]), markerGenes[i], expCondCheckFname)), width = 5.5*length(expCondLevelsUpdate), height = 6)
+            if (featurePlotLabel){
+              pdf(file = file.path(sprintf('%s/%s_featurePlot_%s_%s_%s.pdf', plotResDir, featurePlotReductionMethod, gsub('/', '_', geneTypes$geneType[match(markerGenes[i], geneTypes$Gene)]), markerGenes[i], expCondCheckFname)), width = 5.5*length(expCondLevelsUpdate), height = 6)
+            } else {
+              pdf(file = file.path(sprintf('%s/%s_featurePlot_woLabel_%s_%s_%s.pdf', plotResDir, featurePlotReductionMethod, gsub('/', '_', geneTypes$geneType[match(markerGenes[i], geneTypes$Gene)]), markerGenes[i], expCondCheckFname)), width = 5.5*length(expCondLevelsUpdate), height = 6)
+            }
+
           } else {
-            pdf(file = file.path(sprintf('%s/%s_featurePlot_%s_%s.pdf', plotResDir, featurePlotReductionMethod, markerGenes[i], expCondCheckFname)), width = 5.5*length(expCondLevelsUpdate), height = 6)
+            if (featurePlotLabel) {
+              pdf(file = file.path(sprintf('%s/%s_featurePlot_%s_%s.pdf', plotResDir, featurePlotReductionMethod, markerGenes[i], expCondCheckFname)), width = 5.5*length(expCondLevelsUpdate), height = 6)
+            } else {
+              pdf(file = file.path(sprintf('%s/%s_featurePlot_woLabel_%s_%s.pdf', plotResDir, featurePlotReductionMethod, markerGenes[i], expCondCheckFname)), width = 5.5*length(expCondLevelsUpdate), height = 6)
+            }
+
           }
           print(featurePlotExpSplit+theme1wLegend)
           dev.off()

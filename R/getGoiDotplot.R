@@ -11,7 +11,7 @@
 #' @param expCondCheck specify which experimental conditions to be explored, including sample, idents, or expCond1/2/....
 #' @param expCondCheckFname suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.
 #' @param expCondReorderLevels a character string of the corresponding experimental condition factor levels' orders presented on the y-axis of the dot-plot from bottom to top, if not defined, sorted numerically or alphabetically.
-#' @param expCondName subset the specified experimental condition corresponding to 'expCondCheck' levels to make the corresponding dot plot.
+#' @param expCond subset the specified experimental condition corresponding to 'expCondCheck' levels to make the corresponding dot plot.
 #' @param cellcluster specify cell clusters to be displayed on the dot plot
 #' @param dotPlotFnamePrefix prefix of the dot plot file name, if not defined, by default = 'goiDotplots'.
 #' @param dotPlotMinExpCutoff minimum expression value threshold presented in the dot plot, if not defined, by default = 0.3.
@@ -56,9 +56,10 @@
 # library(grDevices)
 # library(tools)
 # library(xlsx)
-getGoiDotplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, goiFname, geneTypeOrder=NULL, expCondCheck='sample', expCondCheckFname = NULL, expCondReorderLevels=NULL, expCondName = NULL, cellcluster = NULL, dotPlotFnamePrefix='goiDotplots', dotPlotMinExpCutoff=0.3, dotPlotMaxExpCutoff = 2.5, dotPlotWidth=NULL, dotPlotHeight=NULL, legendPer=NULL, genetypebarPer=NULL, fontsize.x = 24, fontsize.y = 18, fontangle.x = 90, fontangle.y = 90, fontsize.legend1 = 20, fontsize.legend2 = NULL, gridOn = as.logical(F), geneTypeLegendOn = as.logical(T) ){
+getGoiDotplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, goiFname, geneTypeOrder=NULL, expCondCheck='sample', expCondCheckFname = NULL, expCondReorderLevels=NULL, expCond = NULL, cellcluster = NULL, dotPlotFnamePrefix='goiDotplots', dotPlotMinExpCutoff=0.3, dotPlotMaxExpCutoff = 2.5, dotPlotWidth=NULL, dotPlotHeight=NULL, legendPer=NULL, genetypebarPer=NULL, fontsize.x = 24, fontsize.y = 18, fontangle.x = 90, fontangle.y = 90, fontsize.legend1 = 20, fontsize.legend2 = NULL, gridOn = as.logical(F), geneTypeLegendOn = as.logical(T) ){
   ## ---
   newAnnotation           <- as.logical(newAnnotation)
+  expCondName             <- expCond
   if (newAnnotation & is.null(newAnnotationRscriptName)) print("Option 'newAnnotation' is on, please provide corresponding option 'newAnnotationRscriptName'.")
   ## ---
   if (is.null(resDir) & !is.null(rds)) {
@@ -80,8 +81,20 @@ getGoiDotplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationR
     if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
     seuratObjFinal          <<- readRDS(file = as.character(rdsFname))
     print('Done for RDS read in')
-  } else {
-    stop("Error: please provide either option 'resDir' or 'rdsFname'. ")
+  } else if (is.null(resDir) & is.null(rds)){
+    stop("Error: please provide either option 'resDir' or 'rds', or both. ")
+  } else if (!is.null(resDir) & !is.null(rds)){
+    if (class(rds)=='Seurat') {
+      seuratObjFinal      <<- rds
+      print('RDS is provided with rds option')
+    } else {
+      rdsFname            <- rds
+      ## ---
+      if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
+      seuratObjFinal      <<- readRDS(file = as.character(rdsFname))
+      print('Done for RDS read in')
+    }
+    resDir                <- resDir
   }
   ## ------
   ## update results directory if new annotation is used
@@ -132,10 +145,6 @@ getGoiDotplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationR
       seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data[, grep(as.character(expCondCheck), colnames(seuratObjFinal@meta.data))]
     }
   }
-  print('97979799')
-  print(table(seuratObjFinal@meta.data$expCond))
-  print(head(seuratObjFinal))
-  print(sprintf('4444 plotResDir is %s', plotResDir))
   if (!dir.exists(plotResDir)) dir.create(plotResDir)
   print(sprintf('GOI dot plots will be saved in %s', plotResDir))
   ##--------------------------------------------------------------------------------------##
@@ -143,9 +152,27 @@ getGoiDotplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationR
   expCondLevels = levels(factor(seuratObjFinal@meta.data$expCond))
   if (!is.null(expCondName)) {
     if (any(!expCondName %in% expCondLevels ) ) stop('Please provide the corresponding experimental condition.')
-    print(sprintf('Subsetting a specific experimental condition level: %s', expCondName))
-    seuratObjFinal                          <- subset(seuratObjFinal, expCond == expCondName )
+    if (length(expCondName)==1) {
+      print(sprintf('Subsetting a specific experimental condition level: %s', expCondName))
+      seuratObjFinal                          <- subset(seuratObjFinal, expCond == expCondName )
+    } else {
+      print(sprintf('Subsetting %s specific experimental condition levels: %s', length(expCondName), paste(expCondName, collapse = ', ')))
+      for (e in 1:length(expCondName)) {
+        seuratObjFinalPrep                    <- subset(seuratObjFinal, subset = expCond == expCondName[e] )
+        # print(seuratObjFinalPrep)
+        if (e == 1) {
+          seuratObjFinal2                     <- seuratObjFinalPrep
+        } else {
+          seuratObjFinal2                     <- merge(seuratObjFinal2, seuratObjFinalPrep)
+        }
+      }
+      seuratObjFinal <- seuratObjFinal2
+    }
   }
+  # print('97979799')
+  # print(table(seuratObjFinal@meta.data$expCond))
+  # print(head(seuratObjFinal))
+  # print('97979799')
   ## ------
   # print(table(Seurat::Idents(seuratObjFinal)))
   clusterLevels <- levels(Seurat::Idents(seuratObjFinal))

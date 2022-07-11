@@ -18,7 +18,6 @@
 #' @keywords DoubletDecon
 #' @export
 #' @examples Improved_Seurat_Pre_Process()
-#' @return
 #'
 ##----------------------------------------------------------------------------------------
 Improved_Seurat_Pre_Process <- function (seuratObject, num_genes = 50, write_files = FALSE, data_type = "counts") {

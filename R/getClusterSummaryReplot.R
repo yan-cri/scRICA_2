@@ -36,7 +36,6 @@
 #' @keywords clusterSummary
 #' @examples clusterSummary(rds, expCondCheck='sample/idents/expCond*')
 #' @export
-#' @return
 ## ---------------------------------------------------------------------------------------
 getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, fpRemake = T, perRemake = T, colors = NULL, cellcluster = NULL, expCondCheck='sample', expCondCheckFname = NULL, fpClusterOrder = NULL, perClusterOrder = NULL, perPlotVertical = F, perPlotHeight = NULL, perPlotWidth = NULL, expCondNameOrder = NULL) {
   ## ---
@@ -75,8 +74,20 @@ getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newA
     if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
     seuratObjFinal          <<- readRDS(file = as.character(rdsFname))
     print('Done for RDS read in')
-  } else {
-    stop("Error: please provide either option 'resDir' or 'rdsFname'. ")
+  } else if (is.null(resDir) & is.null(rds)){
+    stop("Error: please provide either option 'resDir' or 'rds', or both. ")
+  } else if (!is.null(resDir) & !is.null(rds)){
+    if (class(rds)=='Seurat') {
+      seuratObjFinal      <<- rds
+      print('RDS is provided with rds option')
+    } else {
+      rdsFname            <- rds
+      ## ---
+      if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
+      seuratObjFinal      <<- readRDS(file = as.character(rdsFname))
+      print('Done for RDS read in')
+    }
+    resDir                <- resDir
   }
   ## ------
   clusteringPlotRemake    <- as.logical(fpRemake)

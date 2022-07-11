@@ -1,11 +1,5 @@
-## Developed by Yan Li, June, 2021                                                        ##
-##----------------------------------------------------------------------------------------##
-# library(Seurat)
-# library(dplyr)
-# library(ggplot2)
-# library(gridExtra)
 ## -------------------------------------------------------------------------------------- ##
-#' getExpCondClusterMarkers() Function
+#' getExpCondClusterMarkers2() Function
 #' @details
 #' This function is used to identify positively expressed cluster markers for all originally identified/annotated cell clusters from the experimental conditions specified in the metadata table.
 #'
@@ -17,10 +11,6 @@
 #' @param expCondCheckFname suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.
 #' @param pAdjValCutoff adjusted p-value cutoff for significant positively expressed cluster markers, by default = 0.05.
 #' @param topNo specify the top number of significantly over expressed cluster markers in each identified/annotated clusters, by default = 10.
-#' @param deMethod DE test method with options: 'wilcox', 't', 'negbinom', 'poisson', 'MAST', 'DESeq2', default = 'wilcox'.
-#' @param min.pct only test genes that are detected in this specified minimum fraction of cells in either of these 2 comparison populations, default is 0.1.
-#' @param logfc.threshold only test genes that are detected in this specified X-fold difference (log-scale) between these 2 comparison populations cells, default is 0.25 (around 1.19 FC).
-#' @param min.cells.group Minimum number of cells in one of the comparison groups.
 #'
 #' @importFrom Seurat DefaultAssay
 #' @importFrom Seurat Idents
@@ -37,13 +27,13 @@
 #' @importFrom grDevices dev.off
 #' @importFrom grDevices pdf
 #'
-#' @keywords getExpCondClusterMarkers
-#' @examples getExpCondClusterMarkers()
+#' @keywords getExpCondClusterMarkers2
+#' @examples getExpCondClusterMarkers2()
 #' @export
 #' @return
 #' a list item including 2 elements: All positively expressed genes from each experimental condition cell clusters in 'expCondPosMarkers' and all positively significantly expressed genes at FDR corrected p-value of 0.05 (by default) from each experimental condition cell clusters in'expCondSigPosMarkers'
 ## -------------------------------------------------------------------------------------- ##
-getExpCondClusterMarkers <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, expCondCheck='sample', expCondCheckFname = NULL, deMethod = 'wilcox', min.pct = 0.1, logfc.threshold = 0.25, min.cells.group = 3, pAdjValCutoff = 0.05, topNo = 10) {
+getExpCondClusterMarkers2 <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, expCondCheck='sample', expCondCheckFname = NULL, deMethod = 'wilcox', min.cells.group = 3, min.pct = 0.25, logfc.threshold = 0.25, pAdjValCutoff = 0.05, topNo = 10) {
   options(java.parameters = "-Xmx32000m")
   ###--------------------------------------------------------------------------------------##
   pAdjValCutoff           <- as.numeric(pAdjValCutoff)
@@ -88,9 +78,9 @@ getExpCondClusterMarkers <- function(resDir=NULL, rds=NULL, newAnnotation=F, new
   ##--------------------------------------------------------------------------------------##
   ## update results directory if new annotation is used
   if (newAnnotation) {
-    resDir <- paste(resDir, 'clusterMarkerGenes_results_wNewAnnotation', sep = '/')
+    resDir <- paste(resDir, 'clusterMarkerGenes_RNA_results_wNewAnnotation', sep = '/')
   } else {
-    resDir <- paste(resDir, 'clusterMarkerGenes_results_wOrgClusterAnnotation', sep = '/')
+    resDir <- paste(resDir, 'clusterMarkerGenes_RNA_results_wOrgClusterAnnotation', sep = '/')
   }
   if (!dir.exists(resDir)) dir.create(resDir)
   ## -------------------------------------------------------------------------------------
@@ -137,9 +127,9 @@ getExpCondClusterMarkers <- function(resDir=NULL, rds=NULL, newAnnotation=F, new
   ## ---
   expCondPosMarkers       <- list()
   expCondSigPosMarkers    <- list()
-  if (Seurat::DefaultAssay(seuratObjFinal)!='integrated') {
-    stop("Please conduct data integration before using this function.")
-  }
+  ##--------------------------------------------------------------------------------------##
+  Seurat::DefaultAssay(seuratObjFinal) <- "RNA"
+  seuratObjFinal <- Seurat::ScaleData(object = seuratObjFinal, do.scale = T, do.center = T) ## by default, both do.scale/center are on, will scale the expression level for each feature by dividing the centered feature expression levels by their standard deviations
   print(table(seuratObjFinal@meta.data$expCond))
   ## -------------------------------------------------------------------------------------
   for (l in 1:length(expCondLevels)) {
@@ -152,7 +142,7 @@ getExpCondClusterMarkers <- function(resDir=NULL, rds=NULL, newAnnotation=F, new
     ## identify cluster positively expressed markers
     print(sprintf('Start %s: finding positive regulated cluster marker genes for experimental condition: %s', l, expCondLevel))
     ## identify significant positively expressed cluster markers
-    allPosMarkers         <- FindAllMarkers(seuratObjFinalexpCond, assay = 'integrated', slot = "scale.data", only.pos = TRUE, min.pct = min.pct, logfc.threshold = logfc.threshold, min.cells.group = min.cells.group, test.use = deMethod)
+    allPosMarkers         <- FindAllMarkers(seuratObjFinalexpCond, assay = 'RNA', slot = "scale.data", only.pos = TRUE, min.pct = min.pct, logfc.threshold = logfc.threshold, min.cells.group = min.cells.group, test.use = deMethod)
     allPosMarkersAdjSig   <- allPosMarkers %>% dplyr::filter(p_val_adj <= pAdjValCutoff) %>% dplyr::mutate(perDiff = pct.1-pct.2)
     if (dim(allPosMarkersAdjSig)[1] > 0) write.table(x = allPosMarkersAdjSig, file = file.path(sprintf('%s/expCond_%s_%s_allCluster_pos_markers_UpSig.txt', resDir, expCondCheckFname, expCondLevel)), quote = F, sep = '\t', row.names = T, col.names = NA)
     print(sprintf('A total of %s positively expressed genes identified for experimental condition %s at %s, among them %s are significant up expressed at adjusted p-value significant level of %s', dim(allPosMarkers)[1], expCondCheckFname, expCondLevel, dim(allPosMarkersAdjSig)[1], pAdjValCutoff ))
@@ -164,14 +154,14 @@ getExpCondClusterMarkers <- function(resDir=NULL, rds=NULL, newAnnotation=F, new
     expCondSigPosMarkers[[l]]  <- allPosMarkersAdjSig
     systime2               <- Sys.time()
     print(sprintf('END %s: finding positive regulated cluster marker genes for experimental condition in %s with computation time: %s %s.', l, expCondLevel, round(difftime(systime2, systime1), digits = 2), attr(difftime(systime2, systime1), "units") ))
-    print('Start: Step 6 making cluster marker genes heatmap plot')
-    ## all significant cluster markers heatmap
-    topMarkers                 <- allPosMarkers %>% group_by(cluster) %>% top_n(n = topNo) %>% as.data.frame()
-    cluterAllsigMarkerheatmap  <- DoHeatmap(seuratObjFinalexpCond, assay = 'integrated', slot = "scale.data", features = topMarkers$gene)
-    pdf(file = file.path(sprintf('%s/expCond_%s_%s_allCluster_pos_markers_UpSig_heatmap.pdf', resDir, expCondCheckFname, expCondLevel )), width = 25, height = 20)
-    print(cluterAllsigMarkerheatmap)
-    dev.off()
-    print('END: Step 6 making cluster marker genes heatmap plot')
+    # print('Start: Step 6 making cluster marker genes heatmap plot')
+    # ## all significant cluster markers heatmap
+    # topMarkers                 <- allPosMarkers %>% group_by(cluster) %>% top_n(n = topNo) %>% as.data.frame()
+    # cluterAllsigMarkerheatmap  <- DoHeatmap(seuratObjFinalexpCond, assay = 'RNA', slot = "scale.data", features = topMarkers$gene)
+    # pdf(file = file.path(sprintf('%s/expCond_%s_%s_allCluster_pos_markers_UpSig_heatmap.pdf', resDir, expCondCheckFname, expCondLevel )), width = 25, height = 20)
+    # print(cluterAllsigMarkerheatmap)
+    # dev.off()
+    # print('END: Step 6 making cluster marker genes heatmap plot')
     print('********************')
     ## ---
   }

@@ -14,7 +14,7 @@ getGoiDotplot(
   expCondCheck = "sample",
   expCondCheckFname = NULL,
   expCondReorderLevels = NULL,
-  expCondName = NULL,
+  expCond = NULL,
   cellcluster = NULL,
   dotPlotFnamePrefix = "goiDotplots",
   dotPlotMinExpCutoff = 0.3,
@@ -52,7 +52,7 @@ getGoiDotplot(
 
 \item{expCondReorderLevels}{a character string of the corresponding experimental condition factor levels' orders presented on the y-axis of the dot-plot from bottom to top, if not defined, sorted numerically or alphabetically.}
 
-\item{expCondName}{subset the specified experimental condition corresponding to 'expCondCheck' levels to make the corresponding dot plot.}
+\item{expCond}{subset the specified experimental condition corresponding to 'expCondCheck' levels to make the corresponding dot plot.}
 
 \item{cellcluster}{specify cell clusters to be displayed on the dot plot}
 

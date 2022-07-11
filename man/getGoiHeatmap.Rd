@@ -10,8 +10,8 @@ getGoiHeatmap(
   rds = NULL,
   newAnnotation = F,
   newAnnotationRscriptName = NULL,
-  resSaveFname = NULL,
   scaled = F,
+  resSaveFname = NULL,
   goiFname = NULL,
   geneNames = NULL,
   expCondCheck = "sample",
@@ -45,9 +45,9 @@ getGoiHeatmap(
 
 \item{newAnnotationRscriptName}{if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.}
 
-\item{resSaveFname}{whether to save re-scaled seurat object on the defined 'cellcluster' and 'expCond', by default it is 'NULL' without saving re-scaled RDS object.}
-
 \item{scaled}{whether input rds is scaled, by default False, will scale data based on selected 'cellcluster' and 'expCond'.}
+
+\item{resSaveFname}{whether to save re-scaled seurat object on the defined 'cellcluster' and 'expCond', by default it is 'NULL' without saving re-scaled RDS object.}
 
 \item{goiFname}{path to file, where a list of marker/features genes are provided in column 'Gene', if column 'Cell Type' is also provided, option 'geneTypeOrder' can be used to adjust orders.}
 

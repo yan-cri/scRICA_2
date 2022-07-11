@@ -106,39 +106,24 @@ pdHeatmap(
     containing the color names for a vertical side bar that may be used to
     annotate the rows of \code{x}.}
 
-\item{cexRow}{positive numbers, used as \code{cex.axis} in
+\item{cexRow, cexCol}{positive numbers, used as \code{cex.axis} in
     for the row or column axis labeling.  The defaults currently only
     use number of rows or columns, respectively.}
 
-\item{cexCol}{positive numbers, used as \code{cex.axis} in
-    for the row or column axis labeling.  The defaults currently only
-    use number of rows or columns, respectively.}
-
-\item{labRow}{character vectors with row and column labels to
+\item{labRow, labCol}{character vectors with row and column labels to
     use; these default to \code{rownames(x)} or \code{colnames(x)},
     respectively.}
 
-\item{labCol}{character vectors with row and column labels to
-    use; these default to \code{rownames(x)} or \code{colnames(x)},
-    respectively.}
-
-\item{main}{main, x- and y-axis titles; defaults to none.}
-
-\item{xlab}{main, x- and y-axis titles; defaults to none.}
-
-\item{ylab}{main, x- and y-axis titles; defaults to none.}
+\item{main, xlab, ylab}{main, x- and y-axis titles; defaults to none.}
 
 \item{...}{additional arguments passed on to \code{\link{image}},
     e.g., \code{col} specifying the colors.}
-}
-\value{
-
 }
 \description{
 pdHeatmap() Function modified from heatmap.3 to include extra ColSideColors factors.
 }
 \details{
-
+Intermediate function to make heat-map of pseudo-time trajectory analysis results
 }
 \examples{
 pdHeatmap()
