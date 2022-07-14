@@ -23,6 +23,7 @@
 #' @param fontsize.top modify the font size of top legend color bar.
 #' @param fontsize.y modify the font size of y-axis (gene names).
 #' @param fontangle.y modify the y-axis (gene names) angle position.
+#' @param debug by default False, turn on to print extra messages to debug the analysis process
 #'
 #' @importFrom ggplot2 theme
 #' @importFrom ggplot2 guides
@@ -69,7 +70,7 @@ getGoiHeatmap <- function(heatmap.view = 'ident', resDir=NULL, rds=NULL, newAnno
                           cellcluster = NULL , expCond = NULL, expCondReorderLevels = NULL,
                           plotFnamePrefix='goiHeatmap', plotWidth=25, plotHeight = 20,
                           minVal = -2.5, maxVal = 2.5, fontsize.legend = 20,
-                          fontangle.top = 0, fontsize.top = 5, fontsize.y = 20, fontangle.y = 0, hjust.top = 0, vjust.top = 0, barHeight.top = 0.02) {
+                          fontangle.top = 0, fontsize.top = 5, fontsize.y = 20, fontangle.y = 0, hjust.top = 0, vjust.top = 0, barHeight.top = 0.02, debug = F) {
   ## ----
   sel.expConds <- expCond ## to avoid 'expCond' otpion with metadata 'expCond' rename this paratmer into sel.expConds
   if (is.null(geneNames) & is.null(goiFname)) {
@@ -197,6 +198,7 @@ getGoiHeatmap <- function(heatmap.view = 'ident', resDir=NULL, rds=NULL, newAnno
   }
   ## in provided, subset on 'expCond'
   expCondLevels           <- levels(factor(seuratObjFinal@meta.data$expCond))
+  if (debug) print(expCondLevels)
   if (!is.null(sel.expConds)) {
     if (any(!sel.expConds %in% expCondLevels ) ) stop("Please provide the corresponding experimental condition levesl specified in 'expCondCheck' option.")
     print(sprintf('Subsetting %s specific expCond: %s', length(sel.expConds), paste(sel.expConds, collapse = ',')))
