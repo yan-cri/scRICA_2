@@ -18,7 +18,7 @@
 #' @param min.cells.group Minimum number of cells in one of the comparison groups.
 #' @param deseq2bulk.metaCovariateInput when deMethod = 'DESeq2.bulk', use this option to provide the meta data table for covariate correction. This input should be a data frame object with all corresponding sample items in rows and corresponding group information on columns.
 #' @param covariateVarName this option is only used when deMethod = 'MIST' with this specified column for covariate correction.
-#' @param verbose whether to turn on for debug check, by default FALSE (turned off).
+#' @param debug whether to turn on for debug check, by default FALSE (turned off).
 #'
 #' @importFrom Seurat DefaultAssay
 #' @importFrom Seurat Idents
@@ -41,11 +41,9 @@
 ## ---------------------------------------------------------------------------------------
 getClusterExpCondDe <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, expCondCheck='sample',
                                 expCondCheckFname = NULL, cellcluster = NULL, compGroup, deMethod = 'wilcox',
-                                covariateVarName = NULL, deseq2bulk.metaCovariateInput = NULL, covariateVarLevels = NULL, median.norm = 1,
-                                min.cells.group = 10, min.pct = 0.1, logfc.threshold = 0.25, pAdjValCutoff = 0.05, topNo = 10, verbose = T, debug = F, outputExcel = as.logical(T)) {
+                                covariateVarName = NULL, deseq2bulk.metaCovariateInput = NULL, covariateVarLevels = NULL,
+                                min.cells.group = 10, min.pct = 0.1, logfc.threshold = 0.25, pAdjValCutoff = 0.05, topNo = 10, debug = F, outputExcel = as.logical(T)) {
   options(java.parameters = "-Xmx128g")
-  # median.norm <- as.logical(median.norm)
-  # if (debug) print(sprintf("median.norm is %s", as.logical(median.norm)))
   ## ---
   if (missing(compGroup)) stop("Please provide option 'compGroup' to specify which 2 groups in your updated experimental condition levels with 'expCondCheck' for comparision.")
   pAdjValCutoff           <- as.numeric(pAdjValCutoff)
@@ -201,7 +199,7 @@ getClusterExpCondDe <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnot
     }
   }
   ## -
-  if (verbose) print(sprintf("clusters to be processed are %s", paste(noClusters, collapse = ', ')))
+  if (debug) print(sprintf("clusters to be processed are %s", paste(noClusters, collapse = ', ')))
   for (i in 1:length(noClusters)) {
     # for (i in c(1,3,4)) {
     print(sprintf('Start 1.%s processing cluster %s for DE markers identification', i, noClusters[i]))
@@ -213,7 +211,7 @@ getClusterExpCondDe <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnot
     ## -------------------- ##
     if (deMethod == 'MAST') {
       if (!is.null(covariateVarLevels)) {
-        if (verbose) {
+        if (debug) {
           print("*********")
           print(table(seuratObjFinalSubet@meta.data$covariateVar))
           print(sprintf("input 'covariateVarLevels': %s", paste(covariateVarLevels, collapse = ', ')))
@@ -221,13 +219,13 @@ getClusterExpCondDe <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnot
         }
         if (length(unique(seuratObjFinalSubet@meta.data$covariateVar))<length(covariateVarLevels)) {
           covariateVarLevels <- covariateVarLevels[which(!is.na(match(covariateVarLevels, unique(seuratObjFinalSubet@meta.data$covariateVar))))]
-          if (verbose) print(sprintf("covariateVarLevels is updated into %s. ", paste(covariateVarLevels, collapse = ', ')))
+          if (debug) print(sprintf("covariateVarLevels is updated into %s. ", paste(covariateVarLevels, collapse = ', ')))
         }
         seuratObjFinalSubet@meta.data$covariateVar = factor(seuratObjFinalSubet@meta.data$covariateVar, levels = covariateVarLevels)
         # seuratObjFinalSubet@meta.data$covariateVar = relevel(x =  seuratObjFinalSubet@meta.data$covariateVar, ref = covariateVarLevels[length(covariateVarLevels)] )
       } else {
         covariateVarLevels <- names(sort(table(seuratObjFinalSubet@meta.data$covariateVar), decreasing = F))
-        if (verbose) {
+        if (debug) {
           print("*********")
           print(table(seuratObjFinalSubet@meta.data$covariateVar))
           print(sprintf("sorted levels: %s", paste(covariateVarLevels, collapse = ', ')))
@@ -247,17 +245,17 @@ getClusterExpCondDe <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnot
         if (length(compGroupName) == 1) {
           if (all(table(seuratObjFinalSubet$expCond) >= min.cells.group) ) {
             if (deMethod=='DESeq2.bulk') {
-              deMarkers                    <- runBulkDEseq2(object = seuratObjFinalSubet, ident.1 =  compGroupName, min.pct = min.pct, metaCovariateInput = deseq2bulk.metaCovariateInput, verbose = verbose, debug = debug )
+              deMarkers                    <- runBulkDEseq2(object = seuratObjFinalSubet, ident.1 =  compGroupName, min.pct = min.pct, metaCovariateInput = deseq2bulk.metaCovariateInput, debug = debug, min.cells.group = min.cells.group)
             } else {
               if (is.null(covariateVarName)) {
-                deMarkers                  <- FindMarkers(seuratObjFinalSubet, ident.1 = compGroupName, group.by = 'expCond', test.use = deMethod, min.cells.group = min.cells.group, logfc.threshold = logfc.threshold, min.pct =  min.pct, verbose = verbose)
+                deMarkers                  <- FindMarkers(seuratObjFinalSubet, ident.1 = compGroupName, group.by = 'expCond', test.use = deMethod, min.cells.group = min.cells.group, logfc.threshold = logfc.threshold, min.pct =  min.pct)
               } else {
-                if (verbose) {
+                if (debug) {
                   print('--------------')
                   print(table(seuratObjFinalSubet@meta.data$covariateVar))
                   print('--------------')
                 }
-                deMarkers                  <- FindMarkers(seuratObjFinalSubet, ident.1 = compGroupName, group.by = 'expCond', test.use = deMethod, min.cells.group = min.cells.group, logfc.threshold = logfc.threshold, min.pct =  min.pct, verbose = verbose, latent.vars = 'covariateVar')
+                deMarkers                  <- FindMarkers(seuratObjFinalSubet, ident.1 = compGroupName, group.by = 'expCond', test.use = deMethod, min.cells.group = min.cells.group, logfc.threshold = logfc.threshold, min.pct =  min.pct, latent.vars = 'covariateVar')
               }
             }
           } else {
@@ -266,24 +264,24 @@ getClusterExpCondDe <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnot
         } else if (length(compGroupName) == 2) {
           if (all(table(seuratObjFinalSubet$expCond)[match(compGroupName, names(table(seuratObjFinalSubet$expCond)))] >= min.cells.group) ) {
             if (deMethod=='DESeq2.bulk') {
-              deMarkers                    <- runBulkDEseq2(object = seuratObjFinalSubet, ident.1 = compGroupName[1], ident.2 = compGroupName[2], min.pct = min.pct, metaCovariateInput = deseq2bulk.metaCovariateInput, verbose = verbose, debug = debug, median.norm = median.norm )
+              deMarkers                    <- runBulkDEseq2(object = seuratObjFinalSubet, ident.1 = compGroupName[1], ident.2 = compGroupName[2], min.pct = min.pct, metaCovariateInput = deseq2bulk.metaCovariateInput, debug = debug, min.cells.group = min.cells.group)
             } else {
               if (is.null(covariateVarName)) {
-                deMarkers                  <- FindMarkers(seuratObjFinalSubet, ident.1 = compGroupName[1], ident.2 = compGroupName[2], group.by = 'expCond', test.use = deMethod, min.cells.group = min.cells.group, logfc.threshold = logfc.threshold, min.pct =  min.pct, verbose = verbose)
+                deMarkers                  <- FindMarkers(seuratObjFinalSubet, ident.1 = compGroupName[1], ident.2 = compGroupName[2], group.by = 'expCond', test.use = deMethod, min.cells.group = min.cells.group, logfc.threshold = logfc.threshold, min.pct =  min.pct)
               } else {
-                if (verbose) {
+                if (debug) {
                   print('--------------')
                   print(table(seuratObjFinalSubet@meta.data$covariateVar))
                   print('--------------')
                 }
-                deMarkers                  <- FindMarkers(seuratObjFinalSubet, ident.1 = compGroupName[1], ident.2 = compGroupName[2], group.by = 'expCond', test.use = deMethod, min.cells.group = min.cells.group, logfc.threshold = logfc.threshold, min.pct =  min.pct, verbose = verbose, latent.vars = 'covariateVar')
+                deMarkers                  <- FindMarkers(seuratObjFinalSubet, ident.1 = compGroupName[1], ident.2 = compGroupName[2], group.by = 'expCond', test.use = deMethod, min.cells.group = min.cells.group, logfc.threshold = logfc.threshold, min.pct =  min.pct, latent.vars = 'covariateVar')
               }
             }
           } else {
             print(sprintf('cluster %s has less than 3 cells in one experimental condiction, no DE markers can be identfied for this cluster', noClusters[i]))
           }
         }
-        if(verbose) print('-=-=-=-=-=-=-=-=-=-=-=-=-=-=-')
+        if(debug) print('-=-=-=-=-=-=-=-=-=-=-=-=-=-=-')
         clusterDeMarkers[[i]]          <- deMarkers
         if (deMethod!="DESeq2.bulk") {
           # print(sprintf('Maximum p_value is %s, Maximum adjusted p_value is %s', round(max(deMarkers$pvalue), digits = 4), round(max(deMarkers$padj, na.rm = T), digits = 4)))
@@ -370,7 +368,7 @@ getClusterExpCondDe <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnot
   ## -
   clusterTopDeMarkersUpComb          <- data.frame('Gene' = clusterTopDeMarkersUp[-1], 'geneType'= clusterTopDeMarkersUpCluster[-1])
   clusterTopDeMarkersDownComb        <- data.frame('Gene' = clusterTopDeMarkersDown[-1], 'geneType' = clusterTopDeMarkersDownCluster[-1])
-  if(verbose) print(head(clusterTopDeMarkersUpComb))
+  if(debug) print(head(clusterTopDeMarkersUpComb))
   if (dim(clusterTopDeMarkersUpComb[!is.na(clusterTopDeMarkersUpComb$Gene),])[1]!=0) {
     write.xlsx( x = clusterTopDeMarkersUpComb[!is.na(clusterTopDeMarkersUpComb$Gene),], file = sprintf('%s_top%s_upDe.xlsx', clusterDeMarkersFname, topNo1), sheetName = 'up', row.names = F, col.names = T, append = F)
   }
@@ -406,10 +404,10 @@ IdentsToCells <- function( object, group.by, ident.1, ident.2 = NULL, cellnames.
   return(list(group1 = ident.1, group2 = ident.2))
 }
 ## ----------------- ##
-runBulkDEseq2 <- function(object, ident.1, ident.2=NULL, min.pct = 0.1, metaCovariateInput = NULL, verbose = F, debug = F, median.norm = median.norm, min.cells.group = 3) {
+runBulkDEseq2 <- function(object, ident.1, ident.2=NULL, min.pct = 0.1, metaCovariateInput = NULL, debug = F, min.cells.group = min.cells.group) {
   cellGroup = 'expCond' ##updated with 'expCondCheck', compGroupName should be levels shown in 'expCond'
   min.cells.group = as.numeric(min.cells.group)
-  if (verbose) print(table(object@meta.data[,match(cellGroup, colnames(object@meta.data))]))
+  if (debug) print(table(object@meta.data[,match(cellGroup, colnames(object@meta.data))]))
   if (is.null(ident.2)) {
     print(sprintf("group1 = %s, group2 = NULL", ident.1))
   } else {
@@ -417,14 +415,14 @@ runBulkDEseq2 <- function(object, ident.1, ident.2=NULL, min.pct = 0.1, metaCova
   }
   ## select cells corresponding ident.1/2
   cells      <- IdentsToCells(object = object, group.by = cellGroup, ident.1 = ident.1, ident.2 = ident.2,  cellnames.use = colnames(object) )
-  if (verbose) print(str(cells))
+  if (debug) print(str(cells))
   # ## calculate normalization factors with respect to all selected cells, either full sets or subsets.
   # cells.meta <- object@meta.data[match(unlist(cells), rownames(object@meta.data)),]
   # cells.no   <- count(cells.meta, deseq2bulk) %>% as.data.frame()
   # cells.no$norm.factor<- cells.no$n/median(cells.no$n)
   ## calculate FC results
   fc.results <- FoldChange(object = object, ident.1 = ident.1, ident.2 = ident.2,  group.by = cellGroup )
-  if (verbose) {
+  if (debug) {
     print(sprintf("Initially, %s genes are used for FC calculation.", dim(fc.results)[1]))
   }
   ## filter based on min.pct option
@@ -437,57 +435,28 @@ runBulkDEseq2 <- function(object, ident.1, ident.2=NULL, min.pct = 0.1, metaCova
     counts             <- FetchData(object = object, vars = genes4de, cells = cells[[x]], slot = "count")
     counts$deseq2bulk  <- FetchData(object = object, vars = 'deseq2bulk', cells = cells[[x]])$deseq2bulk
     counts.group       <- counts %>% group_by(deseq2bulk) %>% summarise(across(everything(), list(sum))) %>% as.data.frame()
-    if (median.norm == 0) {
-      counts.group     = counts.group
-    } else if (median.norm == 1) {
-      print("11111111111111111")
-      ## normalize the sum by median of number of cells
-      deseq2bulk.no      <- as.data.frame(table(counts$deseq2bulk))
-      print("before remval")
-      print(deseq2bulk.no)
-      deseq2bulk.no        <- deseq2bulk.no[deseq2bulk.no$Freq >= min.cells.group,]
-      print("after remval")
-      print(deseq2bulk.no)
-      print('-=-=-=-=-=-=-=-=-')
-      deseq2bulk.no$weight <- deseq2bulk.no$Freq/median(deseq2bulk.no$Freq)
-      deseq2bulk.no$weight <- deseq2bulk.no$Freq/sum(deseq2bulk.no$Freq)
-      deseq2bulk.no      <- deseq2bulk.no[match(counts.group$deseq2bulk, deseq2bulk.no$Var1),]
-      counts.group.match <- counts.group %>% dplyr::filter(deseq2bulk == deseq2bulk.no$Var1 )
-      print(sprintf("Before: [row=%s %s], After [row=%s %s]", dim(counts.group)[1], dim(counts.group)[2], dim(counts.group.match)[1], dim(counts.group.match)[2] ) )
-      counts.group2      <- round(counts.group.match[,-1]/deseq2bulk.no$weight, digits = 0)
-      counts.group2$deseq2bulk <- counts.group.match$deseq2bulk
-      counts.group       <- counts.group2
-      print(dim(counts.group))
-      print(deseq2bulk.no)
-      ## -
-    } else if (median.norm == 2) {
-      print('222222222222222222')
-      print("process median normalization")
-      counts.groupMedian <- counts %>% group_by(deseq2bulk) %>% summarise(across(everything(), list(median))) %>% as.data.frame()
-      print(head(counts.groupMedian[,1:4]))
-      print('******')
-      counts.groupMax    <- counts %>% group_by(deseq2bulk) %>% summarise(across(everything(), list(max))) %>% as.data.frame()
-      print(head(counts.groupMax[,1:4]))
-      print('******')
-      counts.groupMin    <- counts %>% group_by(deseq2bulk) %>% summarise(across(everything(), list(min))) %>% as.data.frame()
-      print(head(counts.groupMin[,1:4]))
-      print('******')
-      counts.group2      <- (counts.group[,-1]-counts.groupMedian[,-1])/(counts.groupMax[,-1]-counts.groupMin[,-1])
-      counts.group       <- counts.group2
-    } else if (median.norm == 3) {
-      print('333333333333333333')
-      deseq2bulk.no      <- as.data.frame(table(counts$deseq2bulk))
-      deseq2bulk.no      <- deseq2bulk.no[match(counts.group$deseq2bulk, deseq2bulk.no$Var1),]
-      print(deseq2bulk.no$Freq)
-      counts.group2      <- round(counts.group[,-1]/deseq2bulk.no$Freq, digits = 0)
-      counts.group2$deseq2bulk <- counts.group$deseq2bulk
-      print(head(counts.group[,1:4]))
-      print('******')
-      print(head(counts.group2[,1:4]))
-      print('******')
-      counts.group       <- counts.group2
-      print(deseq2bulk.no)
-    }
+    colnames(counts.group) <- gsub('_1', '', colnames(counts.group))
+    ## normalize the sum by median of number of cells weight
+    deseq2bulk.no      <- as.data.frame(table(counts$deseq2bulk))
+    ## remove samples with low expression cell number at cut-off of 'min.cells.group'
+    if (debug) print("before remval")
+    if (debug)  print(deseq2bulk.no)
+    deseq2bulk.no        <- deseq2bulk.no[deseq2bulk.no$Freq >= min.cells.group,]
+    if (debug) print("after remval")
+    if (debug) print(deseq2bulk.no)
+    if (debug) print('-=-=-=-=-=-=-=-=-')
+    deseq2bulk.no$weight <- deseq2bulk.no$Freq/median(deseq2bulk.no$Freq)
+    ## match count table with weight table
+    counts.group.match   <-counts.group %>% dplyr::filter(deseq2bulk %in% as.character(deseq2bulk.no$Var1) )
+    deseq2bulk.no        <- deseq2bulk.no[match(counts.group.match$deseq2bulk, deseq2bulk.no$Var1),]
+    if (debug) print(sprintf("min.cells.group = %s", min.cells.group))
+    if (debug) print(sprintf("Before: [row=%s %s], After [row=%s %s]", dim(counts.group)[1], dim(counts.group)[2], dim(counts.group.match)[1], dim(counts.group.match)[2] ) )
+    counts.group2            <- round(counts.group.match[,-1]/deseq2bulk.no$weight, digits = 0)
+    counts.group2$deseq2bulk <- counts.group.match$deseq2bulk
+    counts.group             <- counts.group2
+    if (debug) print(dim(counts.group))
+    if (debug) print(deseq2bulk.no)
+    ## -
     counts.group$group <- paste('group', x, sep = '')
     return(counts.group)
   } )
@@ -500,6 +469,7 @@ runBulkDEseq2 <- function(object, ident.1, ident.2=NULL, min.pct = 0.1, metaCova
   colnames(countTab) <- countInputsComb %>% dplyr::pull(deseq2bulk)
   if (debug) print("header of countTab")
   if (debug) print(head(countTab))
+  if (debug) print(dim(countTab))
   if (debug) print('-=-=-=-=-=-=-=-=-=-=-')
   ## ----------------- ##
   ## prepare metaTab, if 'metaCovariateInput' != NULL, add corresponding covariates for model DESeq2 model fitting.
@@ -517,12 +487,15 @@ runBulkDEseq2 <- function(object, ident.1, ident.2=NULL, min.pct = 0.1, metaCova
   ## ----------------- ##
   if (debug) print("header of metaTab")
   if (debug) print(head(metaTab2))
-  if (debug) print('-=-=-=-=-=-=-=-=-=-=-')
+  print('-=-=-=-=-=-=-=-=-=-=-')
+  print(sprintf("A total of %s samples", dim(metaTab2)[1]))
+  print(table(metaTab2$group))
+  print('-=-=-=-=-=-=-=-=-=-=-')
   ## ----------------- ##
   design.formula <- formula(paste0(' ~ ', paste(colnames(metaTab2), collapse = '+')))
-  if (verbose) print("Design formular is:")
-  if (verbose) print(design.formula)
-  if (verbose) print('-=-=-=-=-=-=-=-=-=-=-')
+  print("Design formular is:")
+  print(design.formula)
+  print('-=-=-=-=-=-=-=-=-=-=-')
   dds           <- DESeq2::DESeqDataSetFromMatrix(countData=countTab, colData=S4Vectors::DataFrame(metaTab2), design = design.formula )
   dds           <- DESeq2::DESeq(dds)
   if (debug) print(DESeq2::resultsNames(dds))
@@ -531,7 +504,7 @@ runBulkDEseq2 <- function(object, ident.1, ident.2=NULL, min.pct = 0.1, metaCova
   tpdeseq2.save <- res[order(res$padj) , ]
   if (debug) print(head(tpdeseq2.save))
   return(tpdeseq2.save)
-  if (verbose) print("DESeq2 bulk analysis is completed.")
+  print("DESeq2 bulk analysis is completed.")
 }
 
 
