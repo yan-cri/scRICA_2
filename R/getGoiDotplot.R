@@ -56,10 +56,13 @@
 # library(grDevices)
 # library(tools)
 # library(xlsx)
-getGoiDotplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, goiFname, geneTypeOrder=NULL, expCondCheck='sample', expCondCheckFname = NULL, expCondReorderLevels=NULL, expCond = NULL, cellcluster = NULL, dotPlotFnamePrefix='goiDotplots', dotPlotMinExpCutoff=0.3, dotPlotMaxExpCutoff = 2.5, dotPlotWidth=NULL, dotPlotHeight=NULL, legendPer=NULL, genetypebarPer=NULL, fontsize.x = 24, fontsize.y = 18, fontangle.x = 90, fontangle.y = 90, fontsize.legend1 = 20, fontsize.legend2 = NULL, gridOn = as.logical(F), geneTypeLegendOn = as.logical(T) ){
+getGoiDotplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, goiFname, geneTypeOrder=NULL,
+                          expCondCheck='sample', expCondCheckFname = NULL, expCondReorderLevels=NULL,
+                          expCond = NULL, cellcluster = NULL, dotPlotFnamePrefix='goiDotplots',
+                          dotPlotMinExpCutoff=0.3, dotPlotMaxExpCutoff = 2.5, dotPlotWidth=NULL, dotPlotHeight=NULL, legendPer=NULL, genetypebarPer=NULL, fontsize.x = 24, fontsize.y = 18, fontangle.x = 90, fontangle.y = 90, fontsize.legend1 = 20, fontsize.legend2 = NULL, gridOn = as.logical(F), geneTypeLegendOn = as.logical(T), debug = F ){
   ## ---
   newAnnotation           <- as.logical(newAnnotation)
-  expCondName             <- expCond
+  expCondName             <- expCond ## for subsetting on expCond
   if (newAnnotation & is.null(newAnnotationRscriptName)) print("Option 'newAnnotation' is on, please provide corresponding option 'newAnnotationRscriptName'.")
   ## ---
   if (is.null(resDir) & !is.null(rds)) {
@@ -148,7 +151,7 @@ getGoiDotplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationR
   if (!dir.exists(plotResDir)) dir.create(plotResDir)
   print(sprintf('GOI dot plots will be saved in %s', plotResDir))
   ##--------------------------------------------------------------------------------------##
-  # print(table(seuratObjFinal@meta.data$expCond))
+  if (debug) print(table(seuratObjFinal@meta.data$expCond))
   expCondLevels = levels(factor(seuratObjFinal@meta.data$expCond))
   if (!is.null(expCondName)) {
     if (any(!expCondName %in% expCondLevels ) ) stop('Please provide the corresponding experimental condition.')
@@ -168,18 +171,27 @@ getGoiDotplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationR
       }
       seuratObjFinal <- seuratObjFinal2
     }
+    if(debug) print('-=-=-=-=-=-=-=-=-=-=-')
+    if(debug) print('subsetting on expCond')
+    if(debug) print("expCond table is shown below")
+    if(debug) print(table(seuratObjFinal@meta.data$expCond))
+    if(debug) print('******')
+    if(debug) print(head(seuratObjFinal))
+    if(debug) print("Idents table is shown below")
+    if(debug) print(table(Seurat::Idents(seuratObjFinal)))
+    if(debug) print('-=-=-=-=-=-=-=-=-=-=-')
   }
-  # print('97979799')
-  # print(table(seuratObjFinal@meta.data$expCond))
-  # print(head(seuratObjFinal))
-  # print('97979799')
+
   ## ------
-  # print(table(Seurat::Idents(seuratObjFinal)))
   clusterLevels <- levels(Seurat::Idents(seuratObjFinal))
   if (!is.null(cellcluster)) {
     if (any(!cellcluster %in% clusterLevels ) ) stop('Please provide the corresponding cell clusters ')
     print(sprintf('Subsetting %s specific cell clusters: %s', length(cellcluster), paste(cellcluster, collapse = ',')))
     seuratObjFinal                          <- subset(seuratObjFinal, idents = cellcluster )
+    if (debug) print("subset cell clusters")
+    if(debug) print("subsetted idents table is shown below")
+    if(debug) print(table(Seurat::Idents(seuratObjFinal)))
+    if(debug) print('-=-=-=-=-=-=-=-=-=-=-')
   }
   ##--------------------------------------------------------------------------------------##
   ## using column 'gene' as marker genes, if column 'geneType' exist, will be used to categorize the genes
@@ -189,7 +201,7 @@ getGoiDotplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationR
     markerGenesPrep         <- read.delim(file = as.character(goiFname), header = T, sep = '\t')
   }
   colnames(markerGenesPrep) <- tolower(colnames(markerGenesPrep))
-  # print(head(markerGenesPrep))
+  if (debug) print(head(markerGenesPrep))
   print("----------------")
   if (sum(duplicated(markerGenesPrep$gene))>0) print(sprintf("%s genes are duplicated genes, they are: %s", sum(duplicated(markerGenesPrep$gene)), paste(markerGenesPrep$gene[duplicated(markerGenesPrep$gene)], collapse = ', ' ) ))
   if (dim(markerGenesPrep)[2] == 1) {
@@ -236,25 +248,17 @@ getGoiDotplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationR
     if (is.null(expCondReorderLevels)) {
       expCondReorderLevels          <- levels(factor(seuratObjFinal@meta.data$expCond))
     }
-    print(levels(factor(seuratObjFinal@meta.data$expCond)))
     ## ---
-    if ( !all(expCondReorderLevels %in% levels(factor(seuratObjFinal$expCond))) ) stop("Please provide correct corresponding 'expCondReorderLevels' to sort y-axis dot plot")
+    if ( !all(expCondReorderLevels %in% levels(factor(seuratObjFinal$expCond))) ) stop("Please provide correct corresponding 'expCondReorderLevels' to sort y-axis dot plot experimental conditions.")
     ## ---
     if (expCondCheck != 'idents') {
-
-      if (newAnnotation) {
-        Seurat::Idents(seuratObjFinal)        <- factor( paste(Seurat::Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'),
-                                                         levels = paste(rep(levels(Seurat::Idents(seuratObjFinal)), each = length(levels(factor(seuratObjFinal$expCond))) ), levels(factor(seuratObjFinal$expCond, levels = expCondReorderLevels)), sep = '_') )
-
-      }else {
-        Seurat::Idents(seuratObjFinal)        <- factor( seuratObjFinal$expCond, levels = expCondReorderLevels )
-
-      }
-
+      Seurat::Idents(seuratObjFinal)        <- factor( paste(Seurat::Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'),
+                                                       levels = paste(rep(levels(Seurat::Idents(seuratObjFinal)), each = length(levels(factor(seuratObjFinal$expCond))) ), levels(factor(seuratObjFinal$expCond, levels = expCondReorderLevels)), sep = '_') )
     } else {
       Seurat::Idents(seuratObjFinal)        <- factor(Seurat::Idents(seuratObjFinal), levels = expCondReorderLevels)
     }
-
+  } else{
+    print("Error: cell name does not match.")
   }
   print(sprintf('Updated idents information with experimental condition are as below:'))
   print(table(Seurat::Idents(seuratObjFinal) ))
