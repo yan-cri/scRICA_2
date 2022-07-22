@@ -155,9 +155,9 @@ getClusterMarkers <- function(qcProcessedResults, integrationMethod = 'CCA', nfe
   # seuratObjFinal <- ScoreJackStraw(seuratObjFinal, dims = 1:20)
   elbowPlot                     <- ElbowPlot(seuratObjFinal, ndims = 30)
   ## 4.3 umap, tsne, knn/clusters
-  seuratObjFinal                <- RunUMAP(seuratObjFinal, reduction = "pca", dims = 1:20)
   seuratObjFinal                <- FindNeighbors(seuratObjFinal, reduction = "pca", dims = 1:20)
   seuratObjFinal                <- FindClusters(seuratObjFinal, resolution = 0.5)
+  seuratObjFinal                <- RunUMAP(seuratObjFinal, reduction = "pca", dims = 1:20)
   seuratObjFinal                <- RunTSNE(object = seuratObjFinal, dims = 1:20)
   ##--------------------------------------------------------------------------------------##
   ## PCA plot
