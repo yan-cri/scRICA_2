@@ -15,6 +15,7 @@
 #' @param newAnnotationRscriptName if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.
 #' @param expCondCheck specify which experimental conditions to be explored, including sample, idents, or expCond1/2/....
 #' @param expCondCheckFname suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.
+#' @param cellcluster specify cell clusters to be extracted for the cluster markers identification.
 #' @param pAdjValCutoff adjusted p-value cutoff for significant positively expressed cluster markers, by default = 0.05.
 #' @param topNo specify the top number of significantly over expressed cluster markers in each identified/annotated clusters, by default = 10.
 #' @param deMethod DE test method with options: 'wilcox', 't', 'negbinom', 'poisson', 'MAST', 'DESeq2', default = 'wilcox'.
@@ -43,7 +44,11 @@
 #' @return
 #' a list item including 2 elements: All positively expressed genes from each experimental condition cell clusters in 'expCondPosMarkers' and all positively significantly expressed genes at FDR corrected p-value of 0.05 (by default) from each experimental condition cell clusters in'expCondSigPosMarkers'
 ## -------------------------------------------------------------------------------------- ##
-getExpCondClusterMarkers <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, expCondCheck='sample', expCondCheckFname = NULL, deMethod = 'wilcox', min.pct = 0.1, logfc.threshold = 0.25, min.cells.group = 3, pAdjValCutoff = 0.05, topNo = 10) {
+getExpCondClusterMarkers <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL,
+                                     expCondCheck='sample', expCondCheckFname = NULL,
+                                     cellcluster = NULL,
+                                     deMethod = 'wilcox',
+                                     min.pct = 0.1, logfc.threshold = 0.25, min.cells.group = 3, pAdjValCutoff = 0.05, topNo = 10) {
   options(java.parameters = "-Xmx32000m")
   ###--------------------------------------------------------------------------------------##
   pAdjValCutoff           <- as.numeric(pAdjValCutoff)
@@ -132,6 +137,14 @@ getExpCondClusterMarkers <- function(resDir=NULL, rds=NULL, newAnnotation=F, new
     }
   }
   ##--------------------------------------------------------------------------------------##
+  ## if 'cellcluster' is provided, subset on 'cellcluster'
+  clusterLevels <- levels(Seurat::Idents(seuratObjFinal))
+  if (!is.null(cellcluster)) {
+    if (any(!cellcluster %in% clusterLevels ) ) stop('Please provide the corresponding cell clusters in identfied idents.')
+    print(sprintf('Subsetting %s specific cell clusters: %s', length(cellcluster), paste(cellcluster, collapse = ',')))
+    seuratObjFinal        <- subset(seuratObjFinal, idents = cellcluster )
+  }
+  ##--------------------------------------------------------------------------------------##
   ## updated expCond factor after above updating
   expCondLevels           <- levels(factor(seuratObjFinal@meta.data$expCond))
   ## ---
@@ -140,6 +153,8 @@ getExpCondClusterMarkers <- function(resDir=NULL, rds=NULL, newAnnotation=F, new
   if (Seurat::DefaultAssay(seuratObjFinal)!='integrated') {
     stop("Please conduct data integration before using this function.")
   }
+  print('-=-=-=--=-=-=-=-=-=-')
+  print("Conducting cluster markers analysis on below experimental conditions respectively.")
   print(table(seuratObjFinal@meta.data$expCond))
   ## -------------------------------------------------------------------------------------
   for (l in 1:length(expCondLevels)) {
