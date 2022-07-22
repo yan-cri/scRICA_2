@@ -499,7 +499,7 @@ runBulkDEseq2 <- function(object, ident.1, ident.2=NULL, min.pct = 0.1, metaCova
   dds           <- DESeq2::DESeqDataSetFromMatrix(countData=countTab, colData=S4Vectors::DataFrame(metaTab2), design = design.formula )
   dds           <- DESeq2::DESeq(dds)
   if (debug) print(DESeq2::resultsNames(dds))
-  res           <- DESeq2::results(dds, contrast=c("group", 'group2', 'group1' ), format="DataFrame")
+  res           <- DESeq2::results(dds, contrast=c("group", 'group1', 'group2' ), format="DataFrame")
   res           <- as.data.frame(res)
   tpdeseq2.save <- res[order(res$padj) , ]
   if (debug) print(head(tpdeseq2.save))
