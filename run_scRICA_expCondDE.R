@@ -71,8 +71,13 @@ parser$add_argument("--logfc.threshold", type="double",
                     metavar='')
 
 parser$add_argument("--outputExcel", type="character",
-                    default = 'Ture',
+                    default = 'T',
                     help="Whether to export analysis results in excel format, by default True",
+                    metavar='')
+
+parser$add_argument("--debug", type="character",
+                    default = 'F',
+                    help="Whether to print extra analysis processing information for debug, by default False",
                     metavar='')
 
 ## ---
@@ -82,8 +87,7 @@ print("All input options")
 print(args)
 print('-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-')
 ## -------------------------------------------------------------------------------------##
-verbose = as.logical(T)
-debug   = as.logical(F)
+debug   = as.logical(args$debug)
 print("START read in RDS file")
 rds1             <- readRDS(as.character(args$rdsFname))
 setwd(as.character(args$outputDir))
@@ -101,7 +105,8 @@ if (is.null(args$cellAnnotation)) {
                                    compGroup = as.character(args$compGroup), deMethod = as.character(args$deMethod),
                                    topNo = as.numeric(args$topNo), outputExcel = as.logical(args$outputExcel),
                                    min.cells.group = as.numeric(args$min.cells.group), min.pct =  as.numeric(args$min.pct), logfc.threshold = as.numeric(args$logfc.threshold),
-                                   pAdjValCutoff = as.numeric(args$pAdjValCutoff), verbose = verbose, debug = debug)
+                                   pAdjValCutoff = as.numeric(args$pAdjValCutoff), debug = debug)
+
     } else {
       sampMeta <- read.delim(file = as.character(args$deseq2bulkSampleMeta), header = T, sep = '\t')
       deRes <- getClusterExpCondDe(rds = rds1, resDir = as.character(args$outputDir),
@@ -112,7 +117,7 @@ if (is.null(args$cellAnnotation)) {
                                    deseq2bulk.metaCovariateInput = sampMeta,
                                    topNo = as.numeric(args$topNo), outputExcel = as.logical(args$outputExcel),
                                    min.cells.group = as.numeric(args$min.cells.group), min.pct =  as.numeric(args$min.pct), logfc.threshold = as.numeric(args$logfc.threshold),
-                                   pAdjValCutoff = as.numeric(args$pAdjValCutoff), verbose = verbose, debug = debug)
+                                   pAdjValCutoff = as.numeric(args$pAdjValCutoff), debug = debug)
     }
 
   } else {
@@ -124,7 +129,7 @@ if (is.null(args$cellAnnotation)) {
                                    compGroup = as.character(args$compGroup), deMethod = as.character(args$deMethod),
                                    topNo = as.numeric(args$topNo), cellcluster = sel.cellClusters, outputExcel = as.logical(args$outputExcel),
                                    min.cells.group = as.numeric(args$min.cells.group), min.pct =  as.numeric(args$min.pct), logfc.threshold = as.numeric(args$logfc.threshold),
-                                   pAdjValCutoff = as.numeric(args$pAdjValCutoff), verbose = verbose, debug = debug)
+                                   pAdjValCutoff = as.numeric(args$pAdjValCutoff), debug = debug)
     } else {
       sampMeta <- read.delim(file = as.character(args$deseq2bulkSampleMeta), header = T, sep = '\t')
       deRes <- getClusterExpCondDe(rds = rds1, resDir = as.character(args$outputDir),
@@ -134,7 +139,7 @@ if (is.null(args$cellAnnotation)) {
                                    deseq2bulk.metaCovariateInput = sampMeta,
                                    topNo = as.numeric(args$topNo), cellcluster = sel.cellClusters, outputExcel = as.logical(args$outputExcel),
                                    min.cells.group = as.numeric(args$min.cells.group), min.pct =  as.numeric(args$min.pct), logfc.threshold = as.numeric(args$logfc.threshold),
-                                   pAdjValCutoff = as.numeric(args$pAdjValCutoff), verbose = verbose, debug = debug)
+                                   pAdjValCutoff = as.numeric(args$pAdjValCutoff), debug = debug)
     }
 
   }
@@ -147,7 +152,7 @@ if (is.null(args$cellAnnotation)) {
                                    compGroup = as.character(args$compGroup), deMethod = as.character(args$deMethod),
                                    topNo = as.numeric(args$topNo), outputExcel = as.logical(args$outputExcel),
                                    min.cells.group = as.numeric(args$min.cells.group), min.pct =  as.numeric(args$min.pct), logfc.threshold = as.numeric(args$logfc.threshold),
-                                   pAdjValCutoff = as.numeric(args$pAdjValCutoff), verbose = verbose, debug = debug)
+                                   pAdjValCutoff = as.numeric(args$pAdjValCutoff), debug = debug)
     } else {
       sampMeta <- read.delim(file = as.character(args$deseq2bulkSampleMeta), header = T, sep = '\t')
       deRes <- getClusterExpCondDe(rds = rds1, resDir = as.character(args$outputDir),
@@ -157,19 +162,19 @@ if (is.null(args$cellAnnotation)) {
                                    deseq2bulk.metaCovariateInput = sampMeta,
                                    topNo = as.numeric(args$topNo), outputExcel = as.logical(args$outputExcel),
                                    min.cells.group = as.numeric(args$min.cells.group), min.pct =  as.numeric(args$min.pct), logfc.threshold = as.numeric(args$logfc.threshold),
-                                   pAdjValCutoff = as.numeric(args$pAdjValCutoff), verbose = verbose, debug = debug)
+                                   pAdjValCutoff = as.numeric(args$pAdjValCutoff), debug = debug)
     }
 
   } else {
     sel.cellClusters <- paste(unlist(strsplit(args$cellclusters, split = ', ')), sep = ', ' )
-    if (args$cellclusters == 'all') {
+    if (args$deMethod!='DESeq2.bulk') {
       deRes <- getClusterExpCondDe(rds = rds1, resDir = as.character(args$outputDir),
                                    newAnnotation = T, newAnnotationRscriptName = args$cellAnnotation,
                                    expCondCheck = as.character(args$expCondCheck), expCondCheckFname = as.character(args$expCondCheckFname),
                                    compGroup = as.character(args$compGroup), deMethod = as.character(args$deMethod),
                                    topNo = as.numeric(args$topNo), cellcluster = sel.cellClusters, outputExcel = as.logical(args$outputExcel),
                                    min.cells.group = as.numeric(args$min.cells.group), min.pct =  as.numeric(args$min.pct), logfc.threshold = as.numeric(args$logfc.threshold),
-                                   pAdjValCutoff = as.numeric(args$pAdjValCutoff), verbose = verbose, debug = debug)
+                                   pAdjValCutoff = as.numeric(args$pAdjValCutoff), debug = debug)
     } else {
       sampMeta <- read.delim(file = as.character(args$deseq2bulkSampleMeta), header = T, sep = '\t')
       deRes <- getClusterExpCondDe(rds = rds1, resDir = as.character(args$outputDir),
@@ -179,9 +184,8 @@ if (is.null(args$cellAnnotation)) {
                                    deseq2bulk.metaCovariateInput = sampMeta,
                                    topNo = as.numeric(args$topNo), cellcluster = sel.cellClusters, outputExcel = as.logical(args$outputExcel),
                                    min.cells.group = as.numeric(args$min.cells.group), min.pct =  as.numeric(args$min.pct), logfc.threshold = as.numeric(args$logfc.threshold),
-                                   pAdjValCutoff = as.numeric(args$pAdjValCutoff), verbose = verbose, debug = debug)
+                                   pAdjValCutoff = as.numeric(args$pAdjValCutoff), debug = debug)
     }
-
   }
 }
 print(sprintf("END DE anlaysis with method %s", args$deMethod))
