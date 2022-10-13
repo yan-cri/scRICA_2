@@ -303,6 +303,7 @@ processQC <- function(metadata, multiomics = F, extraFilter=F, resDirName=NULL, 
     print(head(seuratObj@meta.data, 5))
     ## calculating no. of cells with certain mitochondrial percentage
     mtPer <- list()
+    rRNAper <- list()
     for(k in seq_along(1:4)){
       mtPer[[k]] <- sum(seuratObj@meta.data$percent.mt < 5*k) / length(seuratObj@meta.data$percent.mt)
     }
@@ -314,7 +315,27 @@ processQC <- function(metadata, multiomics = F, extraFilter=F, resDirName=NULL, 
     } else {
       mtPerTabSampComb        <- dplyr::full_join(x = mtPerTabSampComb, y = mtPerTab, by = 'MT.cutoff')
     }
-    # print(mtPerTabSampComb)
+    ## ---
+    ## calculate rRNA content
+    print(sprintf('%s rRNA genes are processed', length(grep(rRNAcontent(as.character(genomeSpecies)), seuratObj@assays$RNA@data@Dimnames[[1]])) ))
+    seuratObj[['rRNA.content']] <- Seurat::PercentageFeatureSet(object = seuratObj, pattern = rRNAcontent(as.character(genomeSpecies)) )
+    for(k in seq_along(1:20)){
+      rRNAper[[k]] <- sum(seuratObj@meta.data$rRNA.content < 5*k) / length(seuratObj@meta.data$rRNA.content)
+    }
+    rRNAper                     <- do.call(rbind, rRNAper)
+    rRNAperTab                  <- data.frame(`rRNA content` = c("<5%", "<10%", "<15%", "<20%",
+                                                                 "<25%", "<30%", "<35%", "<40%",
+                                                                 "<45%", "<50%", "<55%", "<60%",
+                                                                 "<65%", "<70%", "<75%", "<80%",
+                                                                 "<85%", "<90%", "<95%", "<100%"),
+                                              `Percentage of cells` =  scales::label_percent()(rRNAper[,1]))
+    if (x == 1) {
+      rRNAperSampComb           <- rRNAperTab
+    } else {
+      rRNAperSampComb           <- dplyr::full_join(x = rRNAperSampComb, y = rRNAperTab, by = 'rRNA.content')
+    }
+    ## ------
+    # print(rRNAperSampComb)
     # write.table(x = mtPerTab, file = paste(resDir, '/ToDelete_MT_percentage_summary_', names(seuratObjList)[x], '.txt', sep = ''), quote = F, sep = '\t', row.names = F, col.names = T)
     ## 1).2 plot mitochondrial content
     pdf(file = paste(qcPlotsDir, '/featureScatter_', names(seuratObjList)[x], '.pdf', sep = ''), width = 10, height = 6)
@@ -325,7 +346,7 @@ processQC <- function(metadata, multiomics = F, extraFilter=F, resDirName=NULL, 
     dev.off()
     ## 1). 3 visualize QC metrics as a violin plot
     pdf(file = paste(qcPlotsDir, '/featureViolin_', names(seuratObjList)[x], '.pdf', sep = ''), width = 10, height = 6)
-    vlnFeaturePlot            <- Seurat::VlnPlot(seuratObj, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
+    vlnFeaturePlot            <- Seurat::VlnPlot(seuratObj, features = c("nFeature_RNA", "nCount_RNA", "percent.mt", "rRNA.content"), ncol = 4)
     print(vlnFeaturePlot)
     dev.off()
     ## --
@@ -342,7 +363,7 @@ processQC <- function(metadata, multiomics = F, extraFilter=F, resDirName=NULL, 
       print(plot1 + plot2)
       dev.off()
       pdf(file = paste(qcPlotsDir, '/featureViolin_', names(seuratObjList)[x], '_afterFiltering.pdf', sep = ''), width = 10, height = 6)
-      vlnFeaturePlot <- Seurat::VlnPlot(seuratObj, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
+      vlnFeaturePlot <- Seurat::VlnPlot(seuratObj, features = c("nFeature_RNA", "nCount_RNA", "percent.mt", "rRNA.content"), ncol = 4)
       print(vlnFeaturePlot)
       dev.off()
       print(sprintf('Processing sample %s (%s), After filtering out high percentage contained mitochondrial genes, low and high gene feature expressed cells, cell number reduced from %s to %s.', x, names(seuratObjList)[x], dim(seuratObjBeforeFilter@meta.data)[1], dim(seuratObj@meta.data)[1] ))
@@ -376,6 +397,10 @@ processQC <- function(metadata, multiomics = F, extraFilter=F, resDirName=NULL, 
   names(seuratQcProcessObjList) <- names(seuratObjList)
   colnames(mtPerTabSampComb)    <- c(colnames(mtPerTabSampComb)[1], names(seuratObjList))
   write.table(x = mtPerTabSampComb, file = file.path(resDir, 'MT_percentage_summary.txt'), quote = F, sep = '\t', row.names = F, col.names = T)
+  ## ---
+  colnames(rRNAperSampComb)    <- c(colnames(rRNAperSampComb)[1], names(seuratObjList))
+  write.table(x = rRNAperSampComb, file = file.path(resDir, 'rRNA_content_summary.txt'), quote = F, sep = '\t', row.names = F, col.names = T)
+  ## ---
   colnames(noFilteredCellsSampComb)   <- c(colnames(noFilteredCellsSampComb)[1], names(seuratObjList))
   if (length(seuratQcProcessObjList)>1) {
     noFilteredCellsSampComb$Total       <- rowSums(noFilteredCellsSampComb[,-1])
@@ -392,6 +417,12 @@ mtPatten <- function(genomeSpecies) {
   if (genomeSpecies == 'human') return('^MT-')
   if (genomeSpecies == 'mouse') return('^mt-')
   if (genomeSpecies == 'human_mouse') return('^MT-|mt-')
+}
+
+rRNAcontent <-  function(genomeSpecies) {
+  if (genomeSpecies == 'human') return('^RP[SL]')
+  if (genomeSpecies == 'mouse') return('^rp[sl]')
+  if (genomeSpecies == 'human_mouse') return('^RP[SL]|^rp[sl]')
 }
 meata2list <- function(metadata) {
   cellrangerResList    <- list()

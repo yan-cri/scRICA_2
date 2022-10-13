@@ -186,18 +186,19 @@ getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newA
     }
   }
   ## -------------------------------------------------------------------------------------
+  if (is.null(fpClusterOrder)) fpClusterOrder <- levels(factor(Seurat::Idents(seuratObjFinal)))
+  Seurat::Idents(seuratObjFinal) <- factor(Seurat::Idents(seuratObjFinal), levels = fpClusterOrder )
+  ## -
+  if (is.null(colors)) {
+    # selectedCol  <- DiscretePalette(n = length(levels(Seurat::Idents(seuratObjFinal))), palette = 'alphabet')
+    selectedCol        <- ggplotColours(n=length(levels(Seurat::Idents(seuratObjFinal))))
+  } else {
+    selectedCol        <- colors
+  }
+  print(sprintf("used colors are '%s' for cells: '%s'.", paste(selectedCol, collapse = ','), paste(fpClusterOrder, collapse = ',') ))
+  ## -------------------------------------------------------------------------------------
   ## 1. re-make tSNE plot
   if (clusteringPlotRemake) {
-    if (is.null(fpClusterOrder)) fpClusterOrder <- levels(factor(Seurat::Idents(seuratObjFinal)))
-    Seurat::Idents(seuratObjFinal) <- factor(Seurat::Idents(seuratObjFinal), levels = fpClusterOrder )
-    ## ---
-    if (is.null(colors)) {
-      # selectedCol  <- DiscretePalette(n = length(levels(Seurat::Idents(seuratObjFinal))), palette = 'alphabet')
-      selectedCol        <- ggplotColours(n=length(levels(Seurat::Idents(seuratObjFinal))))
-    } else {
-      selectedCol        <- colors
-    }
-
     print('***************************************************')
     ## ---
     print(sprintf('Start step1: remake tSNE/UMAP plots'))
@@ -438,8 +439,6 @@ getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newA
       print(g1)
       dev.off()
     }
-
-
     print(sprintf('END step2.2: plotting identified cell no. percentage in each cluster'))
     ## -
   }

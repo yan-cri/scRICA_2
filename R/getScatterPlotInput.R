@@ -12,7 +12,7 @@
 #' @param newAnnotation logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.
 #' @param newAnnotationRscriptName if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.
 #' @param subsetOn whether to subset certain cell clusters when it is 'idents' or conditions when it is 'expCond1/2...'.
-#' @param subset define the specific cell cluster names when it is 'subsetOn=idents' or expCond when 'subsetOn=expCond1/2...' to extract.
+#' @param subset define the specific cell cluster names when it is 'subsetOn=idents' or expConds inheritated from metadata table 'subsetOn=expCond1/2...' to extract.
 #' @param expCondCheck specify which experimental conditions to be explored, including sample, idents, or expCond1/2/....
 #' @param selectedGroups specify 2 groups in a list to be plotted with scatter plot, it can be either cell ident names presented in 'Idents' of RDS object or experimental condition levels shown in the 'expCondCheck' condition.
 #'
@@ -37,7 +37,8 @@
 #' @export
 #' @return an interactive scatter plot window
 ## -------------------------------------------------------------------------------------- ##
-getScatterPlot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, subsetOn = NULL, subset = NULL, expCondCheck='idents', selectedGroups, interactive = T) {
+getScatterPlot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL,
+                           subsetOn = NULL, subset = NULL, subsetGenes = NULL, expCondCheck='idents', selectedGroups, interactive = T) {
   if(length(selectedGroups)!=2) stop("Please provide corresponding x/y groups used for scatter plot")
   ##--------------------------------------------------------------------------------------##
   if (is.null(resDir) & !is.null(rds)) {
@@ -158,7 +159,15 @@ getScatterPlot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotation
     norm.res.mean <- Matrix::rowMeans(x = norm.res)
     return(norm.res.mean)
   })
-  print(sprintf("%s gene expression are extracted for scatter plot.", dim(res4plotPrep)[1]))
+  ##--------------------------------------------------------------------------------------##
+  ## subset genes if not null 'subsetGenes'
+  if (!is.null(subsetGenes)) {
+    res4plotPrep2 <- res4plotPrep[match(subsetGenes, rownames(res4plotPrep)),]
+    res4plotPrep  <- res4plotPrep2[!is.na(rownames(res4plotPrep2)),]
+    print(sprintf("subsetGenes is on, %s gene expression are extracted for scatter plot.", dim(res4plotPrep)[1]))
+  } else {
+    print(sprintf("subsetGenes is off, %s gene expression are extracted for scatter plot.", dim(res4plotPrep)[1]))
+  }
   print("END to extract expressions for scatter plot")
   print("-=-=-=-=-=-=-=-=-")
   ## ---------

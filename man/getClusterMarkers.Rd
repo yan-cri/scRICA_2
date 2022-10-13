@@ -9,7 +9,8 @@ getClusterMarkers(
   integrationMethod = "CCA",
   nfeatures = 2000,
   resDirName = NULL,
-  topN = 10
+  topN = 10,
+  ribo = F
 )
 }
 \arguments{
@@ -17,10 +18,12 @@ getClusterMarkers(
 
 \item{integrationMethod}{default = 'CCA', either 'CCA' or 'RPCA' integration method can be applied for anchor identification for integration.}
 
-\item{resDirName}{optional, define folder/directory name where integration analysis results will be saved.
-If processQC() full results used for option 'qcProcessedResults', it will use the same 'resDirName' used in processQC()}
+\item{resDirName}{optional, define folder/directory name where integration analysis results will be saved.}
 
 \item{topN}{optional, default = 10, indicating the number of identified cluster gene markers}
+
+\item{ribo}{optional, logical determining if rRNA genes will be ignored in variable features before integration.
+If processQC() full results used for option 'qcProcessedResults', it will use the same 'resDirName' used in processQC()}
 }
 \value{
 the entire integration analysis results in the defined 'resDirName' inherited from 'processQC()'.

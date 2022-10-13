@@ -7,22 +7,18 @@
 compAnno(seuratObj, seuratObj2Comp)
 }
 \arguments{
-\item{obj}{either a Seurat or SingleCellExperiment object.}
+\item{seuratObj}{the ident cells to be decomposed for comparisons.}
 
-\item{slingshotclusterLabels}{cluster used for slingshot with 3 options: NULL, GMM, Seurat_clusters, by default NULL.}
-
-\item{resSave}{whether to save the analysis results into Rdata, by default 'FALSE'}
-
-\item{resFnamePrefix}{if 'resSave = T', the Rdata file name prefix, by default 'TEST'}
+\item{seuratObj2Comp}{the annotation cells to be compared with.}
 }
 \value{
-results in cell number and relative percentage of idents cells.
+results in cell number and relative percentage of idents cells between 2 input seurat objects, all cells are decomposed on rows.
 }
 \description{
 compAnno() Function
 }
 \details{
-This function is used to perform functional pseudo time analysis via PCA, Diffusion Map, and slingshot
+This function is used to make comparisons between 2 seurat objects. 'seuratObj2Comp' is the baseline, where 'seuratObj' is decomposed into.
 }
 \examples{
 compAnno()

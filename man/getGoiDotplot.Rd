@@ -30,7 +30,8 @@ getGoiDotplot(
   fontsize.legend1 = 20,
   fontsize.legend2 = NULL,
   gridOn = as.logical(F),
-  geneTypeLegendOn = as.logical(T)
+  geneTypeLegendOn = as.logical(T),
+  debug = F
 )
 }
 \arguments{

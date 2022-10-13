@@ -11,6 +11,7 @@ getScatterPlot(
   newAnnotationRscriptName = NULL,
   subsetOn = NULL,
   subset = NULL,
+  subsetGenes = NULL,
   expCondCheck = "idents",
   selectedGroups,
   interactive = T
@@ -27,7 +28,7 @@ getScatterPlot(
 
 \item{subsetOn}{whether to subset certain cell clusters when it is 'idents' or conditions when it is 'expCond1/2...'.}
 
-\item{subset}{define the specific cell cluster names when it is 'subsetOn=idents' or expCond when 'subsetOn=expCond1/2...' to extract.}
+\item{subset}{define the specific cell cluster names when it is 'subsetOn=idents' or expConds inheritated from metadata table 'subsetOn=expCond1/2...' to extract.}
 
 \item{expCondCheck}{specify which experimental conditions to be explored, including sample, idents, or expCond1/2/....}
 

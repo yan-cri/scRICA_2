@@ -21,6 +21,10 @@ parser$add_argument("-g", "--genomeSpecies", type="character",
                     default = 'human',
                     help="genome species, options are human, mice, rat",
                     metavar = '')
+parser$add_argument("--multiomics", type="character",
+                    default = 'F',
+                    help="logical, whether is this multiomics data",
+                    metavar = '')
 parser$add_argument("-rh", "--doubletDeconRhop", type="double",
                     default = '0.5',
                     help="doubletDecon Rhop, default 0.5",
@@ -65,7 +69,7 @@ extraFilter             <- as.logical(args$extraFilter)
 # resFilename             <- 'findDoublets_results_scRICA_batch1_5samp'
 ## ---
 doubletDeconResDir      <- findDoublets(metadata = metadata,
-                                        multiomics = T,
+                                        multiomics = as.logical(args$multiomics),
                                         extraFilter = extraFilter,
                                         genomeSpecies = genomeSpecies,
                                         doubletDeconRhop =  doubletDeconRhop,

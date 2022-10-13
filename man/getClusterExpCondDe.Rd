@@ -17,13 +17,13 @@ getClusterExpCondDe(
   covariateVarName = NULL,
   deseq2bulk.metaCovariateInput = NULL,
   covariateVarLevels = NULL,
-  median.norm = 1,
+  norm.method = "UQ",
+  run.dispersion = as.logical(T),
   min.cells.group = 10,
   min.pct = 0.1,
   logfc.threshold = 0.25,
   pAdjValCutoff = 0.05,
   topNo = 10,
-  verbose = T,
   debug = F,
   outputExcel = as.logical(T)
 )
@@ -51,6 +51,10 @@ getClusterExpCondDe(
 
 \item{deseq2bulk.metaCovariateInput}{when deMethod = 'DESeq2.bulk', use this option to provide the meta data table for covariate correction. This input should be a data frame object with all corresponding sample items in rows and corresponding group information on columns.}
 
+\item{norm.method}{DESeq2 counts across samples normalization method, options are TMM, UQ or DEseq2.}
+
+\item{run.dispersion}{whether to run DESeq2 counts across genes dispersion normalization, if norm.method='DEseq2', this option is automatically on.}
+
 \item{min.cells.group}{Minimum number of cells in one of the comparison groups.}
 
 \item{min.pct}{only test genes that are detected in this specified minimum fraction of cells in either of these 2 comparison populations, default is 0.1.}
@@ -61,7 +65,7 @@ getClusterExpCondDe(
 
 \item{topNo}{specify the top number of up and down significant DEGs in each identified/annotated cell clusters, by default = 10.}
 
-\item{verbose}{whether to turn on for debug check, by default FALSE (turned off).}
+\item{debug}{whether to turn on for debug check, by default FALSE (turned off).}
 }
 \value{
 a list item including 3 elements:

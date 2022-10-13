@@ -11,12 +11,17 @@ getExpCondClusterMarkers(
   newAnnotationRscriptName = NULL,
   expCondCheck = "sample",
   expCondCheckFname = NULL,
+  cellcluster = NULL,
   deMethod = "wilcox",
+  deseq2bulk.metaCovariateInput = NULL,
   min.pct = 0.1,
   logfc.threshold = 0.25,
-  min.cells.group = 3,
+  min.cells.group = 10,
   pAdjValCutoff = 0.05,
-  topNo = 10
+  topNo = 10,
+  norm.method = "TMM",
+  run.dispersion = as.logical(T),
+  debug = F
 )
 }
 \arguments{
@@ -32,17 +37,27 @@ getExpCondClusterMarkers(
 
 \item{expCondCheckFname}{suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.}
 
-\item{deMethod}{DE test method with options: 'wilcox', 't', 'negbinom', 'poisson', 'MAST', 'DESeq2', default = 'wilcox'.}
+\item{cellcluster}{specify cell clusters to be extracted for the cluster markers identification.}
+
+\item{deMethod}{DE test method with options: 'wilcox', 't', 'negbinom', 'poisson', 'MAST', 'DESeq2', and 'DESeq2.bulk', default = 'wilcox'.}
+
+\item{deseq2bulk.metaCovariateInput}{when deMethod = 'DESeq2.bulk', use this option to provide the meta data table for covariate correction. This input should be a data frame object with all corresponding sample items in rows and corresponding group information on columns.}
 
 \item{min.pct}{only test genes that are detected in this specified minimum fraction of cells in either of these 2 comparison populations, default is 0.1.}
 
 \item{logfc.threshold}{only test genes that are detected in this specified X-fold difference (log-scale) between these 2 comparison populations cells, default is 0.25 (around 1.19 FC).}
 
-\item{min.cells.group}{Minimum number of cells in one of the comparison groups.}
+\item{min.cells.group}{Minimum number of cells in one of the comparison groups, by default 10.}
 
 \item{pAdjValCutoff}{adjusted p-value cutoff for significant positively expressed cluster markers, by default = 0.05.}
 
-\item{topNo}{specify the top number of significantly over expressed cluster markers in each identified/annotated clusters, by default = 10.}
+\item{topNo}{specify the top number of significantly over expressed cluster markers in each identified/annotated clusters presented in heatmap , by default = 10.}
+
+\item{norm.method}{DESeq2 counts across samples normalization method, options are TMM, UQ or DEseq2.}
+
+\item{run.dispersion}{whether to run DESeq2 counts across genes dispersion normalization, if norm.method='DEseq2', this option is automatically on.}
+
+\item{debug}{whether to turn on for debug check, by default FALSE (turned off).}
 }
 \value{
 a list item including 2 elements: All positively expressed genes from each experimental condition cell clusters in 'expCondPosMarkers' and all positively significantly expressed genes at FDR corrected p-value of 0.05 (by default) from each experimental condition cell clusters in'expCondSigPosMarkers'

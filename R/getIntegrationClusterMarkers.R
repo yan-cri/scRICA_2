@@ -14,6 +14,7 @@
 #' @param integrationMethod default = 'CCA', either 'CCA' or 'RPCA' integration method can be applied for anchor identification for integration.
 #' @param topN optional, default = 10, indicating the number of identified cluster gene markers
 #' @param resDirName optional, define folder/directory name where integration analysis results will be saved.
+#' @param ribo optional, logical determining if rRNA genes will be ignored in variable features before integration.
 #' If processQC() full results used for option 'qcProcessedResults', it will use the same 'resDirName' used in processQC()
 #'
 #' @importFrom ggplot2 theme
@@ -54,7 +55,7 @@
 #' 3. 'resDir': full path of results directory, where the entire integration analysis results are saved.
 #'
 ##----------------------------------------------------------------------------------------
-getClusterMarkers <- function(qcProcessedResults, integrationMethod = 'CCA', nfeatures = 2000, resDirName = NULL, topN = 10) {
+getClusterMarkers <- function(qcProcessedResults, integrationMethod = 'CCA', nfeatures = 2000, resDirName = NULL, topN = 10, ribo = F) {
   ## ---
   topN                          <- as.numeric(topN)
   if ('resDir' %in% names(qcProcessedResults) & 'countReadInOjb' %in% names(qcProcessedResults) ){
@@ -106,18 +107,30 @@ getClusterMarkers <- function(qcProcessedResults, integrationMethod = 'CCA', nfe
       qcProcessedSeuratObjList <- lapply(X = qcProcessedSeuratObjList, FUN = function(x) {
         x <- Seurat::NormalizeData(x, normalization.method = "LogNormalize", scale.factor = 10000)
         x <- Seurat::FindVariableFeatures(x, selection.method = 'vst', nfeatures = nfeatures)
+        if (ribo == TRUE) {
+          Seurat::VariableFeatures(x) <- Seurat::VariableFeatures(x)[-grep("^RP[SL]", Seurat::VariableFeatures(x))]
+        }
       })
     } else if (any(unlist(lapply(qcProcessedSeuratObjList, function(x) length(Seurat::VariableFeatures(x))<nfeatures)))) {
       print("Note: some input data in 'qcProcessedResults' has fewer number of detected varialbe features requested in 'nfeatures' for integration, before integration, conducing normalization again")
       qcProcessedSeuratObjList <- lapply(X = qcProcessedSeuratObjList, FUN = function(x) {
         x <- Seurat::NormalizeData(x, normalization.method = "LogNormalize", scale.factor = 10000)
         x <- Seurat::FindVariableFeatures(x, selection.method = 'vst', nfeatures = nfeatures)
+        if (ribo == TRUE) {
+          Seurat::VariableFeatures(x) <- Seurat::VariableFeatures(x)[-grep("^RP[SL]", Seurat::VariableFeatures(x))]
+        }
       })
     } else {
       print("Note: input data in 'qcProcessedResults' has been appropriately normalized, no need to normalize before integration.")
     }
     ##--------------------------------------------------------------------------------------##
     features                    <- SelectIntegrationFeatures(object.list = qcProcessedSeuratObjList, nfeatures = nfeatures)
+
+    ##Remove rRNA content from the variable features prior to integration, if desired
+    if (ribo == TRUE) {
+        features = features[-grep("^RP[SL]", features)]
+      }
+
     if (integrationMethod == 'RPCA') {
       # normalize and identify variable features for each dataset independently
       qcProcessedSeuratObjList <- lapply(X = qcProcessedSeuratObjList, FUN = function(x) {
@@ -155,9 +168,9 @@ getClusterMarkers <- function(qcProcessedResults, integrationMethod = 'CCA', nfe
   # seuratObjFinal <- ScoreJackStraw(seuratObjFinal, dims = 1:20)
   elbowPlot                     <- ElbowPlot(seuratObjFinal, ndims = 30)
   ## 4.3 umap, tsne, knn/clusters
+  seuratObjFinal                <- RunUMAP(seuratObjFinal, reduction = "pca", dims = 1:20)
   seuratObjFinal                <- FindNeighbors(seuratObjFinal, reduction = "pca", dims = 1:20)
   seuratObjFinal                <- FindClusters(seuratObjFinal, resolution = 0.5)
-  seuratObjFinal                <- RunUMAP(seuratObjFinal, reduction = "pca", dims = 1:20)
   seuratObjFinal                <- RunTSNE(object = seuratObjFinal, dims = 1:20)
   ##--------------------------------------------------------------------------------------##
   ## PCA plot

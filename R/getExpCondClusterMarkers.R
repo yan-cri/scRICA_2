@@ -17,11 +17,15 @@
 #' @param expCondCheckFname suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.
 #' @param cellcluster specify cell clusters to be extracted for the cluster markers identification.
 #' @param pAdjValCutoff adjusted p-value cutoff for significant positively expressed cluster markers, by default = 0.05.
-#' @param topNo specify the top number of significantly over expressed cluster markers in each identified/annotated clusters, by default = 10.
-#' @param deMethod DE test method with options: 'wilcox', 't', 'negbinom', 'poisson', 'MAST', 'DESeq2', default = 'wilcox'.
+#' @param topNo specify the top number of significantly over expressed cluster markers in each identified/annotated clusters presented in heatmap , by default = 10.
+#' @param deMethod DE test method with options: 'wilcox', 't', 'negbinom', 'poisson', 'MAST', 'DESeq2', and 'DESeq2.bulk', default = 'wilcox'.
 #' @param min.pct only test genes that are detected in this specified minimum fraction of cells in either of these 2 comparison populations, default is 0.1.
 #' @param logfc.threshold only test genes that are detected in this specified X-fold difference (log-scale) between these 2 comparison populations cells, default is 0.25 (around 1.19 FC).
-#' @param min.cells.group Minimum number of cells in one of the comparison groups.
+#' @param min.cells.group Minimum number of cells in one of the comparison groups, by default 10.
+#' @param deseq2bulk.metaCovariateInput when deMethod = 'DESeq2.bulk', use this option to provide the meta data table for covariate correction. This input should be a data frame object with all corresponding sample items in rows and corresponding group information on columns.
+#' @param norm.method DESeq2 counts across samples normalization method, options are TMM, UQ or DEseq2.
+#' @param run.dispersion whether to run DESeq2 counts across genes dispersion normalization, if norm.method='DEseq2', this option is automatically on.
+#' @param debug whether to turn on for debug check, by default FALSE (turned off).
 #'
 #' @importFrom Seurat DefaultAssay
 #' @importFrom Seurat Idents
@@ -48,7 +52,10 @@ getExpCondClusterMarkers <- function(resDir=NULL, rds=NULL, newAnnotation=F, new
                                      expCondCheck='sample', expCondCheckFname = NULL,
                                      cellcluster = NULL,
                                      deMethod = 'wilcox',
-                                     min.pct = 0.1, logfc.threshold = 0.25, min.cells.group = 3, pAdjValCutoff = 0.05, topNo = 10) {
+                                     deseq2bulk.metaCovariateInput = NULL,
+                                     min.pct = 0.1, logfc.threshold = 0.25, min.cells.group = 10, pAdjValCutoff = 0.05, topNo = 10,
+                                     norm.method = 'TMM', run.dispersion = as.logical(T),
+                                     debug = F) {
   options(java.parameters = "-Xmx32000m")
   ###--------------------------------------------------------------------------------------##
   pAdjValCutoff           <- as.numeric(pAdjValCutoff)
@@ -127,8 +134,8 @@ getExpCondClusterMarkers <- function(resDir=NULL, rds=NULL, newAnnotation=F, new
   ## update 'seuratObjFinal@meta.data$expCond'
   if (expCondCheck == 'sample') {
     seuratObjFinal                     <- seuratObjFinal
-  } else if (expCondCheck == 'idents') {
-    seuratObjFinal@meta.data$expCond   <- Seurat::Idents(seuratObjFinal)
+  } else if (expCondCheck == 'integrated') {
+    seuratObjFinal@meta.data$expCond   <- 'integrated'
   } else {
     if (!expCondCheck%in%colnames(seuratObjFinal@meta.data)) {
       stop("ERROR: 'expCondCheck' does not exist in your 'rds' metadata.")
@@ -167,25 +174,79 @@ getExpCondClusterMarkers <- function(resDir=NULL, rds=NULL, newAnnotation=F, new
     ## identify cluster positively expressed markers
     print(sprintf('Start %s: finding positive regulated cluster marker genes for experimental condition: %s', l, expCondLevel))
     ## identify significant positively expressed cluster markers
-    allPosMarkers         <- FindAllMarkers(seuratObjFinalexpCond, assay = 'integrated', slot = "scale.data", only.pos = TRUE, min.pct = min.pct, logfc.threshold = logfc.threshold, min.cells.group = min.cells.group, test.use = deMethod)
-    allPosMarkersAdjSig   <- allPosMarkers %>% dplyr::filter(p_val_adj <= pAdjValCutoff) %>% dplyr::mutate(perDiff = pct.1-pct.2)
-    if (dim(allPosMarkersAdjSig)[1] > 0) write.table(x = allPosMarkersAdjSig, file = file.path(sprintf('%s/expCond_%s_%s_allCluster_pos_markers_UpSig.txt', resDir, expCondCheckFname, expCondLevel)), quote = F, sep = '\t', row.names = T, col.names = NA)
+    if (deMethod == 'DESeq2.bulk') {
+      Seurat::DefaultAssay(seuratObjFinalexpCond) <- 'RNA'
+      seuratObjFinalexpCond@meta.data$deseq2bulk = seuratObjFinalexpCond@meta.data$orig.ident
+      clusterLevels2      <- levels(Seurat::Idents(seuratObjFinalexpCond))
+      seuratObjFinalexpCond$expCond  <- Seurat::Idents(seuratObjFinalexpCond)
+      if (debug) print(sprintf("%s cell types used for DEseq2 bulk analysis are %s.", length(clusterLevels2), paste(as.character(clusterLevels2), collapse = ', ')))
+      for (c in 1:length(clusterLevels2)) {
+        if (debug) print(sprintf("%s.Processing %s cell clusters for DEseq2 bulk analysis", c, as.character(clusterLevels2[c])))
+        deseq2bulkRes     <- runBulkDEseq2(object = seuratObjFinalexpCond, ident.1 = clusterLevels2[c], min.pct = min.pct, metaCovariateInput = deseq2bulk.metaCovariateInput, debug = debug, min.cells.group = min.cells.group, norm.method = norm.method, run.dispersion = run.dispersion)
+        deseq2bulkRes$cluster = as.character(clusterLevels2[c])
+        deseq2bulkResPos  <- deseq2bulkRes %>% dplyr::filter(log2FoldChange > 0)
+        if (c ==1) {
+          allPosMarkers   = deseq2bulkResPos
+        } else {
+          allPosMarkers   = rbind(allPosMarkers, deseq2bulkResPos)
+        }
+        if (debug) print(sprintf("%END %s cell clusters for DEseq2 bulk analysis", c, as.character(clusterLevels2[c])))
+        if (debug) print(head(deseq2bulkRes))
+        if (debug) print(sprintf("deseq2bulkRes dimension [%s, %s].", dim(deseq2bulkRes)[1], dim(deseq2bulkRes)[2]))
+        if (debug) print(sprintf("allPosMarkers dimension [%s, %s].", dim(allPosMarkers)[1], dim(allPosMarkers)[2]))
+        if (debug) print('0000000000000000000000000')
+      }
+    } else {
+      # allPosMarkers       <- FindAllMarkers(seuratObjFinalexpCond, assay = 'integrated', slot = "scale.data", only.pos = TRUE, min.pct = min.pct, logfc.threshold = logfc.threshold, min.cells.group = min.cells.group, test.use = deMethod)
+      allPosMarkers       <- FindAllMarkers(seuratObjFinalexpCond, assay = 'integrated', slot = "data", only.pos = TRUE, min.pct = min.pct, logfc.threshold = logfc.threshold, min.cells.group = min.cells.group, test.use = deMethod)
+    }
+    ## ---
+    if (deMethod == 'DESeq2.bulk'){
+      allPosMarkersAdjSig   <- allPosMarkers %>% tibble::rownames_to_column(var = "gene")%>% dplyr::filter(padj <= pAdjValCutoff) %>% dplyr::mutate(FC = ifelse(log2FoldChange>0, 2^log2FoldChange, -2^(-log2FoldChange)) ) %>% dplyr::group_by(cluster) %>% dplyr::arrange(desc(FC), .by_group = TRUE) %>% as.data.frame()
+      seuratObjFinalexpCond <- Seurat::ScaleData(object = seuratObjFinalexpCond, do.scale = T, do.center = T)
+    } else {
+      # allPosMarkersAdjSig   <- allPosMarkers %>% dplyr::filter(p_val_adj <= pAdjValCutoff) %>% dplyr::mutate(perDiff = pct.1-pct.2) %>% dplyr::group_by(cluster) %>% dplyr::arrange(desc(avg_diff), .by_group = TRUE)%>% as.data.frame() ## run on scale.data
+      allPosMarkersAdjSig   <- allPosMarkers %>% dplyr::filter(p_val_adj <= pAdjValCutoff) %>% dplyr::mutate(perDiff = pct.1-pct.2) %>% dplyr::group_by(cluster) %>% dplyr::arrange(desc(avg_log2FC), .by_group = TRUE)%>% as.data.frame() ## run on data
+    }
+    ## ---
+    write.table(x = allPosMarkers, file = file.path(sprintf('%s/expCond_%s_%s_allCluster_pos_markers_resFull.txt', resDir, expCondCheckFname, expCondLevel)), quote = F, sep = '\t', row.names = T, col.names = NA)
+    if (dim(allPosMarkersAdjSig)[1] > 0) write.table(x = allPosMarkersAdjSig, file = file.path(sprintf('%s/expCond_%s_%s_allCluster_pos_markers_UpSig.txt', resDir, expCondCheckFname, expCondLevel)), quote = F, sep = '\t', row.names = F, col.names = T)
     print(sprintf('A total of %s positively expressed genes identified for experimental condition %s at %s, among them %s are significant up expressed at adjusted p-value significant level of %s', dim(allPosMarkers)[1], expCondCheckFname, expCondLevel, dim(allPosMarkersAdjSig)[1], pAdjValCutoff ))
     ## summarize the no. of significant positively expressed cluster markers
-    # allPosMarkersAdjSigNo <- allPosMarkersAdjSig %>% dplyr::group_by(cluster) %>% dplyr::distinct() %>% dplyr::summarise('geneNo' = n()) %>% as.data.frame()
-    # write.table(x = allPosMarkersAdjSigNo, file = file.path(sprintf('%s/expCond_%s_%s_allCluster_pos_markers_UpSig_NoSummary.txt', resDir, expCondCheckFname, expCondLevel)), quote = F, sep = '\t', row.names = F, col.names = T)
+    if (dim(allPosMarkersAdjSig)[1] > 0) {
+      allPosMarkersAdjSigNo <- allPosMarkersAdjSig %>% dplyr::group_by(cluster) %>% dplyr::distinct() %>% dplyr::summarise('geneNo' = dplyr::n()) %>% as.data.frame()
+      write.table(x = allPosMarkersAdjSigNo, file = file.path(sprintf('%s/expCond_%s_%s_allCluster_pos_markers_UpSig_NoSummary.txt', resDir, expCondCheckFname, expCondLevel)), quote = F, sep = '\t', row.names = F, col.names = T)
+    }
     ## -
     expCondPosMarkers[[l]]     <- allPosMarkers
     expCondSigPosMarkers[[l]]  <- allPosMarkersAdjSig
     systime2               <- Sys.time()
     print(sprintf('END %s: finding positive regulated cluster marker genes for experimental condition in %s with computation time: %s %s.', l, expCondLevel, round(difftime(systime2, systime1), digits = 2), attr(difftime(systime2, systime1), "units") ))
-    print('Start: Step 6 making cluster marker genes heatmap plot')
-    ## all significant cluster markers heatmap
-    topMarkers                 <- allPosMarkers %>% group_by(cluster) %>% top_n(n = topNo) %>% as.data.frame()
-    cluterAllsigMarkerheatmap  <- DoHeatmap(seuratObjFinalexpCond, assay = 'integrated', slot = "scale.data", features = topMarkers$gene)
-    pdf(file = file.path(sprintf('%s/expCond_%s_%s_allCluster_pos_markers_UpSig_heatmap.pdf', resDir, expCondCheckFname, expCondLevel )), width = 25, height = 20)
-    print(cluterAllsigMarkerheatmap)
-    dev.off()
+    if (any(table(allPosMarkersAdjSig$cluster) >= topNo)) {
+      print('Start: Step 6 making cluster marker genes heatmap plot')
+      ## all significant cluster markers heatmap
+      if (deMethod == 'DESeq2.bulk') {
+        topMarkers               <- allPosMarkersAdjSig %>% dplyr::group_by(cluster) %>% dplyr::arrange(desc(FC), .by_group = TRUE) %>% dplyr::top_n(n = topNo, FC) %>% as.data.frame()
+        cluterAllsigMarkerheatmap  <- DoHeatmap(seuratObjFinalexpCond, assay = 'RNA', slot = "scale.data", features = topMarkers$gene)
+      } else {
+        topMarkers               <- allPosMarkersAdjSig %>% dplyr::group_by(cluster) %>% dplyr::arrange(desc(avg_log2FC), .by_group = TRUE) %>% dplyr::top_n(n = topNo, avg_log2FC) %>% as.data.frame()
+        cluterAllsigMarkerheatmap  <- DoHeatmap(seuratObjFinalexpCond, assay = 'integrated', slot = "scale.data", features = topMarkers$gene)
+      }
+      if (topNo<=10) {
+        pdf(file = file.path(sprintf('%s/expCond_%s_%s_allCluster_pos_markers_UpSig_heatmap.pdf', resDir, expCondCheckFname, expCondLevel )), width = 25, height = 8)
+        print(cluterAllsigMarkerheatmap)
+        dev.off()
+      } else if (topNo > 10 & topNo <=100) {
+        pdf(file = file.path(sprintf('%s/expCond_%s_%s_allCluster_pos_markers_UpSig_heatmap.pdf', resDir, expCondCheckFname, expCondLevel )), width = 25, height = 10)
+        print(cluterAllsigMarkerheatmap)
+        dev.off()
+      } else {
+        pdf(file = file.path(sprintf('%s/expCond_%s_%s_allCluster_pos_markers_UpSig_heatmap.pdf', resDir, expCondCheckFname, expCondLevel )), width = 25, height = 25)
+        print(cluterAllsigMarkerheatmap)
+        dev.off()
+      }
+
+    }
     print('END: Step 6 making cluster marker genes heatmap plot')
     print('********************')
     ## ---
@@ -193,7 +254,7 @@ getExpCondClusterMarkers <- function(resDir=NULL, rds=NULL, newAnnotation=F, new
   names(expCondPosMarkers)    <- expCondLevels
   names(expCondSigPosMarkers) <- expCondLevels
   ##--------------------------------------------------------------------------------------##
-  return(list('expCondPosMarkers' = expCondPosMarkers, 'expCondSigPosMarkers' = expCondSigPosMarkers))
+  return(list('fullRes'=expCondPosMarkers, 'sigUp' = expCondSigPosMarkers))
   ##--------------------------------------------------------------------------------------##
 }
 ## -------------------------------------------------------------------------------------- ##

@@ -31,7 +31,9 @@ getGoiHeatmap(
   fontangle.y = 0,
   hjust.top = 0,
   vjust.top = 0,
-  barHeight.top = 0.02
+  barHeight.top = 0.02,
+  sample.merge = as.logical(F),
+  draw.lines = as.logical(T)
 )
 }
 \arguments{
@@ -76,6 +78,10 @@ getGoiHeatmap(
 \item{fontsize.y}{modify the font size of y-axis (gene names).}
 
 \item{fontangle.y}{modify the y-axis (gene names) angle position.}
+
+\item{sample.merge}{whether to average cells expression values across samples respectively.}
+
+\item{draw.lines}{whether to have an empty cell space on heatmap to separate different groups.}
 }
 \value{
 the Heatmap of provided GOI(gene of interest) provided by 'geneNames' directly or presented in 'goiFname'.
