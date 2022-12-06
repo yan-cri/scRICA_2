@@ -46,7 +46,7 @@ cellChat analysis result
 getCellChatRes() Function
 }
 \details{
-This function is used to make dotplot of marker/features genes in provided 'goiFname'.
+This function is used to conduct cellChat analysis on the selected expCond levels.
 }
 \examples{
 getCellChatRes(rds, expCondCheck='sample/idents/expCond*')
