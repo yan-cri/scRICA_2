@@ -167,6 +167,9 @@ getClusterExpCondDe <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnot
   print(sprintf("A total of %s clusters to process", length(noClusters)))
   ## -
   clusterDeMarkers                       <- list()
+  normCounts <- list()
+  orgCounts  <- list()
+  metaTabs   <- list()
   clusterDeResSummary                    <- matrix(data = NA, nrow = length(noClusters), ncol = 4)
   clusterTopDeMarkers                    <- list()
   clusterTopDeMarkersUp                  <- NA
@@ -247,7 +250,11 @@ getClusterExpCondDe <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnot
         if (length(compGroupName) == 1) {
           if (all(table(seuratObjFinalSubet$expCond) >= min.cells.group) ) {
             if (deMethod=='DESeq2.bulk') {
-              deMarkers                    <- runBulkDEseq2(object = seuratObjFinalSubet, ident.1 =  compGroupName, min.pct = min.pct, metaCovariateInput = deseq2bulk.metaCovariateInput, debug = debug, min.cells.group = min.cells.group, norm.method = norm.method, run.dispersion = run.dispersion)
+              deMarkersRes                 <- runBulkDEseq2(object = seuratObjFinalSubet, ident.1 =  compGroupName, min.pct = min.pct, metaCovariateInput = deseq2bulk.metaCovariateInput, debug = debug, min.cells.group = min.cells.group, norm.method = norm.method, run.dispersion = run.dispersion)
+              deMarkers                    <- deMarkersRes$deres
+              orgCount                     <- deMarkersRes$orgCount
+              normCount                    <- deMarkersRes$normCount
+              metaTab                      <- deMarkersRes$metaTab
             } else {
               if (is.null(covariateVarName)) {
                 deMarkers                  <- FindMarkers(seuratObjFinalSubet, ident.1 = compGroupName, group.by = 'expCond', test.use = deMethod, min.cells.group = min.cells.group, logfc.threshold = logfc.threshold, min.pct =  min.pct)
@@ -266,7 +273,11 @@ getClusterExpCondDe <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnot
         } else if (length(compGroupName) == 2) {
           if (all(table(seuratObjFinalSubet$expCond)[match(compGroupName, names(table(seuratObjFinalSubet$expCond)))] >= min.cells.group) ) {
             if (deMethod=='DESeq2.bulk') {
-              deMarkers                    <- runBulkDEseq2(object = seuratObjFinalSubet, ident.1 = compGroupName[1], ident.2 = compGroupName[2], min.pct = min.pct, metaCovariateInput = deseq2bulk.metaCovariateInput, debug = debug, min.cells.group = min.cells.group, norm.method = norm.method, run.dispersion = run.dispersion)
+              deMarkersRes                 <- runBulkDEseq2(object = seuratObjFinalSubet, ident.1 = compGroupName[1], ident.2 = compGroupName[2], min.pct = min.pct, metaCovariateInput = deseq2bulk.metaCovariateInput, debug = debug, min.cells.group = min.cells.group, norm.method = norm.method, run.dispersion = run.dispersion)
+              deMarkers                    <- deMarkersRes$deres
+              orgCount                     <- deMarkersRes$orgCount
+              normCount                    <- deMarkersRes$normCount
+              metaTab                      <- deMarkersRes$metaTab
             } else {
               if (is.null(covariateVarName)) {
                 deMarkers                  <- FindMarkers(seuratObjFinalSubet, ident.1 = compGroupName[1], ident.2 = compGroupName[2], group.by = 'expCond', test.use = deMethod, min.cells.group = min.cells.group, logfc.threshold = logfc.threshold, min.pct =  min.pct)
@@ -285,6 +296,9 @@ getClusterExpCondDe <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnot
         }
         if(debug) print('-=-=-=-=-=-=-=-=-=-=-=-=-=-=-')
         clusterDeMarkers[[i]]          <- deMarkers
+        normCounts[[i]] <- normCount
+        orgCounts[[i]]  <- orgCount
+        metaTabs[[i]]   <- metaTab
         if (deMethod!="DESeq2.bulk") {
           # print(sprintf('Maximum p_value is %s, Maximum adjusted p_value is %s', round(max(deMarkers$pvalue), digits = 4), round(max(deMarkers$padj, na.rm = T), digits = 4)))
           deMarkersAdjSig                <- deMarkers %>% dplyr::filter(p_val_adj <= pAdjValCutoff) %>% dplyr::filter(abs(avg_log2FC) >= logfc.threshold) %>% dplyr::mutate(perDiff = pct.1-pct.2) %>% dplyr::mutate(FC = ifelse(avg_log2FC>0, 2^avg_log2FC, -2^(-avg_log2FC)) )
@@ -385,9 +399,16 @@ getClusterExpCondDe <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnot
   ## ---
   names(clusterDeMarkers)            <- noClusters
   names(clusterTopDeMarkers)         <- noClusters
+  names(normCounts)                  <- noClusters
+  names(orgCounts)                   <- noClusters
+  names(metaTabs)                    <- noClusters
   print(sprintf('End step 1: identifing DEGs for each identified clusters based on sample name experimental conditions'))
   print('-=-=-=-=-=-=-=-=-=-=-=-=-=-=')
-  return(list('clusterDeMarkers' = clusterDeMarkers, 'clusterDeResSummary' = clusterDeResSummary, 'clusterTopDeMarkers' = clusterTopDeMarkers ))
+  if (deMethod=='DESeq2.bulk') {
+    return(list('orgCounts' = orgCounts, 'normCounts' = normCounts, 'metaTabs' = metaTabs, 'clusterDeMarkers' = clusterDeMarkers, 'clusterDeResSummary' = clusterDeResSummary, 'clusterTopDeMarkers' = clusterTopDeMarkers ))
+  }else {
+    return(list('clusterDeMarkers' = clusterDeMarkers, 'clusterDeResSummary' = clusterDeResSummary, 'clusterTopDeMarkers' = clusterTopDeMarkers ))
+  }
   ## -------------------------------------------------------------------------------------
 }
 
@@ -504,19 +525,21 @@ runBulkDEseq2 <- function(object, ident.1, ident.2=NULL, min.pct, metaCovariateI
   print("Design formular is:")
   print(design.formula)
   print('-=-=-=-=-=-=-=-=-=-=-')
-
   #
   if (norm.method == 'TMM') {
     dge   <- edgeR::DGEList(counts = countTab)
     if (debug) print("using TMM normalization")
     dge           <- edgeR::calcNormFactors(object = dge, method = 'TMM')
+    normCount     <- edgeR::cpm(dge)
     dds <- DESeq2::DESeqDataSetFromMatrix(countData=round(edgeR::cpm(dge), digits = 0), colData=S4Vectors::DataFrame(metaTab2), design = design.formula )
   } else if (norm.method == 'UQ'){
     dge   <- edgeR::DGEList(counts = countTab)
     if (debug) print("using upperquartile normalization")
     dge   <- edgeR::calcNormFactors(object = dge, method = 'upperquartile')
+    normCount     <- edgeR::cpm(dge)
     dds <- DESeq2::DESeqDataSetFromMatrix(countData=round(edgeR::cpm(dge), digits = 0), colData=S4Vectors::DataFrame(metaTab2), design = design.formula )
   } else {
+    normCount     <- edgeR::cpm(countTab)
     dds   <- DESeq2::DESeqDataSetFromMatrix(countData=countTab, colData=S4Vectors::DataFrame(metaTab2), design = design.formula )
   }
   if (norm.method == 'TMM' | norm.method == 'UQ') {
@@ -545,7 +568,13 @@ runBulkDEseq2 <- function(object, ident.1, ident.2=NULL, min.pct, metaCovariateI
   res           <- as.data.frame(res)
   tpdeseq2.save <- res[order(res$padj) , ]
   if (debug) print(head(tpdeseq2.save))
-  return(tpdeseq2.save)
+  # print('090909090909')
+  # print(head(countTab))
+  # print('-=-=-=-')
+  # print(head(normCount))
+  # print('-=-=-=-')
+  # print('090909090909')
+  return(list(deres = tpdeseq2.save, orgCount = countTab, normCount =  normCount, metaTab = metaTab))
   print("DESeq2 bulk analysis is completed.")
 }
 
