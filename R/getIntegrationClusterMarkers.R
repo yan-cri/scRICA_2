@@ -15,6 +15,7 @@
 #' @param topN optional, default = 10, indicating the number of identified cluster gene markers
 #' @param resDirName optional, define folder/directory name where integration analysis results will be saved.
 #' @param ribo optional, logical determining if rRNA genes will be ignored in variable features before integration.
+#' @param int.k.weight optional, default = 100, indicating the number of neighbors to consider when weighting anchors in the step of integration, if too few number cells used in the study, this number can be reduced.
 #' If processQC() full results used for option 'qcProcessedResults', it will use the same 'resDirName' used in processQC()
 #'
 #' @importFrom ggplot2 theme
@@ -55,7 +56,7 @@
 #' 3. 'resDir': full path of results directory, where the entire integration analysis results are saved.
 #'
 ##----------------------------------------------------------------------------------------
-getClusterMarkers <- function(qcProcessedResults, integrationMethod = 'CCA', nfeatures = 2000, resDirName = NULL, topN = 10, ribo = F) {
+getClusterMarkers <- function(qcProcessedResults, integrationMethod = 'CCA', nfeatures = 2000, resDirName = NULL, topN = 10, ribo = F, int.k.weight = 100) {
   ## ---
   topN                          <- as.numeric(topN)
   if ('resDir' %in% names(qcProcessedResults) & 'countReadInOjb' %in% names(qcProcessedResults) ){
@@ -148,7 +149,7 @@ getClusterMarkers <- function(qcProcessedResults, integrationMethod = 'CCA', nfe
     }
     ##--------------------------------------------------------------------------------------##
     ## 3.2 Integrating data based on found anchors above
-    seuratObjIntegrated         <- IntegrateData(anchorset = anchors)
+    seuratObjIntegrated         <- IntegrateData(anchorset = anchors, k.weight = int.k.weight)
     print(sprintf('End Step 1: data integration at %s', Sys.time()))
     print('---===---===---===---===---===---')
     ##--------------------------------------------------------------------------------------##
