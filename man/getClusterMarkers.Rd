@@ -10,7 +10,8 @@ getClusterMarkers(
   nfeatures = 2000,
   resDirName = NULL,
   topN = 10,
-  ribo = F
+  ribo = F,
+  int.k.weight = 100
 )
 }
 \arguments{
@@ -22,7 +23,9 @@ getClusterMarkers(
 
 \item{topN}{optional, default = 10, indicating the number of identified cluster gene markers}
 
-\item{ribo}{optional, logical determining if rRNA genes will be ignored in variable features before integration.
+\item{ribo}{optional, logical determining if rRNA genes will be ignored in variable features before integration.}
+
+\item{int.k.weight}{optional, default = 100, indicating the number of neighbors to consider when weighting anchors in the step of integration, if too few number cells used in the study, this number can be reduced.
 If processQC() full results used for option 'qcProcessedResults', it will use the same 'resDirName' used in processQC()}
 }
 \value{
