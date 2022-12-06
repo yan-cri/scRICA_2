@@ -58,6 +58,14 @@ parser$add_argument("--integration.nfeatures", type="integer",
                     default = '2000',
                     help="Number of features used for integration, by default 2000",
                     metavar = '')
+parser$add_argument("--meta.shuffle", type="character",
+                    default = 'T',
+                    help="logical, whether to re-order samples integration orders in metadata table",
+                    metavar = '')
+parser$add_argument("--integration.k.weight", type="integer",
+                    default = '100',
+                    help="Number of neighbors to consider when weighting anchors during the integration step.",
+                    metavar = '')
 ## ------
 args <- parser$parse_args()
 print(args)
@@ -70,6 +78,12 @@ print(sprintf('Analysis results are saved in %s', outputDir))
 ## ---
 metadata                <- read.delim2(file = as.character(args$metadata), header = T)
 print(head(metadata))
+if (as.logical(args$meta.shuffle)) {
+  print("shuffle metadata table sample orders for integration")
+  set.seed(123)
+  metadata                <- metadata[sample(1:dim(metadata)[1], replace = F),]
+  print(metadata[,1:2])
+}
 print(sprintf("%s samples in provided metadata table to be processed", dim(metadata)[1]))
 ## ---------------------------------------------------------------------------------------
 ## 1. parameters/options used for step1: doublets identification analysis with findDoublets()
@@ -84,7 +98,7 @@ save(seuratProcssedObjList, file = file.path(seuratProcssedObjList$resDir, "seur
 print("END-=-=-=-=-=-END-=-=-=-=-=-END-=-=-=-=-=-END")
 ## ---------
 ## 2. integration
-seuratIntegratedRes     <- getClusterMarkers(qcProcessedResults = seuratProcssedObjList,
+seuratIntegratedRes     <- getClusterMarkers(qcProcessedResults = seuratProcssedObjList, int.k.weight = as.numeric(args$integration.k.weight),
                                              integrationMethod = as.character(args$integration.method),
                                              nfeatures = as.numeric(args$integration.nfeatures),
                                              topN = 50)

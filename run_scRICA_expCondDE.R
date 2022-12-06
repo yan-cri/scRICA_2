@@ -51,7 +51,7 @@ parser$add_argument("--deseq2bulkSampleMeta", type="character",
                     metavar='')
 
 parser$add_argument("--norm.method", type="character",
-                    default = 'DEseq2',
+                    default = 'UQ',
                     help="if deMethod is 'DESeq2.bulk', this option can sepcify counts normalization method, options are 'TMM', 'UQ' (upper quantile), and 'DESeq2' (by default).",
                     metavar='')
 

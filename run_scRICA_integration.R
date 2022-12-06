@@ -25,6 +25,10 @@ parser$add_argument("--integration.method", type="character",
                     default = 'CCA',
                     help="2 options, CCA or RPCA as integration method.",
                     metavar = '')
+parser$add_argument("--integration.k.weight", type="integer",
+                    default = '100',
+                    help="Number of neighbors to consider when weighting anchors during the integration step.",
+                    metavar = '')
 ## ------
 args <- parser$parse_args()
 print(args)
@@ -40,7 +44,10 @@ print(seuratObjList)
 print("STEP1-=-=-=-=-=-STEP1-=-=-=-=-=-STEP1-=-=-=-=-=-STEP1")
 ## ---------
 # ?getClusterMarkers() changed into getIntegrationClusterMarkers()
-seuratIntegratedRes     <- getClusterMarkers(qcProcessedResults = seuratObjList, resDirName = as.character(args$resDirName), integrationMethod = as.character(args$integration.method), nfeatures = as.numeric(args$integration.nFeatures), topN = 50)
+seuratIntegratedRes     <- getClusterMarkers(qcProcessedResults = seuratObjList, int.k.weight = as.numeric(args$integration.k.weight),
+                                             resDirName = as.character(args$resDirName),
+                                             integrationMethod = as.character(args$integration.method),
+                                             nfeatures = as.numeric(args$integration.nFeatures), topN = 50)
 str(seuratIntegratedRes)
 ## ---------
 setwd(currentDir)
