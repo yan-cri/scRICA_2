@@ -1,6 +1,6 @@
 #' getCellChatRes() Function
 #' @details
-#' This function is used to make dotplot of marker/features genes in provided 'goiFname'.
+#' This function is used to conduct cellChat analysis on the selected expCond levels.
 #'
 #' @param resDir full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.
 #' @param rds User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.
