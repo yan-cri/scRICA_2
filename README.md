@@ -4,6 +4,16 @@
 It is a R workflow package which can be used to perform scRNA-Seq downstream integrative, comparative analyses and visualization. This package can process a batch of scRNA-Seq count matrix from different experimental conditions fro integration and comparative analysis efficiently and reproducible. The package functions can be categorized into: 1). analysis workflow functions and 2). visualization functions:
 
 ### 2. pacakge installation and vignettes
+  * Prerequisite packages
+```r
+devtools::install_github('EDePasquale/DoubletDecon')
+devtools::install_github("ChenMengjie/lightHippo")
+BiocManager::install("MAST")
+BiocManager::install("scater")
+BiocManager::install("destiny")
+install.packages("mclust")
+install.packages("easylabel")
+```
 
   * github installation
 
@@ -27,7 +37,7 @@ browseVignettes(package = 'scRICA')
 
 ### 3. Demonstration data
 
-As shown in below, a total of 6 samples single cell gene expression count matrix results from cell ranger analysis are included in this package as the demonstration data for this package analysis implementations. 
+As shown in below, a total of 6 samples single cell gene expression count matrix results from cell ranger analysis can be downloaded from https://drive.google.com/drive/folders/1wwxmi4cvASRDFtiFKs6MbflFDOOxw3AY?usp=sharing using as the demonstration data for this package analysis implementations. 
 
 ```
 -- 3041A
