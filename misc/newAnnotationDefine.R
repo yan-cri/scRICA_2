@@ -34,9 +34,5 @@ seuratObjFinal     <- RenameIdents(seuratObjFinal,
                                    `18` = 'B/P' ## 'B/plasma cell'
 )
 
-perClusterOrder  <- c('MA', "ST", "P/V", 'SM',
-                      'CE', 'SE',
-                      "EN", 'LE',
-                      'T/NK', 'MP', 'B/P' )
 
 print('END adding new annotation')
