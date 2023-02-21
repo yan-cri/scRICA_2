@@ -4,7 +4,7 @@
 It is a systematic workflow R pacakge for integrative and comparative scRNA-seq analysis. Various parameter options are inputted from a metadata table and then inherited through the entire analysis workflow. scRICA can significantly improves efficiency of programming for comparative analyses with multiple sample attributes. It is distributed as an R package and also offers a command line execution option.
 
 scRICA categorizes the workflow of integrative and comparative analysis using multiple-sample scRNA-seq data into four steps as shown below picture: ‘Step 1’ for pre-processing and quality control; ‘Step 2’ for multi-sample integration; ‘Step 3’ for visualization by attribute groups; and ‘Step 4’ for downstream analysis including differential expression (DE) analysis, pseudo-time trajectory analysis, and cell clusters identification.
-
+[Some title here](FILE_NAME.pdf)
 
 ### 2. pacakge installation and vignettes
   * Prerequisite packages
