@@ -1,7 +1,10 @@
 # scRICA: **s**ingle-**c**ell **R**NA-Seq **I**ntegrative **C**omparative **A**nalysis 
 
 ### 1. What is scRICA
-It is a R workflow package which can be used to perform scRNA-Seq downstream integrative, comparative analyses and visualization. This package can process a batch of scRNA-Seq count matrix from different experimental conditions fro integration and comparative analysis efficiently and reproducible. The package functions can be categorized into: 1). analysis workflow functions and 2). visualization functions:
+It is a systematic workflow R pacakge for integrative and comparative scRNA-seq analysis. Various parameter options are inputted from a metadata table and then inherited through the entire analysis workflow. scRICA can significantly improves efficiency of programming for comparative analyses with multiple sample attributes. It is distributed as an R package and also offers a command line execution option.
+
+scRICA categorizes the workflow of integrative and comparative analysis using multiple-sample scRNA-seq data into four steps as shown below picture: ‘Step 1’ for pre-processing and quality control; ‘Step 2’ for multi-sample integration; ‘Step 3’ for visualization by attribute groups; and ‘Step 4’ for downstream analysis including differential expression (DE) analysis, pseudo-time trajectory analysis, and cell clusters identification.
+
 
 ### 2. pacakge installation and vignettes
   * Prerequisite packages
