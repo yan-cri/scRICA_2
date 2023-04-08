@@ -7,10 +7,10 @@
 #' @details
 #' This function is used to identify positively expressed cluster markers for all originally identified/annotated cell clusters from the experimental conditions specified in the metadata table.
 #'
-#' @param resDir full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.
-#' @param rds User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.
-#' @param newAnnotation logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.
-#' @param newAnnotationRscriptName if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.
+#' @param resDir specify a exiting full path of integration results analysis are saved.
+#' @param rds provide integrated RDS object, user can also provide the full path of the RDS where integrated RDS object is saved.
+#' @param newAnnotation logical option, whether to add the new cell types annotation for identified cell clusters from provided integrated RDS file.
+#' @param newAnnotationRscriptName if 'newAnnotation = T', please specify the full path of the R script where new cell annotations are defined.
 #' @param subsetOn whether to subset certain cell clusters when it is 'idents' or conditions when it is 'expCond1/2...'.
 #' @param subset define the specific cell cluster names when it is 'subsetOn=idents' or expConds inheritated from metadata table 'subsetOn=expCond1/2...' to extract.
 #' @param expCondCheck specify which experimental conditions to be explored, including sample, idents, or expCond1/2/....
@@ -144,7 +144,7 @@ getScatterPlot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotation
     if (!expCondCheck%in%colnames(seuratObjFinal@meta.data)) {
       stop("ERROR: 'expCondCheck' does not exist in your 'rds' metadata.")
     } else {
-      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data[, grep(as.character(expCondCheck), colnames(seuratObjFinal@meta.data))]
+      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data[, grep(sprintf('^%s$', as.character(expCondCheck)), colnames(seuratObjFinal@meta.data))]
     }
   }
   DefaultAssay(seuratObjFinal) <- "RNA"

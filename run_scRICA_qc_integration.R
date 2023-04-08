@@ -16,15 +16,15 @@ parser$add_argument("-m", "--metadata", nargs = 1,
                     type="character", help="Required: Full path to metadata table",
                     metavar = '')
 parser$add_argument("-o", "--outputDirName", type="character",
-                    default = 'output_results',
-                    help="Full path to save analysis results directory name, default 'output_results' ",
+                    default = 'scRICA_results',
+                    help="Full path to save analysis results directory name, default 'scRICA_results' ",
                     metavar = '')
 ## ------
 ## options used for countReadin()
 ## common option used for different functions
 parser$add_argument("-g", "--genomeSpecies", type="character",
                     default = 'human',
-                    help="genome species, options are human, mice, rat",
+                    help="genome species, options are human, mouse, human_mouse",
                     metavar = '')
 parser$add_argument("-mc", "--minCells", type="integer",
                     default = '3',

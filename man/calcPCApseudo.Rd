@@ -6,7 +6,7 @@
 \usage{
 calcPCApseudo(
   obj,
-  slingshotclusterLabels = NULL,
+  slingshotclusterLabels = "GMM",
   topFeatureNo = 2000,
   resSave = "F",
   resFnamePrefix = "TEST"

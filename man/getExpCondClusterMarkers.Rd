@@ -9,7 +9,7 @@ getExpCondClusterMarkers(
   rds = NULL,
   newAnnotation = F,
   newAnnotationRscriptName = NULL,
-  expCondCheck = "sample",
+  expCondCheck = "allExpConds",
   expCondCheckFname = NULL,
   cellcluster = NULL,
   deMethod = "wilcox",
@@ -25,15 +25,15 @@ getExpCondClusterMarkers(
 )
 }
 \arguments{
-\item{resDir}{full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.}
+\item{resDir}{specify an exiting full path of directory, where results will be saved.}
 
-\item{rds}{User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.}
+\item{rds}{provide integrated RDS object, user can also provide the full path of the RDS where integrated RDS object is saved with above rdsDir option.}
 
-\item{newAnnotation}{logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.}
+\item{newAnnotation}{logical option, whether to add the new cell types annotation for identified cell clusters from provided integrated RDS file.}
 
-\item{newAnnotationRscriptName}{if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.}
+\item{newAnnotationRscriptName}{if 'newAnnotation = T', please specify the full path of the R script where new cell annotations are defined.}
 
-\item{expCondCheck}{specify which experimental conditions to be explored, including sample, idents, or expCond1/2/....}
+\item{expCondCheck}{specify which experimental conditions to be explored, including sample, allExpConds, or expCond1/2/....}
 
 \item{expCondCheckFname}{suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.}
 
@@ -66,7 +66,7 @@ a list item including 2 elements: All positively expressed genes from each exper
 getExpCondClusterMarkers() Function
 }
 \details{
-This function is used to identify positively expressed cluster markers for all originally identified/annotated cell clusters from the experimental conditions specified in the metadata table.
+This function is used to identify positively expressed cluster marker genes for specified cell clusters with respect to different samples attributes levels specified in the metadata table column.
 }
 \examples{
 getExpCondClusterMarkers()

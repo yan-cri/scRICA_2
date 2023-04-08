@@ -36,6 +36,10 @@ parser$add_argument("--expCond", type="character",
                     help = "Define selected experimental conditions for trajectory analysis, the conditions should be consistent with the levels in defined in the 'expCondCheck'.",
                     metavar='')
 
+parser$add_argument("--slingshotclusterLabels", type="character",
+                    default = 'GMM',
+                    help = "Define slingshotclusterLabels option, by default 'GMM'.",
+                    metavar='')
 
 parser$add_argument("--topFeatureNo", type="integer",
                     default = '2000',
@@ -55,15 +59,6 @@ setwd(as.character(args$outputDir))
 print("Complete read in RDS file")
 print('-=-=-=-=-=-=-=-=-=-')
 ## ---
-
-
-pseudoResEe1  <- getExpCondClusterPseudotime(rds = rds1,
-                                             newAnnotation = T, newAnnotationRscriptName = newAnno,
-                                             cellcluster = 'EE1',
-                                             expCondCheck = 'expCond1', expCondCheckFname = 'expCond1_subcluster',
-                                             slingshotclusterLabels = 'GMM', topFeatureNo = 1000 )
-
-
 print(sprintf("START pseudo-time trajectory analysis."))
 if (is.null(args$cellAnnotation)) {
   if (args$expCond == 'all') {
@@ -72,7 +67,7 @@ if (is.null(args$cellAnnotation)) {
       pseudoRes <- getExpCondClusterPseudotime(rds = rds1, resDir = as.character(args$outputDir),
                                                newAnnotation = F,
                                                expCondCheck = as.character(args$expCondCheck), expCondCheckFname = as.character(args$expCondCheckFname),
-                                               slingshotclusterLabels = args$slingshotclusterLabels,
+                                               slingshotclusterLabels = as.character(args$slingshotclusterLabels),
                                                topFeatureNo = as.numeric(args$topFeatureNo) )
     } else {
       print("Analysis is conducted on all experimental conditions specified in 'expCondCheck' the selected cell types in 'cellclusters'. ")
@@ -81,7 +76,7 @@ if (is.null(args$cellAnnotation)) {
                                                newAnnotation = F,
                                                expCondCheck = as.character(args$expCondCheck), expCondCheckFname = as.character(args$expCondCheckFname),
                                                cellcluster = sel.cellClusters,
-                                               slingshotclusterLabels = args$slingshotclusterLabels,
+                                               slingshotclusterLabels = as.character(args$slingshotclusterLabels),
                                                topFeatureNo = as.numeric(args$topFeatureNo) )
     }
   } else {
@@ -92,7 +87,7 @@ if (is.null(args$cellAnnotation)) {
                                                newAnnotation = F,
                                                expCondCheck = as.character(args$expCondCheck), expCondCheckFname = as.character(args$expCondCheckFname),
                                                expCond = sel.expConds,
-                                               slingshotclusterLabels = args$slingshotclusterLabels,
+                                               slingshotclusterLabels = as.character(args$slingshotclusterLabels),
                                                topFeatureNo = as.numeric(args$topFeatureNo) )
     } else {
       print("Analysis is conducted on the selected experimental conditions specified in 'expCond' for the selected cell types in 'cellclusters'. ")
@@ -100,7 +95,7 @@ if (is.null(args$cellAnnotation)) {
                                                newAnnotation = F,
                                                expCondCheck = as.character(args$expCondCheck), expCondCheckFname = as.character(args$expCondCheckFname),
                                                expCond = sel.expConds,
-                                               slingshotclusterLabels = args$slingshotclusterLabels,
+                                               slingshotclusterLabels = as.character(args$slingshotclusterLabels),
                                                topFeatureNo = as.numeric(args$topFeatureNo),
                                                cellcluster = sel.cellClusters )
     }
@@ -112,7 +107,7 @@ if (is.null(args$cellAnnotation)) {
       pseudoRes <- getExpCondClusterPseudotime(rds = rds1, resDir = as.character(args$outputDir),
                                                newAnnotation = T, newAnnotationRscriptName = args$cellAnnotation,
                                                expCondCheck = as.character(args$expCondCheck), expCondCheckFname = as.character(args$expCondCheckFname),
-                                               slingshotclusterLabels = args$slingshotclusterLabels,
+                                               slingshotclusterLabels = as.character(args$slingshotclusterLabels),
                                                topFeatureNo = as.numeric(args$topFeatureNo) )
     } else {
       print("Analysis is conducted on all experimental conditions specified in 'expCondCheck' the selected cell types in 'cellclusters'. ")
@@ -121,7 +116,7 @@ if (is.null(args$cellAnnotation)) {
                                                newAnnotation = T, newAnnotationRscriptName = args$cellAnnotation,
                                                expCondCheck = as.character(args$expCondCheck), expCondCheckFname = as.character(args$expCondCheckFname),
                                                cellcluster = sel.cellClusters,
-                                               slingshotclusterLabels = args$slingshotclusterLabels,
+                                               slingshotclusterLabels = as.character(args$slingshotclusterLabels),
                                                topFeatureNo = as.numeric(args$topFeatureNo) )
     }
   } else {
@@ -132,7 +127,7 @@ if (is.null(args$cellAnnotation)) {
                                                newAnnotation = T, newAnnotationRscriptName = args$cellAnnotation,
                                                expCondCheck = as.character(args$expCondCheck), expCondCheckFname = as.character(args$expCondCheckFname),
                                                expCond = sel.expConds,
-                                               slingshotclusterLabels = args$slingshotclusterLabels,
+                                               slingshotclusterLabels = as.character(args$slingshotclusterLabels),
                                                topFeatureNo = as.numeric(args$topFeatureNo) )
     } else {
       print("Analysis is conducted on the selected experimental conditions specified in 'expCond' for the selected cell types in 'cellclusters'. ")
@@ -141,7 +136,7 @@ if (is.null(args$cellAnnotation)) {
                                                newAnnotation = T, newAnnotationRscriptName = args$cellAnnotation,
                                                expCondCheck = as.character(args$expCondCheck), expCondCheckFname = as.character(args$expCondCheckFname),
                                                expCond = sel.expConds,
-                                               slingshotclusterLabels = args$slingshotclusterLabels,
+                                               slingshotclusterLabels = as.character(args$slingshotclusterLabels),
                                                topFeatureNo = as.numeric(args$topFeatureNo),
                                                cellcluster = sel.cellClusters )
     }

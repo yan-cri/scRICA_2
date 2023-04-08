@@ -2,24 +2,27 @@
 #' compAnno() Function
 #' @details
 #' This function is used to make comparisons between 2 seurat objects. 'seuratObj2Comp' is the baseline, where 'seuratObj' is decomposed into.
-#' @param seuratObj the ident cells to be decomposed for comparisons.
-#' @param seuratObj2Comp the annotation cells to be compared with.
+#' @param seuratObj object with known cells annotations, which is used as base line of comparisons.
+#' @param seuratObj2Comp object cells/idents presented in rows are decomposed into known 'seuratObj' idents cells based on counts and percentages.
 #'
 #' @importFrom Seurat AddMetaData
 #'
 #' @keywords compAnno
-#' @examples compAnno()
+#' @examples res <- compAnno(seuratObj = rds.knownAnnotations, seuratObj2Comp = rds.2decompose)
+#' @examples res1$count; res1$per
 #' @export
 #'
 #' @return
-#' results in cell number and relative percentage of idents cells between 2 input seurat objects, all cells are decomposed on rows.
+#' results in cell number and relative percentage of idents cells between 2 input seurat objects, all cells are decomposed on rows for 'seuratObj2Comp' based on 'seuratObj'.
 ## ------------------------------------------------------------------------------------ ##
 compAnno <- function(seuratObj, seuratObj2Comp) {
   ## ------
   cellName1       <- (sapply(strsplit(rownames(seuratObj@meta.data), split = '_'), '[[', 1))
-  seuratObj       <- AddMetaData(object = seuratObj, metadata = as.vector(paste(cellName1, seuratObj$expCond, sep = '-')), col.name = 'cellName' )
+  # seuratObj       <- AddMetaData(object = seuratObj, metadata = as.vector(paste(cellName1, seuratObj$expCond, sep = '-')), col.name = 'cellName' )
+  seuratObj       <- AddMetaData(object = seuratObj, metadata = as.vector(cellName1), col.name = 'cellName' )
   cellName2       <- (sapply(strsplit(rownames(seuratObj2Comp@meta.data), split = '_'), '[[', 1))
-  seuratObj2Comp <- AddMetaData(object = seuratObj2Comp, metadata = as.vector(paste(cellName2, seuratObj2Comp$expCond, sep = '-')), col.name = 'cellName' )
+  # seuratObj2Comp <- AddMetaData(object = seuratObj2Comp, metadata = as.vector(paste(cellName2, seuratObj2Comp$expCond, sep = '-')), col.name = 'cellName' )
+  seuratObj2Comp <- AddMetaData(object = seuratObj2Comp, metadata = as.vector(cellName2), col.name = 'cellName' )
   vennComp <- gplots::venn(data = list('org' = seuratObj@meta.data$cellName, 'comp' = seuratObj2Comp@meta.data$cellName))
   ## ------
   seuratObj.clusterMatch           <- seuratObj@meta.data

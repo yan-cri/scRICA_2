@@ -2,10 +2,10 @@
 #' @details
 #' This function is used to 1). summarize the number of cells in each originally identified/annotated cells clusters; 2). re-make clustering reduction UMAP/tSNE plots; 3). make the cells percentage plot based on experimental condition levels specified in the metadata table.
 #'
-#' @param resDir full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.
-#' @param rds User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.
-#' @param newAnnotation logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.
-#' @param newAnnotationRscriptName if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.
+#' @param resDir specify an exiting full path of directory, where results will be saved.
+#' @param rds provide integrated RDS object, user can also provide the full path of the RDS where integrated RDS object is saved with above rdsDir option.
+#' @param newAnnotation logical option, whether to add the new cell types annotation for identified cell clusters from provided integrated RDS file.
+#' @param newAnnotationRscriptName if 'newAnnotation = T', please specify the full path of the R script where new cell annotations are defined.
 #' @param expCondCheck specify which experimental conditions to be explored, including sample, idents, or expCond1/2/....
 #' @param expCondCheckFname suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.
 #' @param fpRemake whether to re-make feature plots, default is True
@@ -15,6 +15,9 @@
 #' @param fpClusterOrder character string of cell clusters orders to specify the cell clusters orders corresponding to the color scheme, if not defined, sorted numerically, alphabetically, or the orders shown in the annotation R script.
 #' @param perClusterOrder character string of cell clusters orders to specify the cell clusters orders presented in the percentage bar plot, if not defined, sorted numerically or alphabetically.
 #' @param expCondNameOrder character string of the corresponding experimental condition factor levels' orders presented in the percentage bar plot, if not defined, sorted numerically or alphabetically.
+#' @param stack whether to make stacked bar-plot
+#' @param gap space of un-stacked bar-plot between different conditions, 0.1-1.
+#' @param debug logical option, turn on to have extra analysis information printing out for debug, by defalut 'off'.
 #'
 #' @importFrom ggplot2 theme
 #' @importFrom ggplot2 guides
@@ -37,24 +40,15 @@
 #' @examples clusterSummary(rds, expCondCheck='sample/idents/expCond*')
 #' @export
 ## ---------------------------------------------------------------------------------------
-getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, fpRemake = T, perRemake = T, colors = NULL, cellcluster = NULL, expCondCheck='sample', expCondCheckFname = NULL, fpClusterOrder = NULL, perClusterOrder = NULL, perPlotVertical = F, perPlotHeight = NULL, perPlotWidth = NULL, expCondNameOrder = NULL) {
+getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL,
+                                    fpRemake = T, perRemake = T, colors = NULL, cellcluster = NULL,
+                                    expCondCheck='sample', expCondCheckFname = NULL, fpClusterOrder = NULL, perClusterOrder = NULL,
+                                    perPlotVertical = F, perPlotHeight = NULL, perPlotWidth = NULL, expCondNameOrder = NULL,
+                                    stack = as.logical('T'), gap = 0.8, debug = as.logical(F)) {
   ## ---
   newAnnotation           <- as.logical(newAnnotation)
   if (newAnnotation & is.null(newAnnotationRscriptName)) print("Option 'newAnnotation' is on, please provide corresponding option 'newAnnotationRscriptName'.")
   ## ---
-  # if (is.null(resDir) & !is.null(rds)) {
-  #   rdsFname              <- rdsFname
-  #   resDir                <- getwd()
-  # } else if (!is.null(resDir) & is.null(rdsFname)) {
-  #   rdsFname              <- sprintf('%s/RDS_Dir/%s.rds', resDir, basename(resDir))
-  #   resDir                <- resDir
-  # } else {
-  #   stop("Error: please provide either option 'resDir' or 'rdsFname'. ")
-  # }
-  # ## ---
-  # if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
-  # seuratObjFinal          <<- readRDS(file = as.character(rdsFname))
-  # print('Done for RDS readin')
   if (is.null(resDir) & !is.null(rds)) {
     if (class(rds)=='Seurat') {
       seuratObjFinal      <<- rds
@@ -105,12 +99,15 @@ getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newA
   if (newAnnotation) {
     ## Assign cell type identity to clusters
     ## redefine the level of Idents on the y-axis can be adjusted here by inputting order for cell annotation
-    print("Before adding new annotation")
-    print(table(Idents(seuratObjFinal)))
+    if (debug) {
+      print("Before adding new annotation")
+      print(table(Idents(seuratObjFinal)))
+    }
     source(newAnnotationRscriptName)
-    print("After adding new annotation")
-    print(table(Idents(seuratObjFinal)))
-
+    if(debug){
+      print("After adding new annotation")
+      print(table(Idents(seuratObjFinal)))
+    }
   }
   ## -------------------------------------------------------------------------------------
   # setup custom theme for plotting
@@ -142,13 +139,16 @@ getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newA
     if (!expCondCheck%in%colnames(seuratObjFinal@meta.data)) {
       stop("ERROR: 'expCondCheck' does not exist in your 'rds' metadata.")
     } else {
-      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data[, grep(as.character(expCondCheck), colnames(seuratObjFinal@meta.data))]
+      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data[, grep(sprintf('^%s$', as.character(expCondCheck)), colnames(seuratObjFinal@meta.data))]
     }
   }
   seuratObjFinal$expCond <- gsub(pattern = '_', replacement = '-', x = seuratObjFinal$expCond)
-  # print('6666666666666')
-  # print(table(Seurat::Idents(seuratObjFinal)))
-  # print('6666666666666')
+  if(debug){
+    print('6666666666666')
+    print(table(Seurat::Idents(seuratObjFinal)))
+    print('6666666666666')
+  }
+
   ##--------------------------------------------------------------------------------------##
   clusterLevels <- levels(Seurat::Idents(seuratObjFinal))
   if (!is.null(cellcluster)) {
@@ -156,9 +156,11 @@ getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newA
     print(sprintf('Subsetting %s specific cell clusters: %s', length(cellcluster), paste(cellcluster, collapse = ',')))
     seuratObjFinal                          <- subset(seuratObjFinal, idents = cellcluster )
   }
-  # print('8787878787878')
-  # print(table(Idents(seuratObjFinal)))
-  # print('8787878787878')
+  if(debug){
+    print('8787878787878')
+    print(table(Idents(seuratObjFinal)))
+    print('8787878787878')
+  }
   ##--------------------------------------------------------------------------------------##
   if (expCondCheck == 'sample') {
     if (is.null(expCondCheckFname)) {
@@ -287,7 +289,6 @@ getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newA
       } else if ( length(levels(as.factor(seuratObjFinal$expCond))) > 4) {
         pdf(file = plotName3, width = 5.5*length(levels(as.factor(seuratObjFinal$expCond))), height = 7)
       }
-      # print(umapSplit + theme1noLegend)
       print(umapSplit + theme1wLegend + guides(colour = guide_legend(nrow=4, byrow=TRUE, override.aes = list(size=6))) )
       dev.off()
     }
@@ -302,7 +303,6 @@ getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newA
       } else if ( length(levels(as.factor(seuratObjFinal$expCond))) > 4) {
         pdf(file = plotName4, width = 5.5*length(levels(as.factor(seuratObjFinal$expCond))), height = 7)
       }
-      # print(umapSplit + theme1noLegend)
       print(umapSplitNolabel + theme1wLegend + guides(colour = guide_legend(nrow=4, byrow=TRUE, override.aes = list(size=6))) )
       dev.off()
     }
@@ -310,7 +310,7 @@ getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newA
     ## -
   }
   ## -------------------------------------------------------------------------------------
-  ## 2. summarize cell no in each idetified clusters, if clleNo summary will change automately based on above whether to update on 'expCondCheckFname'
+  ## 2. summarize cell no in each identified clusters, if cellNo summary will change automatically based on above whether to update on 'expCondCheckFname'
   ## '_' is used here to combine idents() with expCond' factor levels.
   if (clusterCellsNoSummary) {
     Seurat::DefaultAssay(seuratObjFinal)   <- "RNA"
@@ -346,15 +346,14 @@ getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newA
     print(sprintf('END step2.1: summarizing on identified cell no. in each cluster'))
     ## -
     print(sprintf('Start step2.2: plotting identified cell no. percentage in each cluster'))
-    # print(head(clusterCellExpNoWidePer))
-    # print(dim(clusterCellExpNoWidePer))
+    if(debug){
+      print(head(clusterCellExpNoWidePer))
+      print(dim(clusterCellExpNoWidePer))
+    }
     perData2plotLong               <- reshape2::melt(clusterCellExpNoWidePer, id.vars = c('cluster'))
     ## ---------
     ## updating annotated cell clusters levels order
     if (is.null(perClusterOrder))  perClusterOrder <- levels(factor(perData2plotLong$cluster))
-    # if (newAnnotation) {
-    #   perData2plotLong$cluster     <- factor(perData2plotLong$cluster, levels = perClusterOrder )
-    # }
     ## ---------
     ## updating 'expCond' levels order
     if (!is.null(expCondNameOrder)){
@@ -402,39 +401,83 @@ getClusterSummaryReplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newA
     }
     ## -
     ## ---------
+    # print(head(perData2plotLong))
+    # print('777777777')
+
     if (perPlotVertical) {
       pdf(file = gsub('.txt', '_vertical.pdf', cellnoFname), width = plotSizeWidth, height = plotSizeHeight  )
-      g1 <- ggplot2::ggplot(perData2plotLong, ggplot2::aes(x = factor(variable), y = value, fill = factor(cluster) )) + ggplot2::geom_bar(stat="identity")
-      g1 <- g1 + ggplot2::scale_fill_manual(values=selectedCol2)
-      g1 <- g1 + ggplot2::labs(title='', x = '', y = '')
-      g1 <- g1 + ggplot2::labs(fill = '')
-      g1 <- g1 + theme(plot.title = element_text(color="black", size=20, face="bold.italic"),
-                       axis.title.x = element_text(color="black", size=16, face="bold"),
-                       axis.title.y = element_text(color="black", size=16, face="bold"))
-      g1 <- g1 + theme(axis.text.x = element_text(face="plain", color="black", size=20, angle=90, vjust = 0, hjust = 1),
-                       axis.text.y = element_text(face="plain", color="#000000", size=20, angle=0))
-      g1 <- g1 + theme(legend.title = element_text(color = "black", size = 18),
-                       legend.text = element_text(color = "black", size = 18) )
-      if (dim(clusterCellExpNoWidePer)[1] > 10) {
-        g1 <- g1 + guides(fill=guide_legend(ncol=1))
+
+      if (stack) {
+        g1 <- ggplot2::ggplot(perData2plotLong, ggplot2::aes(x = factor(variable), y = value, fill = factor(cluster) )) + ggplot2::geom_bar(stat="identity")
+        g1 <- g1 + ggplot2::scale_fill_manual(values=selectedCol2)
+        g1 <- g1 + ggplot2::labs(title='', x = '', y = '')
+        g1 <- g1 + ggplot2::labs(fill = '')
+        g1 <- g1 + theme(plot.title = element_text(color="black", size=20, face="bold.italic"),
+                         axis.title.x = element_text(color="black", size=16, face="bold"),
+                         axis.title.y = element_text(color="black", size=16, face="bold"))
+        g1 <- g1 + theme(axis.text.x = element_text(face="plain", color="black", size=20, angle=90, vjust = 0, hjust = 1),
+                         axis.text.y = element_text(face="plain", color="#000000", size=20, angle=0))
+        g1 <- g1 + theme(legend.title = element_text(color = "black", size = 18),
+                         legend.text = element_text(color = "black", size = 18) )
+        if (dim(clusterCellExpNoWidePer)[1] > 10) {
+          g1 <- g1 + guides(fill=guide_legend(ncol=1))
+        }
+      } else {
+        g1 <- ggplot2::ggplot(perData2plotLong, ggplot2::aes(x = value, y = factor(cluster, levels = rev(perClusterOrder)), fill = factor(variable) ))+ ggplot2::geom_bar(stat="identity", position="dodge", colour="black", width = gap) + ggplot2::coord_flip()
+        # g1 <- g1 + ggplot2::scale_fill_manual(values=selectedCol2)
+        g1 <- g1 + ggplot2::labs(title='', y = 'Relative cell %', x = '')
+        g1 <- g1 + ggplot2::labs(fill = '')
+        g1 <- g1 + ggplot2::theme_void() + theme(panel.grid.major = element_line(colour = "grey85"))
+        g1 <- g1 + ggplot2::theme(plot.margin = unit(c(0.5,0.1,0.5,0.1), "cm"))
+        g1 <- g1 + ggplot2::labs(fill = '')
+        g1 <- g1 + theme(plot.title = element_text(color="black", size=20, face="bold.italic"),
+                         axis.title.x = element_text(color="black", size=16, face="bold"),
+                         axis.title.y = element_text(color="black", size=16, face="bold"))
+        g1 <- g1 + theme(axis.text.x = element_text(face="plain", color="black", size=14, angle=90, vjust = 0, hjust = 1),
+                         axis.text.y = element_text(face="plain", color="#000000", size=20, angle=0))
+        g1 <- g1 + theme(legend.title = element_text(color = "black", size = 18),
+                         legend.text = element_text(color = "black", size = 18) )
+        if (dim(clusterCellExpNoWidePer)[1] > 10) {
+          g1 <- g1 + guides(fill=guide_legend(ncol=1))
+        }
       }
       print(g1)
       dev.off()
     } else {
       pdf(file = gsub('.txt', '.pdf', cellnoFname), width = plotSizeWidth, height = plotSizeHeight )
-      g1 <- ggplot2::ggplot(perData2plotLong, ggplot2::aes(x = value, y = factor(variable), fill = factor(cluster) )) + ggplot2::geom_bar(stat="identity")
-      g1 <- g1 + ggplot2::scale_fill_manual(values=selectedCol2)
-      g1 <- g1 + ggplot2::labs(title='', x = '', y = '')
-      g1 <- g1 + ggplot2::labs(fill = '')
-      g1 <- g1 + theme(plot.title = element_text(color="black", size=20, face="bold.italic"),
-                       axis.title.x = element_text(color="black", size=16, face="bold"),
-                       axis.title.y = element_text(color="black", size=16, face="bold"))
-      g1 <- g1 + theme(axis.text.x = element_text(face="plain", color="black", size=20, angle=0 ),
-                       axis.text.y = element_text(face="plain", color="#000000", size=20, angle=0, hjust=0))
-      g1 <- g1 + theme(legend.title = element_text(color = "black", size = 18),
-                       legend.text = element_text(color = "black", size = 18) )
-      if (dim(clusterCellExpNoWidePer)[1] > 10) {
-        g1 <- g1 + guides(fill=guide_legend(ncol=2, reverse = T))
+      if (stack) {
+        g1 <- ggplot2::ggplot(perData2plotLong, ggplot2::aes(x = value, y = factor(variable), fill = factor(cluster) )) + ggplot2::geom_bar(stat="identity")
+        g1 <- g1 + ggplot2::scale_fill_manual(values=selectedCol2)
+        g1 <- g1 + ggplot2::labs(title='', x = '', y = '')
+        g1 <- g1 + ggplot2::labs(fill = '')
+        g1 <- g1 + theme(plot.title = element_text(color="black", size=20, face="bold.italic"),
+                         axis.title.x = element_text(color="black", size=14, face="bold"),
+                         axis.title.y = element_text(color="black", size=20, face="bold"))
+        g1 <- g1 + theme(axis.text.x = element_text(face="plain", color="black", size=20, angle=0 ),
+                         axis.text.y = element_text(face="plain", color="#000000", size=20, angle=0, hjust=0))
+        g1 <- g1 + theme(legend.title = element_text(color = "black", size = 18),
+                         legend.text = element_text(color = "black", size = 18) )
+        if (dim(clusterCellExpNoWidePer)[1] > 10) {
+          g1 <- g1 + guides(fill=guide_legend(ncol=2, reverse = T))
+        }
+      } else {
+        g1 <- ggplot2::ggplot(perData2plotLong, ggplot2::aes(x = value, y = factor(cluster, levels = rev(perClusterOrder)), fill = factor(variable) ))
+        g1 <- g1 + ggplot2::geom_bar(stat="identity", colour="black", position = 'dodge', width = gap )
+        # g1 <- g1 + ggplot2::scale_fill_manual(values=selectedCol2)
+        g1 <- g1 + ggplot2::labs(title='', x = 'Relative cell %', y = '')
+        g1 <- g1 + ggplot2::labs(fill = '')
+        g1 <- g1 + ggplot2::theme_void() + theme(panel.grid.major = element_line(colour = "grey85"))
+        g1 <- g1 + ggplot2::theme(plot.margin = unit(c(0.1,0.5,0.1,0.5), "cm"))
+        g1 <- g1 + theme(plot.title = element_text(color="black", size=20, face="bold.italic"),
+                         axis.title.x = element_text(color="black", size=20, face="bold"),
+                         axis.title.y = element_text(color="black", size=14, face="bold"))
+        g1 <- g1 + theme(axis.text.x = element_text(face="plain", color="black", size=20, angle=0 ),
+                         axis.text.y = element_text(face="plain", color="#000000", size=14, angle=0, hjust=0))
+        g1 <- g1 + theme(legend.title = element_text(color = "black", size = 20),
+                         legend.text = element_text(color = "black", size = 24) )
+        if (dim(clusterCellExpNoWidePer)[1] > 10) {
+          g1 <- g1 + guides(fill=guide_legend(ncol=1, reverse = T))
+        }
       }
       print(g1)
       dev.off()

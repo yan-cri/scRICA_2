@@ -1,26 +1,33 @@
 #' getGoiDotplot() Function
 #' @details
-#' This function is used to make dotplot of marker/features genes in provided 'goiFname'.
-#'
-#' @param resDir full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.
-#' @param rds User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.
-#' @param newAnnotation logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.
-#' @param newAnnotationRscriptName if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.
+#' This function is used to make feature genes dotplot of a set of marker/feature genes provided with 'goiFname' in an excel file.
+#' @param resDir specify an exiting full path of directory, where results will be saved.
+#' @param rds provide integrated RDS object, user can also provide the full path of the RDS where integrated RDS object is saved with above rdsDir option.
+#' @param newAnnotation logical option, whether to add the new cell types annotation for identified cell clusters from provided integrated RDS file.
+#' @param newAnnotationRscriptName if 'newAnnotation = T', please specify the full path of the R script where new cell annotations are defined.
 #' @param goiFname path to file, where a list of marker/features genes are provided in column 'Gene', if column 'Cell Type' is also provided, option 'geneTypeOrder' can be used to adjust orders.
 #' @param geneTypeOrder if column 'Cell Type' is provided in the 'goiFname' file, this option can be used to adjust the orders of marker gene's cell types, if not provided, marker gene's cell types will be sorted alphabetically.
 #' @param expCondCheck specify which experimental conditions to be explored, including sample, idents, or expCond1/2/....
 #' @param expCondCheckFname suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.
 #' @param expCondReorderLevels a character string of the corresponding experimental condition factor levels' orders presented on the y-axis of the dot-plot from bottom to top, if not defined, sorted numerically or alphabetically.
 #' @param expCond subset the specified experimental condition corresponding to 'expCondCheck' levels to make the corresponding dot plot.
-#' @param cellcluster specify cell clusters to be displayed on the dot plot
+#' @param cellcluster specify cell clusters to be displayed on the dot plot.
 #' @param dotPlotFnamePrefix prefix of the dot plot file name, if not defined, by default = 'goiDotplots'.
 #' @param dotPlotMinExpCutoff minimum expression value threshold presented in the dot plot, if not defined, by default = 0.3.
 #' @param dotPlotMaxExpCutoff maximum expression value threshold presented in the dot plot, if not defined, by default = 2.5.
 #' @param dotPlotWidth dot plot width, if not defined, will be decided automatically based on the number of marker genes presented in 'goiFname'
 #' @param dotPlotHeight dot plot height, if not defined, will be decided automatically based on the number of experimental condition or sample's cell clusters.
 #' @param legendPer specify the legend proportion in the dot plot, if not specified, by default = 0.1
-#' @param gridOn by default 'off', whether to have grid on the plot background
-#' @param geneTypeLegendOn by default 'on', whether to include legend in the plot
+#' @param genetypebarPer specify the proportion top gene types color bar, by default 0.01.
+#' @param fontsize.x specify the font size of gene names on x-axis, by default 24.
+#' @param fontsize.y specify the font size of samples attributes on y-axis, by default 18.
+#' @param fontangle.x change the x-axis text label position, by default vertically aligned with x-axis with 90 degree.
+#' @param fontangle.y change the y-axis text label position, by default horizontally displayed with y-axis with 90 degree.
+#' @param fontsize.legend1 specify the font size of expression color legend bar.
+#' @param fontsize.legend2 specify the font size of input gene list's types legend bar.
+#' @param gridOn logical option, whether to have grid on the plot background, by default it is on.
+#' @param geneTypeLegendOn logical option, whether to include feature genes type legend bar in the plot, by default 'on'.
+#' @param debug logical option, turn on to have extra analysis information printing out for debug, by defalut 'off'.
 #'
 #' @importFrom ggplot2 theme
 #' @importFrom ggplot2 guides
@@ -56,10 +63,13 @@
 # library(grDevices)
 # library(tools)
 # library(xlsx)
+## personal notes: turn on scale in Seurat::DotPlot(), normalized count will be scale() on each group.by conditions. cluster.idents=F do not scale across gene features to avoid high expressed gene strench the visualization.
 getGoiDotplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, goiFname, geneTypeOrder=NULL,
                           expCondCheck='sample', expCondCheckFname = NULL, expCondReorderLevels=NULL,
                           expCond = NULL, cellcluster = NULL, dotPlotFnamePrefix='goiDotplots',
-                          dotPlotMinExpCutoff=0.3, dotPlotMaxExpCutoff = 2.5, dotPlotWidth=NULL, dotPlotHeight=NULL, legendPer=NULL, genetypebarPer=NULL, fontsize.x = 24, fontsize.y = 18, fontangle.x = 90, fontangle.y = 90, fontsize.legend1 = 20, fontsize.legend2 = NULL, gridOn = as.logical(F), geneTypeLegendOn = as.logical(T), debug = F ){
+                          dotPlotMinExpCutoff=0.3, dotPlotMaxExpCutoff = 2.5, dotPlotWidth=NULL,
+                          scale.min = NA, scale.max = NA,
+                          dotPlotHeight=NULL, legendPer=NULL, genetypebarPer=NULL, fontsize.x = 24, fontsize.y = 18, fontangle.x = 90, fontangle.y = 0, fontsize.legend1 = 20, fontsize.legend2 = NULL, gridOn = as.logical(T), geneTypeLegendOn = as.logical(T), debug = F ){
   ## ---
   newAnnotation           <- as.logical(newAnnotation)
   expCondName             <- expCond ## for subsetting on expCond
@@ -111,11 +121,15 @@ getGoiDotplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationR
   if (newAnnotation) {
     ## Assign cell type identity to clusters
     ## redefine the level of Idents on the y-axis can be adjusted here by inputting order for cell annotation
-    print("Before adding new annotation")
-    print(table(Idents(seuratObjFinal)))
+    if(debug){
+      print("Before adding new annotation")
+      print(table(Idents(seuratObjFinal)))
+    }
     source(newAnnotationRscriptName)
-    print("After adding new annotation")
-    print(table(Idents(seuratObjFinal)))
+    if (debug) {
+      print("After adding new annotation")
+      print(table(Idents(seuratObjFinal)))
+    }
   }
   ##--------------------------------------------------------------------------------------##
   if (expCondCheck == 'sample') {
@@ -244,35 +258,51 @@ getGoiDotplot <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationR
   ## '_' is used here to combine idents() with expCond' factor levels.
   if (all( names(Seurat::Idents(seuratObjFinal)) == names(seuratObjFinal$expCond) )) {
     ## re-define Seurat::Idents(seuratObjFinal) with level name: cluster + expCond if expCondCheck != 'comb'
-    ## ---
-    if (is.null(expCondReorderLevels)) {
-      expCondReorderLevels          <- levels(factor(seuratObjFinal@meta.data$expCond))
-    }
-    ## ---
-    if ( !all(expCondReorderLevels %in% levels(factor(seuratObjFinal$expCond))) ) stop("Please provide correct corresponding 'expCondReorderLevels' to sort y-axis dot plot experimental conditions.")
-    ## ---
     if (expCondCheck != 'idents') {
-      Seurat::Idents(seuratObjFinal)        <- factor( paste(Seurat::Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'),
-                                                       levels = paste(rep(levels(Seurat::Idents(seuratObjFinal)), each = length(levels(factor(seuratObjFinal$expCond))) ), levels(factor(seuratObjFinal$expCond, levels = expCondReorderLevels)), sep = '_') )
+      # Seurat::Idents(seuratObjFinal)        <- factor( paste(Seurat::Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'),
+      #                                                  levels = paste(rep(levels(Seurat::Idents(seuratObjFinal)), each = length(levels(factor(seuratObjFinal$expCond))) ), levels(factor(seuratObjFinal$expCond, levels = expCondReorderLevels)), sep = '_') )
+      if (is.null(expCondReorderLevels)) {
+        expCondReorderLevels                <- levels(factor(paste(Seurat::Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_')))
+      }
+      ## ---
+      if ( !all(levels(factor(paste(Seurat::Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'))) %in% expCondReorderLevels ) ) stop("Please provide correct corresponding 'expCondReorderLevels' to sort y-axis dot plot experimental conditions.")
+      ## ---
+      Seurat::Idents(seuratObjFinal)        <- factor(paste(Seurat::Idents(seuratObjFinal), seuratObjFinal$expCond, sep = '_'), levels =expCondReorderLevels )
     } else {
+      if (is.null(expCondReorderLevels)) {
+        expCondReorderLevels                <- levels(factor(Seurat::Idents(seuratObjFinal)))
+      }
+      ## ---
+      if ( !all(levels(factor(Seurat::Idents(seuratObjFinal)))  %in% expCondReorderLevels) ) stop("Please provide correct corresponding 'expCondReorderLevels' to sort y-axis dot plot experimental conditions.")
+      ## ---
       Seurat::Idents(seuratObjFinal)        <- factor(Seurat::Idents(seuratObjFinal), levels = expCondReorderLevels)
+
     }
+    ## ---
+
+       ## ---
   } else{
     print("Error: cell name does not match.")
   }
-  print(sprintf('Updated idents information with experimental condition are as below:'))
-  print(table(Seurat::Idents(seuratObjFinal) ))
-  print('"-=-=-=-=-=')
+  if(debug) {
+    print(sprintf('Updated idents information with experimental condition are as below:'))
+    print(table(Seurat::Idents(seuratObjFinal) ))
+    print('"-=-=-=-=-=')
+  }
   ##--------------------------------------------------------------------------------------##
   ## Currently Seurat::DotPlot() x-axis is based on Seurat::DotPlot()$data$features.plot levels after dropping off unused levels by droplevels()
   if (is.null(markerGenesCat)) {
-    g1                <- Seurat::DotPlot(seuratObjFinal, features = markerGenes, cols = c('#D3D3D3', '#CC0000'), col.min = dotPlotMinExpCutoff, col.max = dotPlotMaxExpCutoff, scale = T, scale.by = 'size', dot.min = 0.01 ) + Seurat::RotatedAxis()
+    g1                <- Seurat::DotPlot(seuratObjFinal, features = markerGenes, cols = c('#D3D3D3', '#CC0000'), col.min = dotPlotMinExpCutoff, col.max = dotPlotMaxExpCutoff, scale = T, scale.by = 'size', dot.min = 0.01, scale.min = scale.min, scale.max = scale.max ) + Seurat::RotatedAxis()
     # print(Seurat::DotPlot(seuratObjFinal, features = markerGenes, cols = c('#D3D3D3', '#CC0000'), col.min = 0.3, scale = T, scale.by = 'size', dot.min = 0.01, idents = levels(Seurat::Idents(seuratObjFinal))[-c(7,14)] ) + Seurat::RotatedAxis())
     # print(Seurat::DotPlot(seuratObjFinal, features = markerGenes, cols = c('#D3D3D3', '#CC0000'), col.min = dotPlotMinExpCutoff, scale = T, scale.by = 'size', dot.min = 0.01 ) + Seurat::RotatedAxis())
     # print(Seurat::DotPlot(seuratObjFinal, features = markerGenes, col.min = 0.3 ) + Seurat::RotatedAxis())
     # print(Seurat::DotPlot(seuratObjFinal, features = markerGenes ) + Seurat::RotatedAxis())
   } else {
-    g1                <- Seurat::DotPlot(seuratObjFinal, features = markerGenesDf$gene, cols = c('#D3D3D3', '#CC0000'), col.min = dotPlotMinExpCutoff, col.max = dotPlotMaxExpCutoff, scale = T, scale.by = 'size', dot.min = 0.01 ) + Seurat::RotatedAxis()
+    g1                <- Seurat::DotPlot(seuratObjFinal, features = markerGenesDf$gene, cols = c('#D3D3D3', '#CC0000'), col.min = dotPlotMinExpCutoff, col.max = dotPlotMaxExpCutoff, scale = T, scale.by = 'size', dot.min = 0.01, scale.min = scale.min, scale.max = scale.max ) + Seurat::RotatedAxis()
+    if (debug) {
+      print(g1)
+      print('0909090909')
+    }
 
   }
   # print(g1)

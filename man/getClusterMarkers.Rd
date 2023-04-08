@@ -15,17 +15,17 @@ getClusterMarkers(
 )
 }
 \arguments{
-\item{qcProcessedResults}{required, processQC() returned full result list or object 'qcProcessObj'.}
+\item{qcProcessedResults}{pre-processed QC results object by processQC().}
 
-\item{integrationMethod}{default = 'CCA', either 'CCA' or 'RPCA' integration method can be applied for anchor identification for integration.}
+\item{integrationMethod}{specify integration method applied for anchor identification for integration, 2 options, 'CCA' and 'RPCA', by default = 'CCA'.}
 
-\item{resDirName}{optional, define folder/directory name where integration analysis results will be saved.}
+\item{resDirName}{specify the folder/directory name where integration analysis results will be saved, by default: the save directory where QC results are saved.}
 
-\item{topN}{optional, default = 10, indicating the number of identified cluster gene markers}
+\item{topN}{specify the number of identified over expressed genes from each identified cell clusters, by default = 10.}
 
-\item{ribo}{optional, logical determining if rRNA genes will be ignored in variable features before integration.}
+\item{ribo}{logical option (True or False), if True, rRNA genes are removed from the variable features for integration analysis.}
 
-\item{int.k.weight}{optional, default = 100, indicating the number of neighbors to consider when weighting anchors in the step of integration, if too few number cells used in the study, this number can be reduced.
+\item{int.k.weight}{specify the number of neighbors to consider when weighting anchors in the step of integration, by default = 100, if too few number cells used in the study, this number can be reduced.
 If processQC() full results used for option 'qcProcessedResults', it will use the same 'resDirName' used in processQC()}
 }
 \value{

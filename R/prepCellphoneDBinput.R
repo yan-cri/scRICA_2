@@ -12,6 +12,7 @@
 #' @param expCondCheck specify which experimental conditions to be explored, including sample or expCond1/2/... presented in the input RDS metadata table column names.
 #' @param expCond specify the specific experimental condition for pseudo time trajectory analysis, if not specified, all experimental conditions will be performed.
 #' @param cellcluster specify the specific cell cluster name for pseudo time trajectory analysis, if not specified, all cell clusters will be performed.
+#' @param debug whether to turn on for debug check, by default FALSE (turned off).
 #'
 #' @importFrom Seurat DefaultAssay
 #' @importFrom Seurat Idents
@@ -24,7 +25,8 @@
 #' @return
 #' a SingleCellExperiment where 3 methods functional pseudotime analysis results are saved in colData
 ## ------------------------------------------------------------------------------------ ##
-prepCellphoneDBinput <- function(rds, newAnnotation = 'F', newAnnotationRscriptName = NULL, resDir = NULL, resFnamePrefix = 'testInput', expCondCheck='sample', expCond = NULL, cellcluster = NULL){
+prepCellphoneDBinput <- function(rds, newAnnotation = 'F', newAnnotationRscriptName = NULL,
+                                 resDir = NULL, resFnamePrefix = 'testInput', expCondCheck='sample', expCond = NULL, cellcluster = NULL, debug = as.logical(F)){
   ##--------------------------------------------------------------------------------------##
   newAnnotation             <- as.logical(newAnnotation)
   if (newAnnotation & is.null(newAnnotationRscriptName)) stop("Please provide corresponding 'newAnnotationRscriptName', becasue 'newAnnotation' == True.")
@@ -104,6 +106,7 @@ prepCellphoneDBinput <- function(rds, newAnnotation = 'F', newAnnotationRscriptN
     if (newAnnotation) source(newAnnotationRscriptName)
     seuratObjFinalList[[1]] <- seuratObjFinal
   }
+  if (debug) print(length(seuratObjFinalList))
   ##--------------------------------------------------------------------------------------##
   ## update 'seuratObjFinal@meta.data$expCond'
   for (i in 1:length(seuratObjFinalList)) {
@@ -114,18 +117,25 @@ prepCellphoneDBinput <- function(rds, newAnnotation = 'F', newAnnotationRscriptN
       expCondCheck = expCondCheck[[i]]
     }
     ## -
-    if (expCondCheck == 'sample') {
+    if (expCondCheck == 'sample' | expCondCheck == 'ALL'| expCondCheck == 'all' | expCondCheck == 'All') {
       seuratObjFinal                     <- seuratObjFinal
     } else {
       if (!expCondCheck%in%colnames(seuratObjFinal@meta.data)) {
         stop("ERROR: 'expCondCheck' does not exist in your 'rds' metadata.")
       } else {
-        seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data[, grep(as.character(expCondCheck), colnames(seuratObjFinal@meta.data))]
+        seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data[, grep(sprintf('^%s$', as.character(expCondCheck)), colnames(seuratObjFinal@meta.data))]
       }
     }
-    print(sprintf("Current experimental condition cell clusters partition in rds.%s are as below:", i))
-    print(table(seuratObjFinal@meta.data$expCond))
-    print('*******************')
+    ## -
+    if (expCondCheck == 'sample' | expCondCheck == 'ALL'| expCondCheck == 'all' | expCondCheck == 'All') {
+      print(sprintf("Current experimental condition cell clusters partition in rds.%s are on idents only as below:", i))
+      print(table(Seurat::Idents(seuratObjFinal)))
+      print('*******************')
+    } else {
+      print(sprintf("Current experimental condition cell clusters partition in rds.%s are as below:", i))
+      print(table(seuratObjFinal@meta.data$expCond))
+      print('*******************')
+    }
     seuratObjFinalList[[i]] <- seuratObjFinal
   }
   ##--------------------------------------------------------------------------------------##
@@ -175,7 +185,11 @@ prepCellphoneDBinput <- function(rds, newAnnotation = 'F', newAnnotationRscriptN
       ## -
       cellMeta1                <- seuratObj4cellphonedb1@meta.data %>% select(expCond) ##%>% rename(expCond = expCond)
       cellMeta1$idents         <- as.factor(Idents(seuratObj4cellphonedb1))
-      cellMeta1$cellType       <- paste(cellMeta1$expCond, cellMeta1$idents, sep = '_')
+      if (expCondCheck=='sample'|expCondCheck=='all'|expCondCheck=='ALL'|expCondCheck=='All') {
+        cellMeta1$cellType       <- cellMeta1$idents
+      } else {
+        cellMeta1$cellType       <- paste(cellMeta1$expCond, cellMeta1$idents, sep = '_')
+      }
       cellMeta12               <- cellMeta1 %>% select(cellType)
       cellMeta12               <- tibble::rownames_to_column(cellMeta12, "Cell")
       print("cellphoneDB interactions analysis on:")

@@ -20,17 +20,20 @@ getClusterSummaryReplot(
   perPlotVertical = F,
   perPlotHeight = NULL,
   perPlotWidth = NULL,
-  expCondNameOrder = NULL
+  expCondNameOrder = NULL,
+  stack = as.logical("T"),
+  gap = 0.8,
+  debug = as.logical(F)
 )
 }
 \arguments{
-\item{resDir}{full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.}
+\item{resDir}{specify an exiting full path of directory, where results will be saved.}
 
-\item{rds}{User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.}
+\item{rds}{provide integrated RDS object, user can also provide the full path of the RDS where integrated RDS object is saved with above rdsDir option.}
 
-\item{newAnnotation}{logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.}
+\item{newAnnotation}{logical option, whether to add the new cell types annotation for identified cell clusters from provided integrated RDS file.}
 
-\item{newAnnotationRscriptName}{if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.}
+\item{newAnnotationRscriptName}{if 'newAnnotation = T', please specify the full path of the R script where new cell annotations are defined.}
 
 \item{fpRemake}{whether to re-make feature plots, default is True}
 
@@ -49,6 +52,12 @@ getClusterSummaryReplot(
 \item{perClusterOrder}{character string of cell clusters orders to specify the cell clusters orders presented in the percentage bar plot, if not defined, sorted numerically or alphabetically.}
 
 \item{expCondNameOrder}{character string of the corresponding experimental condition factor levels' orders presented in the percentage bar plot, if not defined, sorted numerically or alphabetically.}
+
+\item{stack}{whether to make stacked bar-plot}
+
+\item{gap}{space of un-stacked bar-plot between different conditions, 0.1-1.}
+
+\item{debug}{logical option, turn on to have extra analysis information printing out for debug, by defalut 'off'.}
 }
 \description{
 getClusterSummaryReplot() Function

@@ -13,14 +13,14 @@ getExpCondClusterPseudotime(
   expCondCheckFname = NULL,
   expCond = NULL,
   cellcluster = NULL,
-  slingshotclusterLabels = NULL,
+  slingshotclusterLabels = "GMM",
   topFeatureNo = 2000
 )
 }
 \arguments{
-\item{resDir}{full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.}
+\item{resDir}{specify an exiting full path of directory, where results will be saved.}
 
-\item{rds}{User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.}
+\item{rds}{provide integrated RDS object, user can also provide the full path of the RDS where integrated RDS object is saved with above rdsDir option.}
 
 \item{newAnnotation}{logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.}
 
@@ -30,11 +30,11 @@ getExpCondClusterPseudotime(
 
 \item{expCondCheckFname}{suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.}
 
-\item{expCond}{specify the specific experimental condition for pseudo time trajectory analysis, if not specified, all experimental conditions will be performed .}
+\item{expCond}{specify a specific experimental condition for pseudo time trajectory analysis, if not specified, all experimental conditions will be performed .}
 
 \item{cellcluster}{specify the specific cell cluster name for pseudo time trajectory analysis, if not specified, all cell clusters will be performed.}
 
-\item{slingshotclusterLabels}{specify slighshot cluster label options, 3 options are available here, they are 'NULL', 'seurat_clusters', or 'GMM'. By default is 'NULL'.}
+\item{slingshotclusterLabels}{specify slighshot cluster label options, 3 options are available here, they are 'NULL', 'seurat_clusters', or 'GMM'. By default is 'GMM'.}
 
 \item{topFeatureNo}{specify the number of features used in PCA pseudo-time trajectory calculation.}
 }

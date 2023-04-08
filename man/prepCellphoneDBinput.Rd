@@ -12,7 +12,8 @@ prepCellphoneDBinput(
   resFnamePrefix = "testInput",
   expCondCheck = "sample",
   expCond = NULL,
-  cellcluster = NULL
+  cellcluster = NULL,
+  debug = as.logical(F)
 )
 }
 \arguments{
@@ -31,6 +32,8 @@ prepCellphoneDBinput(
 \item{expCond}{specify the specific experimental condition for pseudo time trajectory analysis, if not specified, all experimental conditions will be performed.}
 
 \item{cellcluster}{specify the specific cell cluster name for pseudo time trajectory analysis, if not specified, all cell clusters will be performed.}
+
+\item{debug}{whether to turn on for debug check, by default FALSE (turned off).}
 }
 \value{
 a SingleCellExperiment where 3 methods functional pseudotime analysis results are saved in colData

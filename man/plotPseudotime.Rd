@@ -4,7 +4,15 @@
 \alias{plotPseudotime}
 \title{plotPseudotime() Function}
 \usage{
-plotPseudotime(pseudoRes, xCol, xLabel, yCol, yLabel, colCol, colLabel)
+plotPseudotime(
+  pseudoRes,
+  xCol,
+  xLabel = NULL,
+  yCol,
+  yLabel = NULL,
+  colCol,
+  colLabel = NULL
+)
 }
 \arguments{
 \item{pseudoRes}{required, returned results from function calcFnPseudo()$pseudoRes}

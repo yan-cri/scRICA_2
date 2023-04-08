@@ -130,7 +130,7 @@ getCellChatRes <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotation
     if (!expCondCheck%in%colnames(seuratObjFinal@meta.data)) {
       stop("ERROR: 'expCondCheck' does not exist in your 'rds' metadata.")
     } else {
-      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data[, grep(as.character(expCondCheck), colnames(seuratObjFinal@meta.data))]
+      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data[, grep(sprintf('^%s$', as.character(expCondCheck)), colnames(seuratObjFinal@meta.data))]
     }
   }
   ##--------------------------------------------------------------------------------------##

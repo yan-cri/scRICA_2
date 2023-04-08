@@ -18,21 +18,21 @@ processQC(
 )
 }
 \arguments{
-\item{metadata}{required, metadata table with at least 4 required columns: 'sample', 'path', 'doubletsRmMethod', and 'expCond1'.}
+\item{metadata}{metadata table with at least 4 required columns: 'sample', 'path', 'doubletsRmMethod', and 'expCond1'.}
 
-\item{multiomics}{optional, default = F}
+\item{multiomics}{logical option to specify whether multiomics sequencing data is used, by default = F.}
 
-\item{extraFilter}{optional, default = F, if 'TRUE', column 'filterFname' needs to be included in the provided metadata table.}
+\item{extraFilter}{logical option to specify whether extra cells in excel file specified in the column 'filterFname' of metadata table need to be removded from the analysis, by default = F.}
 
 \item{resDirName}{define the folder/directory name where integration analysis results will be saved, if not defined, by default results will be saved at the current working directory in a folder named as 'scRICA_results'.}
 
 \item{genomeSpecies}{specify sample's genome species, by default 'human', currently supporting human, mouse, and rate.}
 
-\item{minCells}{the minimum detected number of cells to be included in the analysis used by Seurat, bu default = 3.}
+\item{minCells}{specify the minimum detected number of cells with an gene expression to be included in the analysis, this parameter is used by Seurat, bu default = 3.}
 
-\item{minFeatures}{the minimum number of expressed gene features for cells included in the analysis used by Seurat, by default = 200.}
+\item{minFeatures}{specify the minimum number of expressed gene features for cells per cell included in the analysis, this parameter is used by Seurat, by default = 200.}
 
-\item{mtFiltering}{logical to indicate whether to filter mitochondrial content, by default 'FALSE'.}
+\item{mtFiltering}{logical option to indicate whether to filter high mitochondrial content specified in option 'mtPerCutoff', by default 'FALSE'.}
 
 \item{mtPerCutoff}{if 'mtFiltering = T', this option is required to indicate the percentage cut-off for mitochondrial content filtering.}
 }

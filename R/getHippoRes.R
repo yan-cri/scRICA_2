@@ -1,17 +1,17 @@
 #' getHippoRes() Function
 #' @details
-#' This function is used to run hippo analysis and save hippo results into Rdata.
+#' This function is used to run hippo analysis on specified cell clusters and save hippo results into Rdata.
 #'
-#' @param resDir full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.
-#' @param rds User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.
-#' @param newAnnotation logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.
-#' @param newAnnotationRscriptName if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.
+#' @param resDir specify an exiting full path of directory, where hippo clustering analysis results will be saved.
+#' @param rds provide integrated RDS object, user can also provide the full path of the RDS where integrated RDS object is saved with above rdsDir option.
+#' @param newAnnotation logical option, whether to add the new cell types annotation for identified cell clusters from provided integrated RDS file.
+#' @param newAnnotationRscriptName if 'newAnnotation = T', please specify the full path of the R script where new cell annotations are defined.
 #' @param expCondCheck specify which experimental conditions to be explored, including sample or expCond1/2/....
 #' @param cellcluster specify cell clusters (idents) to be conducted with hippo analysis.
 #' @param expCond specify the specific experimental conditions to be conducted with hippo analysis.
 #' @param hippoResNamePrefix prefix of the hippo analysis results, if not defined, by default = 'hippo_cluster_test'.
 #' @param noClusters number of clusters for hippo to identify, default = 3.
-#' @param sparseMatrix whether to turn sparseMatrix option on, default off, when turned on, takes longer time to run hippo.
+#' @param sparseMatrix whether to turn sparse Matrix option on, default off, when turned on, takes longer time to run hippo.
 #' @param initial.label.on whether to run hippo starting with initial identified cell clusters information.
 #' @param topN = 100 by default, the top number genes plotted in hippo analysis
 #'
@@ -38,8 +38,9 @@
 #'
 #' ## ------------------------------------------------------------------------------------ ##
 
-getHippoRes <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, expCondCheck='sample',
-                        cellcluster = NULL , expCond = NULL, noClusters = 3, sparseMatrix = F, initial.label.on = F, hippoResNamePrefix = 'hippo_cluster_test', topN = 100) {
+getHippoRes <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, expCondCheck='all',
+                        cellcluster = NULL , expCond = NULL, noClusters = 3, sparseMatrix = F, initial.label.on = F,
+                        hippoResNamePrefix = 'hippo_cluster_test', topN = 100, debug = as.logical(F)) {
   ##--------------------------------------------------------------------------------------##
   if (is.null(cellcluster)) stop("Please provide 'cellcluster' for hippo analysis")
   sel.expConds <- expCond ## to avoid 'expCond' otpion with metadata 'expCond' rename this paratmer into sel.expConds
@@ -66,8 +67,20 @@ getHippoRes <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRsc
     if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
     seuratObjFinal          <<- readRDS(file = as.character(rdsFname))
     print('Done for RDS read in')
-  } else {
-    stop("Error: please provide either option 'resDir' or 'rdsFname'. ")
+  } else if (is.null(resDir) & is.null(rds)){
+    stop("Error: please provide either option 'resDir' or 'rds', or both. ")
+  } else if (!is.null(resDir) & !is.null(rds)){
+    if (class(rds)=='Seurat') {
+      seuratObjFinal      <<- rds
+      print('RDS is provided with rds option')
+    } else {
+      rdsFname            <- rds
+      ## ---
+      if (!file.exists(rdsFname)) stop("Please execute getClusterMarker() to conduct integration analysis before running getClusterSummaryReplot().")
+      seuratObjFinal      <<- readRDS(file = as.character(rdsFname))
+      print('Done for RDS read in')
+    }
+    resDir                <- resDir
   }
   ##--------------------------------------------------------------------------------------##
   ## update results directory if new annotation is used
@@ -101,18 +114,19 @@ getHippoRes <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRsc
   }
   ##--------------------------------------------------------------------------------------##
   ## update 'seuratObjFinal@meta.data$expCond'
-  if (expCondCheck == 'sample') {
+  if (expCondCheck == 'all') {
     seuratObjFinal                     <- seuratObjFinal
   } else {
     if (!expCondCheck%in%colnames(seuratObjFinal@meta.data)) {
       stop("ERROR: 'expCondCheck' does not exist in your 'rds' metadata.")
     } else {
-      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data[, grep(as.character(expCondCheck), colnames(seuratObjFinal@meta.data))]
+      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data[, grep(sprintf('^%s$', as.character(expCondCheck)), colnames(seuratObjFinal@meta.data))]
     }
   }
   ##--------------------------------------------------------------------------------------##
   ## if provided, subset on 'cellcluster'
   orgClusterLevels <- levels(Seurat::Idents(seuratObjFinal))
+  if (debug) print(sprintf("%s idents levels are %s", length(orgClusterLevels), paste(orgClusterLevels, collapse = ', ')))
   if (!is.null(cellcluster)) {
     if (any(!cellcluster %in% orgClusterLevels ) ) stop('Please provide the corresponding cell clusters in identfied idents for hippo analysis.')
     print(sprintf('Subsetting %s specific cell clusters: %s', length(cellcluster), paste(cellcluster, collapse = ',')))
@@ -120,8 +134,9 @@ getHippoRes <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRsc
   }
   ## in provided, subset on 'expCond'
   expCondLevels           <- levels(factor(seuratObjFinal@meta.data$expCond))
+  if (debug) print(sprintf("%s expCond levels are %s", length(expCondLevels), paste(expCondLevels, collapse = ', ')))
   if (!is.null(sel.expConds)) {
-    if (any(!sel.expConds %in% expCondLevels ) ) stop("Please provide the corresponding experimental condition levesl specified in 'expCondCheck' option.")
+    if (any(!sel.expConds %in% expCondLevels ) ) stop("Please provide the corresponding experimental condition levels specified in 'expCondCheck' option.")
     print(sprintf('Subsetting %s specific expCond: %s', length(sel.expConds), paste(sel.expConds, collapse = ',')))
 
     if (length(sel.expConds)==1) {
@@ -197,7 +212,7 @@ getHippoRes <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRsc
   print(sprintf("%s clusters table is:", noClusters))
   print(table(ttID))
   print('-=-=-=-')
-  check_these <- final_feature_list$ID[[noClusters]]
+  check_these <- final_feature_list$ID[[noClusters-1]]
   tt.selected <- lightHippo::summarize_for_feature_dot(inputData[check_these , ], ttID)
   p <-  lightHippo::makeDotplot(input = tt.selected, topN = topN)
   if (noClusters <= 4) {
@@ -207,6 +222,11 @@ getHippoRes <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRsc
   } else {
     ggsave(filename = file.path(resDir, sprintf('topFeatures_cellCluster_%s_k%s_dotplot.pdf', hippoResNamePrefix, noClusters) ), plot = p, width = ceiling(topN/4), height = ceiling(noClusters/1.5))
   }
+  ##--------------------------------------------------------------------------------------##
+  viewRes  <- lightHippo::cut_hierarchy(lightHippoRes, K = noClusters, cut_sequence = T)
+  pdf(file = file.path(resDir, sprintf('%s_k%s_clustersTree.pdf', hippoResNamePrefix, noClusters) ), width = 5, height = 4 )
+  lightHippo::visualize_hippo_hierarchy(viewRes)
+  dev.off()
   ##--------------------------------------------------------------------------------------##
   if (initial.label.on) {
     noStart = length(unique(inputData.cluster))

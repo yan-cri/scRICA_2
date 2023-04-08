@@ -1,5 +1,5 @@
 Package: scRICA
-Title: single-cell RNA-Seq integration comparative analysis
+Title: scRICA
 Version: 0.0.0.9000
 Authors@R: 
     person(given = "Yan",
@@ -36,5 +36,5 @@ License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.3
 VignetteBuilder: knitr

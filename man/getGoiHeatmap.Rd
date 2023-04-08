@@ -5,13 +5,12 @@
 \title{getGoiHeatmap() Function}
 \usage{
 getGoiHeatmap(
-  heatmap.view = "ident",
+  heatmap.view = "idents",
   resDir = NULL,
   rds = NULL,
   newAnnotation = F,
   newAnnotationRscriptName = NULL,
-  scaled = F,
-  resSaveFname = NULL,
+  slot = "scale.data",
   goiFname = NULL,
   geneNames = NULL,
   expCondCheck = "sample",
@@ -22,9 +21,14 @@ getGoiHeatmap(
   plotFnamePrefix = "goiHeatmap",
   plotWidth = 25,
   plotHeight = 20,
+  res.output = as.logical(F),
+  outputFname = NULL,
   minVal = -2.5,
-  maxVal = 2.5,
+  maxVal = NULL,
   fontsize.legend = 20,
+  features.process = as.logical("F"),
+  features.process.lists = NULL,
+  features.process.fns = "+",
   fontangle.top = 0,
   fontsize.top = 5,
   fontsize.y = 20,
@@ -32,24 +36,21 @@ getGoiHeatmap(
   hjust.top = 0,
   vjust.top = 0,
   barHeight.top = 0.02,
-  sample.merge = as.logical(F),
-  draw.lines = as.logical(T)
+  display = "cell",
+  draw.lines = as.logical(T),
+  debug = as.logical(F)
 )
 }
 \arguments{
-\item{heatmap.view}{3 options: 'ident', 'expCond', and 'expCond.ident' to make heatmap, by default 'idents'.}
+\item{heatmap.view}{specify heatmap visualization options, including 3 options: 'idents', 'expCond', and 'expCond.idents' to make heatmap, by default 'idents'.}
 
-\item{resDir}{full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.}
+\item{resDir}{specify an exiting full path of directory, where results will be saved.}
 
-\item{rds}{User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.}
+\item{rds}{provide integrated RDS object, user can also provide the full path of the RDS where integrated RDS object is saved with above rdsDir option.}
 
-\item{newAnnotation}{logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.}
+\item{newAnnotation}{logical option, whether to add the new cell types annotation for identified cell clusters from provided integrated RDS file.}
 
-\item{newAnnotationRscriptName}{if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.}
-
-\item{scaled}{whether input rds is scaled, by default False, will scale data based on selected 'cellcluster' and 'expCond'.}
-
-\item{resSaveFname}{whether to save re-scaled seurat object on the defined 'cellcluster' and 'expCond', by default it is 'NULL' without saving re-scaled RDS object.}
+\item{newAnnotationRscriptName}{if 'newAnnotation = T', please specify the full path of the R script where new cell annotations are defined.}
 
 \item{goiFname}{path to file, where a list of marker/features genes are provided in column 'Gene', if column 'Cell Type' is also provided, option 'geneTypeOrder' can be used to adjust orders.}
 
@@ -79,9 +80,11 @@ getGoiHeatmap(
 
 \item{fontangle.y}{modify the y-axis (gene names) angle position.}
 
-\item{sample.merge}{whether to average cells expression values across samples respectively.}
+\item{display}{3 options: 'cell', 'sample.merge' or 'expCond.merge'.}
 
 \item{draw.lines}{whether to have an empty cell space on heatmap to separate different groups.}
+
+\item{debug}{if on, extra debug printing meassages displayed, by default it is off.}
 }
 \value{
 the Heatmap of provided GOI(gene of interest) provided by 'geneNames' directly or presented in 'goiFname'.
@@ -90,7 +93,7 @@ the Heatmap of provided GOI(gene of interest) provided by 'geneNames' directly o
 getGoiHeatmap() Function
 }
 \details{
-This function is used to make heat-map of marker/features genes in provided 'goiFname' or geneNames.
+This function is used to make heatmap of marker/features genes in provided 'goiFname' or geneNames with 3 different visualization options on 1). identified cell clusters ('idents'); 2). specific samples attributes from an experimental condition levels ('expCond'); 3). combined levels of cell clusters and samples attributes ('expCond.idents).
 }
 \examples{
 getGoiHeatmap(rds, geneNames/goiFname, expCondCheck='sample/idents/expCond*')

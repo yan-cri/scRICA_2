@@ -10,12 +10,12 @@
 #' @details
 #' This function is used to integrate Seurat objects with identified anchor via Seurat method,
 #' followed with clustering analysis, and cluster markers identification.
-#' @param qcProcessedResults required, processQC() returned full result list or object 'qcProcessObj'.
-#' @param integrationMethod default = 'CCA', either 'CCA' or 'RPCA' integration method can be applied for anchor identification for integration.
-#' @param topN optional, default = 10, indicating the number of identified cluster gene markers
-#' @param resDirName optional, define folder/directory name where integration analysis results will be saved.
-#' @param ribo optional, logical determining if rRNA genes will be ignored in variable features before integration.
-#' @param int.k.weight optional, default = 100, indicating the number of neighbors to consider when weighting anchors in the step of integration, if too few number cells used in the study, this number can be reduced.
+#' @param qcProcessedResults pre-processed QC results object by processQC().
+#' @param integrationMethod specify integration method applied for anchor identification for integration, 2 options, 'CCA' and 'RPCA', by default = 'CCA'.
+#' @param topN specify the number of identified over expressed genes from each identified cell clusters, by default = 10.
+#' @param resDirName specify the folder/directory name where integration analysis results will be saved, by default: the save directory where QC results are saved.
+#' @param ribo logical option (True or False), if True, rRNA genes are removed from the variable features for integration analysis.
+#' @param int.k.weight specify the number of neighbors to consider when weighting anchors in the step of integration, by default = 100, if too few number cells used in the study, this number can be reduced.
 #' If processQC() full results used for option 'qcProcessedResults', it will use the same 'resDirName' used in processQC()
 #'
 #' @importFrom ggplot2 theme

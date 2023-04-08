@@ -1,38 +1,50 @@
 ---
-title: "scRICA: **s**ingle-**c**ell **R**NA-Seq **I**ntegrative **C**omparative **A**nalysis"
+title: "scRICA: an R package for multiple-sample **s**ingle-**c**ell **R**NA-Seq **I**ntegrative **C**omparative **A**nalysis"
 output: rmarkdown::html_vignette
 date: "`r Sys.Date()`"
-author: "Yan Li, Michiko Rye, Qing Gong"
+author: "Yan Li"
 vignette: >
-  %\VignetteIndexEntry{scRICA_v1}
+  %\VignetteIndexEntry{scRICA}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-# scRICA: **s**ingle-**c**ell **R**NA-Seq **I**ntegrative **C**omparative **A**nalysis 
+## 1. What is scRICA
+It is a systematic workflow R package for integrative and comparative scRNA-seq analysis. Various parameter options are inputted from a metadata table and then inherited through the entire analysis workflow. scRICA can significantly improves efficiency of programming for comparative analyses with multiple sample attributes. It is distributed as an R package and also offers a command line execution option. 
 
-### 1. What is scRICA
-It is a R workflow package which can be used to perform scRNA-Seq downstream integrative, comparative analyses and visualization. This package can process a batch of scRNA-Seq count matrix from different experimental conditions fro integration and comparative analysis efficiently and reproducible. The package functions can be categorized into: 1). analysis workflow functions and 2). visualization functions:
+scRICA categorizes the workflow of integrative and comparative analysis using multiple-sample scRNA-seq data into four steps as shown below picture:
 
-#### 1.1 Workflow functions:
+```{r out.height = "570px", out.width='650px', echo=F}
+knitr::include_graphics("../misc/scRICA_workflow7-1.pdf")
+```
 
-  * **`processQC()`**, process quality control (QC) assessment for all samples defined in a metadata table, including doublets identification with wrapped function **`findDoublets()`**, gene features stigmatization, and mitochondrial content filtering.
-    + **`findDoublets()`**, this function is based on [DoubletDecon](https://github.com/EDePasquale/DoubletDecon) to perform either or both medoids and centroids deconvolution algorithms (https://www.cell.com/cell-reports/fulltext/S2211-1247(19)31286-0) defined in the metadata table for doublet cells detection.
-  * **`getIntegrationClusterMarkers()`**, 1). perform integrative analysis based on cells passing the QC with function **`processQC()`**; 2). conduct cell clustering analyses to identify different clustering cell types; and 3). identify conserved gene markers from each identified cell clusters.
-  * **`getExpCondClusterMarkers()`**, identify top expressed gene markers conserved in samples from different experimental conditions.
-  * **`getClusterExpCondDe()`**, identify differential expressed gene markers from 2 specified different experimental condition samples.
-  * **`getExpCondClusterPseudotime()`**, perform pseudo time trajectory functional analysis on the specified experimental condition clustering cells with 3 different methods, including  principal components analysis (PCA) based on [Scater](https://bioconductor.org/packages/release/bioc/html/scater.html), Diffusion Maps based on [density](https://bioconductor.org/packages/release/bioc/html/destiny.html), and [slingshot](https://www.bioconductor.org/packages/release/bioc/html/slingshot.html).
+  * **Step 1:** Pre-processing and quality control; 
+  * **Step 2:** Multi-sample integration; 
+  * **Step 3:** Visualization by attribute groups; 
+  * **Step 4:** Downstream analysis including differential expression (DE) analysis, pseudo-time trajectory analysis, and cell clusters identification.
+  
+## 2. pacakge installation
 
-#### 1.2 Visualization functions:
+### 2.1 Prerequisite packages installation
 
-  * **`getClusterSummaryReplot()`**: 1). summarize the number of cell in each identified or annotated clustering cell types; and 2). generate corresponding tSNE and UMAP plots on the specified experimental conditions.
-  * **`getGoiDotplot()`**: generate dot-plots of provided marker genes on the specified experimental conditions.
-  * **`getGoiFeatureplot()`**: generate feature-plots of provided marker genes on the specified experimental conditions.
-  * **`plotPseudotime()`**: generate pseudo time functional trajectory plots from 3 different analysis methods.
-  * **`plotPseudotimeLineages()`**: make pseudo time trajectory lineage plots based on slingshot.
-  * **`plotPseudotimeHeatmap()`**: make heat-map of identified genes differential expressed on the pseudo time trajectory lineages from slingshot.
+   If below prerequisite packages have not been installed, you can install them via below commands:
+   
+```
+BiocManager::install("MAST")
+BiocManager::install("scater")
+BiocManager::install("destiny")
+install.packages("mclust")
+install.packages("easylabel")
+install.packages("corrplot")
+devtools::install_github('EDePasquale/DoubletDecon')
+devtools::install_github("ChenMengjie/lightHippo")
+BiocManager::install("slingshot")
+BiocManager::install("DESeq2")
+BiocManager::install("SingleCellExperiment")
+BiocManager::install("tradeSeq")
+```
 
-### 2. pacakge installation
+### 2.2 scRICA installation
 
   * github installation
     ```
@@ -40,21 +52,18 @@ devtools::install_github(repo = 'yan-cri/scRICA', build_vignettes = T, force = T
 library(scRICA)
 ```
 
-  * local download installation
-    Download package to your local computer via ``git clone https://github.com/yan-cri/scRICA.git``
+  * Installation by downloading scRICA into your local computer via ``git clone https://github.com/yan-cri/scRICA.git``, then install this package by:
+    
     ```
 devtools::install('scRICA', build_vignettes = T)
-library(scRICA)
-```
-  * The package usage information can be seen from package vignettes via 
-    ```
 browseVignettes(package = 'scRICA')
 ```
 
-### 3. Demonstration data
+## 3. Demonstration data
 
-As shown in below, a total of 6 samples single cell gene expression count matrix results from cell ranger analysis are included in this package as the demonstration data for this package analysis implementations. 
+### 3.1 Demonstration data for multi-sample pre-processing and integration
 
+As shown in below, a total of 6 samples single cell gene expression count matrix results from cell ranger analysis can be downloaded from [https://drive.google.com/drive/folders/1wwxmi4cvASRDFtiFKs6MbflFDOOxw3AY?usp=sharing](https://drive.google.com/drive/folders/1wwxmi4cvASRDFtiFKs6MbflFDOOxw3AY?usp=sharing) using as the demonstration data for this package's **step 1** and **step 2** analysis implementations. 
 ```
 -- 3041A
    |__barcodes.tsv
@@ -82,88 +91,88 @@ As shown in below, a total of 6 samples single cell gene expression count matrix
    |__matrix.mtx.gz
 ```
 
-### 4. Input metadata table file
+### 3.2 Demonstration data example of an integrated RDS
 
-This workflow package has its own inherited structure, and requires an initial metadata table to initiate the entire scRNA-Seq workflow analyses. 4 columns are required in the metadata table, they are `sample`, `path`, `doubletsRmMethod` and `expCond1` for samples names, full path to sample's count matrix tables directory (cellranger analysis results), doublets detective methods with four options, and experimental condition levels respectively; up to 2 experimental conditions specified in column `expCond1` and `expCond2` can be explored with this package. If no doublets removal is needed for samples, please specify 'none' for that sample in the column `doubletsRmMethod`.
+This RDS file can be downloaded from [https://drive.google.com/drive/folders/1wwxmi4cvASRDFtiFKs6MbflFDOOxw3AY?usp=sharing](https://drive.google.com/drive/folders/1wwxmi4cvASRDFtiFKs6MbflFDOOxw3AY?usp=sharing), which can be used as demonstration data for scRICA **step 3** visualization and **step 4** downstream analysis implementations. 
+
+This RDS includes an integration study from our human cell atlas study of Fallopian Tubes, where a total of 18 scRNA-seq sequencing samples from 8 donors fallopian anatomical sites, including isthmus (I), ampule (A) and fambiriae (F). As shown in the table head, these experimental attributes, including donor and anatomical sites, were defined in the original metadata table column '' and '' which has been inherited into the integrated RDS object column '' and '' respectively. 
+
+
+## 4. Input metadata table
+
+### 4.1 metadata table specification
+
+  * In general, the input metadata table includes four mandatory columns: `sample`, `path`, `expCond1`, `doubletsRmMethod`.
+  
+    1. column `sample`: specifies all sample names which will be used for integration;
+    2. column `path`: specifies the full path of count matrix for each corresponding sample in a row, where the processed count matrix can be in different formats, including 1). a processed count matrix saved in a folder as above downloaded data, which is directly generated from the 10X genomic Cell Ranger analysis tool; 2). a count matrix stored in text or hd5 format.
+    3. column `doubletsRmMethod`: specify the doublet removal with 4 options, 1) None: no doublet removal; 2) centroids: one algorithm used for doublets removal from DoubletDecon; 3) medoids: another algorithm used in DobuletDecon for doublets identification; 4) OL, cells detected as doublets by both algorithm (centroids & medoids) from DoubletDecon.
+      + Doublets detection step also can be done separately with a similar metadata table by function `findDoublets()` or command line option `Rscript run_scRICA_findDoublets.R --options`, which only `sample` and `path` are required as mandatory columns
+      + If doublets detection step is done separately, we can use column `doubletsResDir` to specify the full path of DoubletDecon results directory.
+    4. column `expCond1`: specify sample's attributes under an experimental condition, such as our demonstration data, it can be the fallopian tube anatomical side (I/A/F)
+
+  * Extra columns can be added to provide more options, they are:
+    1. `expCond*': specify more sample's attributes, they will be inherited into the integrated Seurat object as `expCond2`, `expCond3`, `expCond4` ...
+    2. `filterFname`: the full path of a file, which includes all cells in the rows specified with column `barcode` and extra column `filter' with True or False to specify whether the cell in a row need to be removed.  
+
+### 4.2 metadata table examples
+
+  * For our provided total of 6 demonstration data for integration, metadata table can be specified as:
 
 sample  | path  | expCond1 | expCond2 | doubletsRmMethod
 ------------- | -------------  | -------------  | ------------- | ------------- 
-sample1_condA_cond1  | /FullPath/to/CountMatrix/ | condA | cond1 | OL/centroids/medoids/none 
-sample2_condA_cond2  | /FullPath/to/CountMatrix/ | condA | cond2 | OL/centroids/medoids/none 
-sample3_condA_cond3  | /FullPath/to/CountMatrix/ | condA | cond3 | OL/centroids/medoids/none
-sample4_condB_cond1  | /FullPath/to/CountMatrix/ | condB | cond1 | OL/centroids/medoids/none 
-sample5_condB_cond2  | /FullPath/to/CountMatrix/ | condB | cond2 | OL/centroids/medoids/none 
+3041A  | /FullPath/to/CountMatrix/ | A | patient1 | OL 
+3041F  | /FullPath/to/CountMatrix/ | F | patient1 | OL 
+3041I  | /FullPath/to/CountMatrix/ | I | patient1 | OL
+3396A  | /FullPath/to/CountMatrix/ | A | patient2 | OL 
+3396F  | /FullPath/to/CountMatrix/ | F | patient2 | OL 
+3396I  | /FullPath/to/CountMatrix/ | I | patient2 | OL 
 
-To figure out the path where the package demonstration data are located, this can be find out with the command `system.file('extdata', package = 'scRICA', mustWork = T)` shown as below. An example of input metadata table can be find in the `'misc'` folder, where we include 4 package demonstration samples, 3396A, 3396F, 3041A, and 3041I. Please update the corresponding path in the metadata table column 'path'. 
+Where you can see that 'OL' doublets removal method is specified in column `doubletsRmMethod` for all samples, you can also specify different methods in that column for each sample, because doublet removal is conducted on samples separately.
 
-```
-print(system.file('extdata', package = 'scRICA', mustWork = T))
-[1] "/Library/Frameworks/R.framework/Versions/4.1/Resources/library/scRICA/extdata"
-```
+  * If doublets removal step is done separately, the metadata table for doublet removal step can be:
+  
+sample  | path  
+------------- | -------------  
+3041A  | /FullPath/to/CountMatrix/ 
+3041F  | /FullPath/to/CountMatrix/
+3041I  | /FullPath/to/CountMatrix/
+3396A  | /FullPath/to/CountMatrix/
+3396F  | /FullPath/to/CountMatrix/ 
+3396I  | /FullPath/to/CountMatrix/ 
 
-```
-metadata <- read.delim2(file = 'path/to/metadata.txt', header = T) 
-```
-
-```
-  sample expCond1 expCond2                                                                                 path doubletsRmMethod
-1  A3396     3396        A /Library/Frameworks/R.framework/Versions/4.1/Resources/library/scRICA/extdata/3396A               OL
-2  F3396     3396        F /Library/Frameworks/R.framework/Versions/4.1/Resources/library/scRICA/extdata/3396F               OL
-3  A3041     3041        A  /Library/Frameworks/R.framework/Versions/4.1/Resources/library/scRICA/extdata/3041A             none
-4  I3041     3041        I  /Library/Frameworks/R.framework/Versions/4.1/Resources/library/scRICA/extdata/3041I             None
-```
-
-### 5. Analysis workflow implementations
-
-This package separate the scRNA-Seq integrative and comparative analysis into 3 categories, including integrative analysis with QC assessment for doublets and mitochondrial content, comparative analysis from different experimental condition groups, and visualizations.
+  * Then the metadata table for integration can be changed into:
+      
+sample  | path  | expCond1 | expCond2 | doubletsRmMethod | doubletsResDir
+------------- | -------------  | -------------  | ------------- | ------------- | ------------- 
+3041A  | /FullPath/to/CountMatrix/ | A | patient1 | OL | /FullPath/to/DoubletDeconResults/
+3041F  | /FullPath/to/CountMatrix/ | F | patient1 | OL | /FullPath/to/DoubletDeconResults/
+3041I  | /FullPath/to/CountMatrix/ | I | patient1 | OL | /FullPath/to/DoubletDeconResults/
+3396A  | /FullPath/to/CountMatrix/ | A | patient2 | OL | /FullPath/to/DoubletDeconResults/
+3396F  | /FullPath/to/CountMatrix/ | F | patient2 | OL | /FullPath/to/DoubletDeconResults/ 
+3396I  | /FullPath/to/CountMatrix/ | I | patient2 | OL | /FullPath/to/DoubletDeconResults/       
 
 
-#### 5.1 integrative analysis with QC assessment
-  * QC assessment
-    + QC assessment without mitochondrial content filtering
-    
-      ```
-library(scRICA)
-qcResult1 <- processQC(metadata = metadata, resDirName = 'scRICA_test_result1', genomeSpecies = 'human')
-```
-    + QC assessment without mitochondrial content filtering: turn on `mtFiltering` option and setup the mitochondrial content percentage cut-off values with option `mtPerCutoff`
+## 5. Analysis Workflow implementation
+
+### 5.1: 'Step 1' data pre-processing and quality control(QC) 
+
+  * QC assessment without mitochondrial content filtering: turn on `mtFiltering` option and setup the mitochondrial content percentage cut-off values with option `mtPerCutoff`
     
       ```
 library(scRICA)
 qcResult <- processQC(metadata = metadata, resDirName = 'scRICA_test_result', genomeSpecies = 'human', mtFiltering = T, mtPerCutoff = 20)
 ```
-      
-      ```
-## -- scRICA_test_result
-##    |__doublet_results
-##       |__ ...
-##       |__doubletDecon_preProcessed_results
-##          |__ ...
-##    |__MT_percentage_summary.txt
-##    |__No_filtered_cells_summary.txt
-##    |__org_doubletsRemoval_cellNoSummary.txt
-##    |__QC_plots
-##       |__featureScatter_A3041.pdf
-##       |__ ...
-##       |__featureViolin_A3041.pdf
-##       |__ ...
-##       |__topVariableFeature_A3041.pdf
-##       |__ ...
-```
-    The analyses results will be saved in the defined `resDirName = 'scRICA_test_result'` option under the current working directory shown as below data structure, where includes 2 directories and 3 text files. 
-
-      + Directory 'doublet_results' include the doublets detection results;
-      + Directory 'QC_plots' contains all quality assessement results with respect to each sample in the metadata table;
-      + Text file 'MT_percentage_summary.txt' presents a summary of mitochondrial content persentage for all samples;
-      + Text file 'org_doubletsRemoval_cellNoSummary.txt' shows a summary of number of cells before and after doublets removal;
-      + Text file 'No_filtered_cells_summary.txt' presents number of cells before and after mitochondrial content filtering, if otpion ` mtFiltering = T`.
+  * Options for this function includes:
+    + `genomeSpecies`: specify sample's genome species, by default 'human', currently supporting human, mouse, and rate.
+    + `extraFilter`: True or False option, if 'TRUE', column 'filterFname' needs to be included in the provided metadata table.
+    + `minCells`: specify the minimum detected number of cells to be included in the analysis for each sample used by Seurat, by default = 3.
+    + `minFeatures`: specify the minimum number of expressed gene features for cells included in the analysis used by Seurat, by default = 200.
+    + These options can also be checked with `?processQC`
     
-  * Integration analyses
-    ```
-results <- getClusterMarkers(qcProcessedResults = qcResult)
-```
-
-    ```
+  * Results will be saved into the folder specified in the option `resDirName` under the current working directory shown as below data structure, where includes 2 directories and 3 text files.
+  
+      ```
 ## -- scRICA_test_result
 ##    |__allCluster_pos_markers_no.txt
 ##    |__allCluster_pos_markers_top10.txt
@@ -178,152 +187,430 @@ results <- getClusterMarkers(qcProcessedResults = qcResult)
 ##    |__umap_plot.pdf
 ```
 
-    The integration results will be saved in the same dirctory defined in the `processQC()` execution. In addition to the previous `processQC()`, we can see that the integration analysis results are shown as below data structure.
+      + Directory 'doublet_results' include the doublets detection results;
+      + Directory 'QC_plots' contains all quality assessment results with respect to each sample in the metadata table;
+      + Text file 'MT_percentage_summary.txt' presents a summary of mitochondrial content percentage for all samples;
+      + Text file 'org_doubletsRemoval_cellNoSummary.txt' shows a summary of number of cells before and after doublets removal;
+      + Text file 'No_filtered_cells_summary.txt' presents number of cells before and after mitochondrial content filtering, if option ` mtFiltering = T`.
 
-    + Integration analysis results are saved in RDS file inside directory 'RDS_Dir';
-    + Two types of clustering results are saved in file name starting with 'tsne*' and 'umap*' respectively;
-    + 'allCluster_pos_markers.txt' includes the identified gene markers with resepct to each cell cluster;
-    + 'allCluster_pos_markers_no.txt' summarize the number of identified gene markers in each cell cluster;
-    + 'allCluster_pos_markers_top10.txt' presents the top N (defined in the option `topN` of `getClusterMarkers()`) identified gene markers with resepct to each cell cluster;
-    + 'cluster_heatmap_top10PosMarkers.pdf' shows a heatmap of the top N (defined in the option `topN` of `getClusterMarkers()`) identified gene markers from each cell cluster.
+### 5.2: 'Step 2' Data integration
 
-  * Integrated results summarization and visualization
-    
-    The integrated analyses result can be summarized on the different experimental conditions with function `getClusterSummaryReplot()` shown as below, where user can define which experimental conditions to be summarized. If user would like to add cluster cells annotation, this can be doen by turn on the option `newAnnotation = T` and provide correpsonding Rscript name with option `newAnnotationRscriptName` wher the corresponding cluster cells annotations are defined.
-
-      ```
-getClusterSummaryReplot(resDir = results$resDir, newAnnotation = F, expCondCheck = 'sample', expCondSepName = 'sample_org')
+  * This step integrates all samples listed in the input metadata table using two popular integration methods, the CCA and RPCA algorithms in Seurat, the input file for this function is the pre-processed QC results from above 'step 1' for example:
+    ```
+results <- getClusterMarkers(qcProcessedResults = qcResult)
 ```
 
-      ```
-## -- scRICA_test_result
-##    |__results_wOrgClusterAnnotation
-##       |__expCond_sample_org
-##          |__cellNo_summary_orgClusterAnnotation_expCond_sample_org.pdf
-##          |__cellNo_summary_orgClusterAnnotation_expCond_sample_org.txt
-##          |__new_tSNE_plot_expCond_sample_org
-##             |__tsne_plot_noLabel_integrate_orgAnnotation.pdf
-##             |__tsne_plot_wLabel_integrate_orgAnnotation.pdf
-##             |__tsne_plot_wLabel_orgAnnotation_expCond_sample_org.pdf
-##          |__new_UMAP_plot_expCond_sample_org
-##             |__UMAP_plot_noLabel_integrate_orgAnnotation.pdf
-##             |__UMAP_plot_wLabel_integrate_orgAnnotation.pdf
-##             |__UMAP_plot_wLabel_orgAnnotation_expCond_sample_org.pdf
-```
-    
-    The option `expCondCheck` of `sample`, `expCond1`, or `expCond2` summarized the identified clusters cell numbers with respect to each sample defined in the metadata table column `sample`, experimental condition levels defined in the metadata table column `expCond1` or `expCond2` respectively. The summarized results are saved inside the directory 'results_wOrgClusterAnnotation' or 'results_wOrgClusterAnnotation' under the directory name of option `resDir`.
-    
-      ```
-getClusterSummaryReplot(resDir = results$resDir, newAnnotation = F, expCondCheck = 'expCond1', expCondSepName = 'expCond1_org' )
-getClusterSummaryReplot(resDir = results$resDir, newAnnotation = F, expCondCheck = 'expCond2', expCondSepName = 'expCond2_org' )
-```
-
-      ```
-## -- scRICA_test_result
-##    |__results_wOrgClusterAnnotation
-##       |__expCond_expCond1_org
-##          |__ ...
-##       |__expCond_expCond2_org
-##          |__ ...
-##       |__expCond_sample_org
-##          |__ ...
-```
-
-
-#### 5.2 markers genes explorations
+ * Options for this function includes:
+    + `integrationMethod`: specify integration method applied for anchor identification for integration, 2 options, 'CCA' and 'RPCA', by default = 'CCA'.
+    + `nfeatures`: specify the number of identified over expressed genes from each identified cell clusters, by default = 10.
+    + `topN`: specify the folder/directory name where integration analysis results will be saved, by default: the save directory where QC results are saved.
+    + `ribo`: True or False logical option, if True, rRNA genes are removed from the variable features for integration analysis.
+    + `int.k.weight`: specify the number of neighbors to consider when weighting anchors in the step of integration, by default = 100, if too few number cells used in the study, this number can be reduced.
   
-  * dot plot exploration
+  * The integration results will be saved in the same directory defined in the `processQC()` execution, here we can see: 
+    + A folder named as 'RDS_Dir', where the integration RDS file is saved.
+    + Several other results files and figures from integration analysis: 
+      + 'umap_plot.pdf': multi-sample integrated UMAP plot;
+      + 'tsne_plot.pdf': multi-sample integrated tSNE plot: 
+      + Corresponding UMAP and tSNE plots separated on samples from the input metadata table: 'umap_plot_samplSep.pdf' and 'tsne_plot_samplSep.pdf' 
+      + 'allCluster_pos_markers.txt': identified over-expressed genes with respect to each identified cell cluster;
+      + 'allCluster_pos_markers_no.txt': summarize the number of over-expressed genes from each identified cell cluster;
+      + 'allCluster_pos_markers_top10.txt': presents `topN` identified over-expressed genes from each identified cell cluster;
+      + 'cluster_heatmap_top10PosMarkers.pdf': a heatmap of `topN` identified over-expressed genes from each identified cell cluster.
+      + 'seuratReadin_qcProcessed.Rdata': intermediate Rdata file, where the pre-processed QC results from step 1 is saved as an object named as `seuratProcssedObjList1`, which can be loaded and used for integration analysis separately, such as 
+      
+        ```
+load(seuratReadin_qcProcessed.Rdata)
+results2 <- getClusterMarkers(qcProcessedResults = seuratProcssedObjList1, integrationMethod = 'RPCA')
+```
+
+### 5.3: Commannd line execution option for Step 1 and Step 2 analysis
+
+  * For our demonstration data, the step 1 and step 2 analysis can be combined together with below command line option to conduct by specifying the full path to the metadata table provide in above section 4.
+
+```{bash eval=FALSE}
+Rscript run_scRICA_qc_integration.R -m PATH/TO/METADATA_TABLE -o scRICA_results -g human --minCells 3 --minFeatures 100 --mtFiltering True --mtPerCutoff 20 --multiomics False --extraFilter False --integration.method CCA --integration.nfeatures 500 > $PWD/run_scRICA.log 2>&1
+```
   
-    ```   
-getGoiDotplot(resDir = results$resDir, goiFname = 'marker_genes.xlsx', expCondCheck = 'expCond1', expCondSepName = 'expCond1_org')
+### 5.4: 'Step 3' integrated results visualization
+
+#### 5.4.1 Cellular compositions summary and visualization
+
+  1. These can be done via `getClusterSummaryReplot()`. In our demonstrated data named as 'scRICA_demo.rds', where 'expCond1' specify the patient donor IDs, and 'expCond2' specify fallopian tube anatomical sites (I/A/F). If you would like to update the cells annotation, just run on `newAnnotation=T`, and provide the corresponding annotation file with the option `newAnnotationRscriptName=/full/path/to/file`, an example of new annotation file named as `anno_example.R` can be found from 'misc' folder, where all cell types need to be updated can be included. 
+  
+      An example code to summarize the cellular composition based on samples attribute specified in 'expCond1' with respect to different donors is shown below:
+
+```
+rds1 <- readRDS('~/Desktop/757_scRNA-seq/RDS/scRNAseq_FT_finalized_wAnno.rds')
+library(scRICA)
+## seperation on donor: expCond1
+getClusterSummaryReplot(rds = rds1, resDir = 'scRICA_results', newAnnotation = F, expCondCheck = 'expCond1', expCondCheckFname = 'donors_summary')
+## seperation on fallopian tissue types (I/A/F): expCond2 togher with new annotation
+getClusterSummaryReplot(rds = rds1, resDir = 'scRICA_results', newAnnotation = T, newAnnotationRscriptName = 'anno_example.R', expCondCheck = 'expCond1', expCondCheckFname = 'donors_summary')
+```
+  
+  2. Depending on whether `newAnnotation` is True or False, all related results will be saved into `scRICA_results/results_wOrgClusterAnnotation/expCond_donors_summary` or `scRICA_results/results_wOrgClusterAnnotation/expCond_donors_summary` respectively. An example of data structure of result with `newAnnotation=F` can be seen as:
+  
+      ```
+-- scRICA_results
+   |__results_wOrgClusterAnnotation
+      |expCond_donors_summary
+         |__cellNo_summary_orgClusterAnnotation_expCond_donors_summary.pdf
+         |__cellNo_summary_orgClusterAnnotation_expCond_donors_summary.txt
+         |__new_tSNE_plot_expCond_donors_summary
+            |__tsne_plot_noLabel_integrate_orgAnnotation.pdf
+            |__tsne_plot_wLabel_integrate_orgAnnotation.pdf
+            |__tsne_plot_wLabel_orgAnnotation_expCond_donors_summary.pdf
+         |__new_UMAP_plot_expCond_donors_summary
+            |__UMAP_plot_noLabel_integrate_orgAnnotation.pdf
+            |__UMAP_plot_wLabel_integrate_orgAnnotation.pdf
+            |__UMAP_plot_wLabel_orgAnnotation_expCond_donors_summary.pdf
+```
+    
+  + where 'cellNo_summary_orgClusterAnnotation_expCond_donors_summary.pdf': is a cellular composition plot separated by the specified sample's attribute by the option `expCondCheck = 'expCond1'`.
+  + 'cellNo_summary_orgClusterAnnotation_expCond_donors_summary.txt': provides a summary of corresponding cell number and percentage of cells normalized by the total number of cells from each attribute. 
+  + cellular composition plot separated by patient donors (`expCondCheck = 'expCond1'`) is:
+    
+```{r out.height = "230px", out.width='650px', echo=F}
+knitr::include_graphics("../misc/visualization_results/results_wOrgClusterAnnotation/expCond_donors_summary/cellNo_summary_orgClusterAnnotation_donors_summary.pdf")
+```
+
+  + cellular composition plot separated by fallopian tube anatomical sites (`expCondCheck = 'expCond2'`) with new cell annotation specified in `newAnnotation = T, newAnnotationRscriptName = 'anno_example.R'` is:
+  
+```{r out.height = '150px', out.width='650px', echo=F}
+knitr::include_graphics("../misc/visualization_results/results_wNewAnnotation/expCond_donors_summary/cellNo_summary_newAnnotation_donors_summary.pdf")
+```
+
++ UMAP plot separated into 3 different anatomical sites (I/A/F) together with new cell annotations is: 
+    
+    ![](../misc/visualization_results/results_wNewAnnotation/umap_exp.png){#id .class width=700px height=250px}
+3. There are several options which can be used to alter the cellular composition percentage bar-plot, such as 
+      
+      + `stack =T`: make stacked or un-stacked cellular composition bar-plot by turning on/off this option
+      
+      + `perPlotVertical = F`, either in the vertical or horizontal position for this cellular composition bar-plot
+      
+      + `fpRemake = F, perRemake = T`: only make cellular composition bar-plot by turn on `perRemake` without making corresponding UMAP/tSNE plots (`perPlotVertical = F`)  
+      
+      + `perPlotVertical = F, perPlotHeight = 3, perPlotWidth = 7, fpRemake = F, stack =T`, 
+      
+      + `expCondNameOrder = c('I', 'A', 'F')`: specify the order of attributes specified from `expCondCheck = 'expCond2'`, where 'expCond2' has 3 levels, which can be re-ordered as 'I->A->F'.
+      
+      + An example of un-stacked re-ordered cellular composition plot shown below can be made by:
+  ```
+getClusterSummaryReplot(rds = rds1, resDir = 'misc/visualization_results', 
+                        perRemake = T, fpRemake = F, stack =F,  
+                        perPlotVertical = T, perPlotHeight = 3, perPlotWidth = 7, 
+                        expCondNameOrder = c('I', 'A', 'F'),
+                        newAnnotation = F, 
+                        expCondCheck = 'expCond2', expCondCheckFname = 'tissue_sep1')
+```  
+
+```{r out.height = '200px', out.width='650px', echo=F}
+knitr::include_graphics('../misc/visualization_results/results_wOrgClusterAnnotation/expCond_tissue_sep/cellNo_summary_orgClusterAnnotation_tissue_sep_vertical.pdf')
+```      
+  
+  4. Other options can be found from the help document via `?getClusterSummaryReplot`
+  
+##### 5.4.2 feature genes dot-plot visualization 
+  
+  1. This plot can be made via function `getGoiDotplot()`. A code example to make such plot on a list of cell cycle genes list (seen in `misc` folder named as 'marker_genes_CC.xlsx'), which all cell cycle genes are classified into 2 groups: 'S phase' and 'G2/M phase'.
+
+      ```
+getGoiDotplot(resDir = 'misc/visualization_results', rds = rds1,
+              newAnnotation = F,
+              goiFname = 'misc/marker_genes_CC.xlsx',
+              expCondCheck = 'expCond2', expCondCheckFname = 'dotplot_tissue',
+              dotPlotFnamePrefix = 'cc')
+```
+  
+  2. scRICA provides options for users to select certain cell types `cellcluster` and/or experimental conditions based on the levels of chosen attribute in `expCondCheck = 'expCond2'` for this feature dot-plot visualization. For example, we can visualize only 3 T/NK cells (T/NK1, T/NK2, and T/NK2) from 2 fallopian tube tissues I and A via below command.
+
+      ```
+getGoiDotplot(resDir = 'misc/visualization_results', rds = rds1,
+              newAnnotation = F,
+              goiFname = 'misc/marker_genes_CC.xlsx',
+              expCondCheck = 'expCond2', expCondCheckFname = 'dotplot_tissue',
+              geneTypeOrder = c('S phase', 'G2/M phase'),
+              cellcluster = c('T/NK1', 'T/NK2', 'T/NK3'),
+              expCond = c('I', 'A'),
+              expCondReorderLevels = paste(rep(rev(c('T/NK1', 'T/NK2', 'T/NK3')), each=2), rep(rev(c('I', 'A')), time = 3), sep = '_'),
+              dotPlotFnamePrefix = 'cc_TNKonly_IAonly',
+              dotPlotMinExpCutoff = 0, dotPlotMaxExpCutoff = 4,
+              dotPlotWidth = 26, dotPlotHeight = 6,
+              legendPer = 0.08, genetypebarPer = 0.03,
+              fontsize.x = 20, fontsize.y = 16,
+              fontangle.x = 90, fontangle.y = 0,
+              fontsize.legend1 = 10,
+              geneTypeLegendOn = T, fontsize.legend2 = 20)
+```
+  
+  3. As shown in above code, there are several options which can be used to adjust this dot-plot display, including x-/y-axis font size and angles (`fontsize.x`, `fontangle.x` etc.), whether to include gene type legend color bar (`geneTypeLegendOn`), the size of the dot plot (`dotPlotWidth` and `dotPlotHeight`), top legend bar height (`genetypebarPer`) etc., for detailed information please refer the help manual `?getGoiDotplot`. And the finalized plot can be seen as this:
+  
+```{r out.height = '160px', out.width='650px', echo=F}
+knitr::include_graphics('../misc/visualization_results/results_wOrgClusterAnnotation/dotplot_selected_markers_dotplot_tissue/cc_TNKonly_IAonly_markerGenes_dotplot_dotplot_tissue.pdf')
+``` 
+  
+##### 5.4.3 heatmap visualization 
+
+  1. This plot can be made via function `getGoiHeatmap()`. The heatmap can be visualized in 3 ways via option `heatmap.view`, including visualize on 1). the identified cell types by `heatmap.view = 'idents'`; 2) samples attributes levels by `heatmap.view = 'expCond'`; 3) across samples attributes levels with respect to different cell types by `heatmap.view = 'expCond.idents'`. Additionally, we also can make heatmap based on 1) cell levels with `display = 'cell'`; 2) aggregated expressions across various levels of samples attributes with `display = 'expCond.merge'`; 3) aggregated expressions for each sample defined in the metadata table with `display = 'sample.merge'`. For example, we can use below command to generate a heatmap of selected genes expression aggregated at the sample level across all cell types. 
+  
+      ```
+getGoiHeatmap(heatmap.view = 'idents', resDir = 'misc/visualization_results', rds = rds1,
+              newAnnotation = F, geneNames = c('CD44', 'ITGA6', 'EPCAM', 'KRT5', 'KRT7', 'TUBB4A', 'TUBB4B', 'PAX8'),
+              expCondCheck = 'expCond2',
+              expCondCheckFname = 'heatmap_tissue',
+              plotFnamePrefix = 'geneset1_sampleMerge',
+              display = 'sample.merge')
+```
+
+  ![](../misc/visualization_results/results_wOrgClusterAnnotation/heatmap_heatmap_tissue/geneset1_sampleMerge_heatmap.png){#id .class width=650px height=250px}
+  2. scRICA includes various options to change the plot size, font size etc. to make the figure with high resolution quality for publication, they can be found from the help manual via `?getGoiHeatmap`. Additionally scRICA also allows users to select certain cell types and samples attributes for heatmap visualization, here is an example of the heatmap from fallopian tube I and A for the selected genes on each sample level.
+  
+  ```
+getGoiHeatmap(heatmap.view = 'expCond.idents', resDir = 'misc/visualization_results', rds = rds1,
+              newAnnotation = F, geneNames = c('CD44', 'ITGA6', 'EPCAM', 'KRT5', 'KRT7', 'TUBB4A', 'TUBB4B', 'PAX8'),
+              expCondCheck = 'expCond2',
+              expCondCheckFname = 'heatmap_tissue',
+              plotFnamePrefix = 'geneset1_expCond_idents_merge_SECEonly_IAonly',
+              expCondReorderLevels = c('I CE', 'A CE', 'I SE', 'A SE'),
+              display = 'sample.merge', draw.lines = F,
+              cellcluster = c('CE', 'SE'),
+              expCond = c('I', 'A'),
+              fontsize.top = 2, fontsize.y = 12, barHeight.top = 0.05,
+              plotWidth = 5, plotHeight = 3, fontangle.top = 90, debug = T)
+```
+  
+  ![](../misc/visualization_results/results_wOrgClusterAnnotation/heatmap_heatmap_tissue/geneset1_expCond_idents_merge_SECEonly_IAonly_heatmap.png){#id .class width=350px height=150px}
+
+  
+##### 5.4.4 scatter plot visualization 
+  1. 
+
+
+### 5.5: 'Step 4' downatream analysis
+
+##### 5.5.1 Differential expression analysis between different samples attributes for cell types
+
+  + DE analysis on cells
+    
+    scRICA allow users to conduct DE analysis on any 2 group of cells with different sample's attributes defined in any specific metadata table column (expCond*). For example, the demonstration RDs data has 2 columns, expCond1 and expCond2, defining samples attributes of donors and fallopian tissue types respectively. If we would like to check DEGs between tissue types I and F for a specific cell type with option `cellcluster` or all cell types without specifying `cellcluster`. Once you are running on all cell clusters, all cell types DE results are saved into the excel file spreadsheet, which can cause memory deficiency for excel file storage. commands to run these 2 analysis can be seen as below:
+    
+    ```
+de.res1 <- getClusterExpCondDe(resDir = 'misc/', rds = rds1,
+                               newAnnotation = F, 
+                               cellcluster = 'MP', deMethod = 'wilcox',
+                               expCondCheck = 'expCond2', expCondCheckFname = 'IFcomp_wilcox', 
+                               compGroup = 'I/F')
 ```
 
     ```
-## -- scRICA_test_result
-##    |__results_wOrgClusterAnnotation
-##       |__dotplot_selected_markers_expCond_expCond1_org
-##          |__goiDotplots_markerGenes_dotplot_expCond_expCond1_org.pdf
+de.res2 <- getClusterExpCondDe(resDir = 'misc/', rds = rds1,
+                               newAnnotation = F, deMethod = 'MAST',
+                               outputExcel = as.logical(F),
+                               expCondCheck = 'expCond2', expCondCheckFname = 'IFcomp_allCells_MAST',
+                               compGroup = 'I/F')
 ```
 
-  * feature plot exploration
-    ```   
-getGoiFeatureplot(resDir = results$resDir, goiFname = 'marker_genes.xlsx', expCondCheck  = 'expCond1')
-```
-
+    All analysis results will be saved into the folder specified by `resDir= 'misc'` with `newAnnotation = F` into `misc/results_wOrgClusterAnnotation_DEGs` or `misc/results_wNewAnnotation_DEGs` when `newAnnotation = T`. For each different analysis, results will be saved into specific folder named via option `expCondCheckFname`, as shown below, above 2 analysis are saved into folder `misc/results_wNewAnnotation_DEGs/IFcomp_wilcox` and `misc/results_wNewAnnotation_DEGs/IFcomp_allCells_MAST` respectively, including 1) full list of DEGs (differentially expressed genes) results; 2) significantly DEGs at the specified `pAdjValCutoff` level, by default it is 0.05; 3) significantly up- and down-regulated DEGs at the specified `pAdjValCutoff` level; 4) summary of number of DEGs; 5) top number of DEGs list. When `outputExcel = F`, full list of DE results and significantly expressed DEGs are saved into the spreadsheet of the same excel file, otherwise, they are saved into the sperate txt file with respect to each cell type.
+    
     ```
-## -- scRICA_test_result
-##    |__results_wOrgClusterAnnotation
-##       |__featurePlot_selected_markers_expCond1
-##          |__goiFeaturePlot
-##             |__umap_expMaxValSummary_expCondexpCond1.txt
-##             |__umap_featurePlot_CAPS_expCondexpCond1.pdf
-##             |__umap_featurePlot_CD79A_expCondexpCond1.pdf
-##             |__ ...
+-- results_wOrgClusterAnnotation_DEGs
+   |__IFcomp_allCells_MAST
+      |__expCondCompDeMarkers_I-F_adjSig_allClusters_cluster*.txt
+      |__expCondCompDeMarkers_I-F_adjSig_down_allClusters_cluster*.txt
+      |__expCondCompDeMarkers_I-F_adjSig_up_allClusters_cluster*.txt
+      |__expCondCompDeMarkers_I-F_full_allClusters_cluster*.txt
+      |__expCondCompDeMarkers_I-F_NoDEmarkers_summary.xlsx
+      |__expCondCompDeMarkers_I-F_top10_downDe.xlsx
+      |__expCondCompDeMarkers_I-F_top10_upDe.xlsx
+   |__IFcomp_wilcox
+      |__expCondCompDeMarkers_I-F_adjSig_1SelClusters.xlsx
+      |__expCondCompDeMarkers_I-F_adjSig_down_1SelClusters.xlsx
+      |__expCondCompDeMarkers_I-F_adjSig_up_1SelClusters.xlsx
+      |__expCondCompDeMarkers_I-F_full_1SelClusters.xlsx
+      |__expCondCompDeMarkers_I-F_NoDEmarkers_summary.xlsx
+      |__expCondCompDeMarkers_I-F_top10_downDe.xlsx
+      |__expCondCompDeMarkers_I-F_top10_upDe.xlsx
 ```
-
-    ```   
-getGoiFeatureplot(resDir = results$resDir, goiFname = 'scRICA/misc/marker_genes_set2.xlsx', expCondCheck  = 'expCond1', featurePlotFnamePrefix='goiFeaturePlot_set2')
-```
-
-    ```
-## -- scRICA_test_result
-##    |__results_wOrgClusterAnnotation
-##       |__featurePlot_selected_markers_expCond1
-##          |__goiFeaturePlot
-##             |__umap_featurePlot_COL1A1_expCondexpCond1.pdf
-##             |__umap_featurePlot_CSPG4_expCondexpCond1.pdf
-##             |__ ...
-##          |__goiFeaturePlot_set2
-##             |__umap_expMaxValSummary_expCondexpCond1.txt
-##             |__umap_featurePlot_CAPS_expCondexpCond1.pdf
-##             |__ ...
-```
-
-#### 5.3 experimental condition comparative analysis
-  *
-
-### 6. Supplementary content
-
-The entire scRNA-Seq integrative and comparative analysis can be implemented with below workflow steps based on the input metadata table and other associated options for each step's analysis. User can skip doublet detection step starting from step2 to perform integration analysis directly by setting up metadata table column `'doubletsRmMethod'` as `none`, otherwise, start the analysis from step1 `findDoublets()` with first 2 columns of above metadata table information. 
-
-We provided an ovarian caner study of 1 patient samples from 3 different Fallopian tissue types as this package demonstration data set, which can be accessible at package 'inst/extdata' folder with command `list.files(system.file('extdata', package = 'scRICA', mustWork = T))`. For the demonstration, we also include the corresponding metadata table for this experiment accessible at `system.file('extdata', 'metadata.txt', package = 'scRICA', mustWork = T)`. Please be aware column `path` information in this demonstration metadata table is based on the Mac system, if you are using other operating system, please make your own metadata table.
-
-  * Step1: doublet cells detection: 
   
+    Above returned DE analysis results are listed item, where you can access all DE analysis results with below command with `de.res1` as an example:
+
+    ```
+head(de.res1$clusterDeMarkers$MP)
+de.res1$clusterDeResSummar
+head(de.res1$clusterTopDeMarkers$MP)
 ```
-metadata                <- read.delim2(file = 'metadata.txt', header = T) 
-# doubletDeconResDir      <- findDoublets(metadata = metadata, 
-#                                         genomeSpecies = 'human', 
-#                                         doubletDeconRhop =  0.5, 
-#                                         doubletDeconPMF = 'F', 
-#                                         resFilename = 'scRICA_test_doublets_checking')
+
+  + DE analysis on sample's pseudo-bulk counts
+  
+    scRICA also provides DE analysis based on pseudo-bulk counts aggregated on samples defined in the initial metadata table, this information is inherited into the integrated RDS metadata table column expCond (`rds1$expCond`). For example, in our demonstration RDS file, there are totally 18 samples from different donor fallopian tube tissues, then we can use option `deMethod = 'DESeq2.bulk'` to conduct pseudo-bulk DE analysis, where counts from each sample are aggregrated and normalized based on the total number of cells. Additionally, users can also use an addtional metadata table to specify certain confounding covariates for model to correct those potential confounding effects for DE analysis with DESeq2. In this confounding factor defining metadata table, 1) column `bulksamp` should include all samples listed in `rds1$expCond` or initial metadata table for integration analysis; 2) other confounding factors to be corrected should be included in the columns of this table, such as we make an example confounding factor metadata table for our RDS demonstration data as below, here we would like to address potential confounding factors effects from `gender` and `bmi`.   
+    
+    ```
+meta1 <- data.frame('bulksamp' = names(table(rds1$expCond)),
+                    'gender' = c('F', 'F', 'F', 'M', 'M', 'M', 'M', 'M', 'F', 'F', 'M', 'M', 'M', 'M', 'M', 'M', 'F', 'F' ),
+                    'bmi' = c(23.5, 23.5, 23.5, 18, 18, 28.4, 28.4, 28.4, 32, 32, 20, 20, 20, 30, 30, 30, 21, 21))
 ```
-This step will conduct cells doublets detection and save the entire analysis results into the defined `resFilename` under current operating directory `getwd()`, it will return a full path of directory to indict where the results were saved at. 
+    
+    With this confounding factor metadata table, we can use option `deseq2bulk.metaCovariateInput` to remove all potential confounding factor effects from pseudo-bulk DE analysis performed via DESeq2. Users also can use option `norm.method` to adjust normalization methods implemented across samples, including TMM, upper-quantile (UQ), and default DESeq2 normalization methods. An example of running command can be seen as below:
+    
+    ```
+de.res3 <- getClusterExpCondDe(resDir = 'misc/', rds = rds1,
+                               newAnnotation = F, cellcluster = 'MP',
+                               deMethod = 'DESeq2.bulk',
+                               deseq2bulk.metaCovariateInput = meta1,
+                               expCondCheck = 'expCond2', expCondCheckFname = 'IFcomp_DEseq2bulk',
+                               compGroup = 'I/F')
+```
 
-  * Step2: quality control and integrative analysis
+    In addition to above analysis results, scRICA also return original and cell number normalized count table, which users can use below command to access them:
+    
+    ```
+head(de.res3$normCounts$MP)
+head(de.res3$orgCounts$MP)
+```
 
-This steps analysis will use 2 functions: `countReadin()` and `getClusterMarkers()`.
+##### 5.5.2 Over expressed marker genes across comparison cell types with respect to different sample's attributes levels. 
 
-Based on the previous step's analysis, we need to update our metadata data by including column `doubletsRmMethod` and `doubletsResDir` as shown in above metadata table input file section, where `doubletsRmMethod` allow users to specify which doublet cells detection analysis method to be used for doublet cells filtering, 3 extra options are provided here, 'medoids', 'centroids', or 'OL' (doublet cells detected by both medoids and centroids deconvolution algorithms); `doubletsResDir` specify where the previous analysis results are located. The metadata table can be updated as below and used for this step's integrative analysis via function `countReadin()`.
+scRICA allow users to check over expressed marker genes across defined cell types via function `getExpCondClusterMarkers()`. For example, users can check over-expressed genes among 5 selected immune cells, including T/NK1, T/NK2, T/NK3, MP,  and B/P with respect to samples tissue types defined in `expCond2` with below command:
 
+```
+oe.res1 <- getExpCondClusterMarkers(resDir = 'misc/', rds = rds1,
+                                    deMethod = 'MAST',
+                                    cellcluster = c('T/NK1', 'T/NK2', 'T/NK3', 'MP', 'B/P'),
+                                    newAnnotation = F,
+                                    expCondCheck = 'expCond2',
+                                    expCondCheckFname = 'tissue_IR_overExpressedGenes')
+```
 
-This function will conduct integrative analysis for all samples provided in the metadata table. If user would like to filter out the mitochondrial content, as shown here, please specify `mtFiltering = 'T'` together with the mitochondrial content filtering percentage with option `mtPerCutoff`. This function will 1) prepare a Seurat object by reading the count matrix from different samples specified in the metadata table into R, and 2) perform the quality control evaluations. 
+Where, over-expressed marker genes are identified from each cell type in comparison with all other cell types with respect to each fallopian tube tissue type (I/A/F). Similarly, as other DE results, all analysis results are also saved into the folder based on defined options `resDir`, `newAnnotation`, and `expCondCheckFname`. In our example, results are saved into the foler named as `misc/clusterMarkerGenes_results_wOrgClusterAnnotation` with below data structure, where 1) full list of marker genes analysis results with respect to each fallopian tube tissue type are saved into txt file named as `*_resFull.txt`; 2) significant over-expressed genes list are also saved into different txt file named as `*_UpSig.txt`; 3) the number of over-expressed marker genes are also summarized into `*_UpSig_NoSummary.txt`; 4) top expressed marker genes heatmap is also made with respect to different levels of samples attributes as `*_UpSig_heatmap.pdf`.
 
-In addition to integrative analysis for all samples, this function will also conduct the top expressed markers detection with respect to each cell clusters. The entire analysis results will be saved in the specified `resDirName`, the final integrated RDS file will be saved in `'RDS_Dir'` folder inside `resDirName` directory. If no `resDirName` is specified, a folder named as `integration_analysis_results` will be created to save this function's analysis results.
+```
+-- clusterMarkerGenes_results_wOrgClusterAnnotation
+   |__tissue_IR_overExpressedGenes
+      |__expCond_tissue_IR_overExpressedGenes_A_allCluster_pos_markers_resFull.txt
+      |__expCond_tissue_IR_overExpressedGenes_A_allCluster_pos_markers_UpSig_heatmap.pdf
+      |__expCond_tissue_IR_overExpressedGenes_A_allCluster_pos_markers_UpSig_NoSummary.txt
+      |__expCond_tissue_IR_overExpressedGenes_A_allCluster_pos_markers_UpSig.txt
+      |__expCond_tissue_IR_overExpressedGenes_F_allCluster_pos_markers_resFull.txt
+      |__expCond_tissue_IR_overExpressedGenes_F_allCluster_pos_markers_UpSig_heatmap.pdf
+      |__expCond_tissue_IR_overExpressedGenes_F_allCluster_pos_markers_UpSig_NoSummary.txt
+      |__expCond_tissue_IR_overExpressedGenes_F_allCluster_pos_markers_UpSig.txt
+      |__expCond_tissue_IR_overExpressedGenes_I_allCluster_pos_markers_resFull.txt
+      |__expCond_tissue_IR_overExpressedGenes_I_allCluster_pos_markers_UpSig_heatmap.pdf
+      |__expCond_tissue_IR_overExpressedGenes_I_allCluster_pos_markers_UpSig_NoSummary.txt
+      |__expCond_tissue_IR_overExpressedGenes_I_allCluster_pos_markers_UpSig.txt
+```
 
-  * Step3: gene marker identfication
-2 types of gene markers identification with respect to experimental conditions can be performed with corresponding functions `getClusterExpCondDe()` and `getClusterExpCondDe()`, where as specified above, `getExpCondClusterMarkers()` can identify top expressed gene markers for samples from different experimental conditions with respect to each identified or annotated clustering cell types; and `getClusterExpCondDe()` can identify differential expressed gene markers for samples from 2 different experimental conditions with respect to each identified or annotated clustering cell types.
+Similarly, some analysis results can also be accessed from returned analysis object, including the full list of over-expressed genes and significantly over-express gene list, such as `oe.res1` from our above analysis example.
 
- Step4: clustering and gene marker visualizations
-The integrative cell clustering analysis results can be visualized via function `getClusterSummaryReplot()`, and additional gene markers exploration can be done via function `getGoiDotplot()` and `getGoiFeatureplot()`.
+```
+head(oe.res1$fullRes$A)
+head(oe.res1$sigUp$A)
+table(oe.res1$sigUp$A$cluster)
+```
 
-#### 5. Step5: pseudotime functional trajectory analysis and visualization
+##### 5.5.3 HIPPO cells sub-clustering analysis 
 
-Pseudotime functional trajectory analysis can be performed at different specified experimental cell clusters via function `getClusterPseudo()`, and the corresponding visualization can be performed via function `plotObjPseudotime()`.
+scRICA allow users to conduct sub-clustering HIPPO analysis for any specific cell types (`cellcluster`) with respect to cell from all samples or any specific sample's attribute defined via `expCondCheck` and `expCond` together. This analyis can be done inside R with R function `getHippoRes()` or by command line exections `Rscript run_scRICA_hippo.R [Options]... `.
 
+  + R function exectution: `?getHippoRes()`
+
+    For example, you can sub-cluster 3 types of T/NK cells (T/NK1, T/NK2 and T/NK3) into 5 sub-clusters via `noClusters=5` based on zero-inflation clustering method for all cells regardless of theirs samples attributes, the command is as below:
+
+    ```
+getHippoRes(resDir = 'misc/', rds = rds1, newAnnotation = F,
+            hippoResNamePrefix = 'Allcells_TNK',
+            cellcluster = c('T/NK1', 'T/NK2', 'T/NK3'), noClusters = 4)
+```
+
+    Users also can conduct HIPPO sub-clustering analysis on cells defined from a specific sample's attribute level, such as you can conduct HIPPO sub-clustering analysis on 2 groups of T/NK cells from fallopian tissue `F` only via below command:
+
+    ```
+getHippoRes(resDir = 'misc/', rds = rds1, newAnnotation = F,
+            expCondCheck = 'expCond2', expCond = 'F',
+            hippoResNamePrefix = 'Fonly_TNK23',
+            cellcluster = c('T/NK2', 'T/NK3'), noClusters = 5)
+```
+
+    If too many cells need to be performed, you also can turn on `sparseMatrix = T` to avoid memory deficiency. The HIPPO analysis results are saved into the defined folder named via option `hippoResNamePrefix` inside `resDir` direcotry sub-folder `hippo_results`, an example of above analysis results data structure can be seen as below:
+
+    ```
+-- hippo_results
+   |__Allcells_TNK
+      |__Allcells_TNK_k4_clustersTree.pdf
+      |__diagnosticPlot_cellCluster_Allcells_TNK_k4.pdf
+      |__lightHIPPOres_Allcells_TNK_k4.Rdata
+      |__Per_cellCluster_Allcells_TNK_k4.xlsx
+      |__topFeatures_cellCluster_Allcells_TNK_k4_dotplot.pdf
+   |__Fonly_TNK23
+      |__...
+```
+
+    where includes 1) hierarchy clustering tree plot; 2) diagnostic clustering plot; 3) all analysis results saved in Rdata; 4) number of cells in each HIPPO identified sub-clusters in excel file; 5) top expressed genes with respect to each HIPPO identified sub-clusters. 
+
+  + Command line execution: `Rscript run_scRICA_hippo.R --help`
+    
+    Users can also conduct above analysis with command line executions as below:
+    
+    ```{bash eval=FALSE}
+Rscript run_scRICA_hippo.R --outputDir misc/ --hippoResNamePrefix Allcells_TNK_commandLine --expCondCheck 'all' --rdsFname ~/Desktop/scRICA_demo.rds --cellclusters 'T/NK1, T/NK2, T/NK3' --noCluster 4 > $PWD/run_scRICA_hippo_tnk_allcells_k4.log 2>&1
+```
+
+    ```{bash eval=FALSE}
+Rscript run_scRICA_hippo.R --outputDir misc/ --hippoResNamePrefix Fonly_TNK23_commandLine --expCondCheck 'expCond2' --expCond 'F' --rdsFname ~/Desktop/scRICA_demo.rds --cellclusters 'T/NK2, T/NK3' --noCluster 5 > $PWD/run_scRICA_hippo_tnk23_Fonly_k5.log 2>&1
+```
+
+  + Update RDS file with HIPPO results
+  
+    As shown in above examples, 3 types of T/NK cells were conducted with sub-clustering analysis with HIPPO for a k=4 sub-clusters identification. Below command can be used to update the cells clustering information saved in `Idents()` based on HIPPO results saved in `Rdata` format. If list names are provided in the option `hippoResList`, updated cells idents names are based on them. Otherwise, users also can use option `hippoResNames` for updated HIIPO sub-clusters names. More detailed information regarding to these options, please refer `?updateHippoIdents`.
+  
+      ```
+rds.hippo1 <- updateHippoIdents(resDir = 'misc/', rds = rds1, resSaveFname = 'hippo_tnk.Rds',
+                               hippoResList = list('TNK_hippo' = 'misc/hippo_results/Allcells_TNK_k4/lightHIPPOres_Allcells_TNK_k4.Rdata'),
+                               hippoResK = c(4),
+                               newAnnotation = F )
+table(Idents(rds.hippo1))
+```
+  
+##### 5.5.4 pseudo-time trajectory analysis with slingshot
+
+Similarly, scRICA also allow users to conduct pseudo-time trajectory analysis with slingshot for any specific cell types (cellcluster) with respect to cells from all samples or any specific sample’s attribute defined via expCondCheck and expCond together. This analyis can be done inside R with R function `getExpCondClusterPseudotime()` or by command line exections `Rscript run_scRICA_pseudoTime.R [Options]...`.
+
+  + R function exectution: `?getExpCondClusterPseudotime()`. For example, you can run slingshot pseudo-time trajectory analysis on SE and CE cell types with respect to 3 different fallopian tube anatomical sites seperations with below command:
+
+      ```
+psdt.res1 <- getExpCondClusterPseudotime(resDir = 'misc/visualization_results', rds = rds1,
+                                         expCondCheck = 'expCond2', 
+                                         expCondCheckFname = 'tissueSep_SECE',
+                                         cellcluster = c('SE1', 'CE'),
+                                         newAnnotation = F)
+```
+
+  + The above analysis results are saved inside folder named via options `resDir` and `expCondCheckFname`. For example, the above analysis results are saved into the folder named as `./misc/visualization_results/results_wOrgClusterAnnotation_pseudoTime/tissueSep_SECE` with below data structure:
+
+      ```
+-- results_wOrgClusterAnnotation_pseudoTime
+   |__tissueSep_SECE
+        |__expCondLevel_A_cluster_SE_fnPseudoTimeRes.Rdata
+        |__expCondLevel_A_cluster_SE_ptGMM_GAMheatmap.pdf
+        |__expCondLevel_A_cluster_SE_ptGMM_GAMheatmapGenenames.txt
+        |__expCondLevel_A_cluster_SE_ptGMM_lineage.pdf
+        |__expCondLevel_A_cluster_SE_ptGMM_plots.pdf
+        |__...
+```
+
+      where includes results with respect to each samples attributes condition and cell types, such as for fallpian site ampulla, SE cell, 1) slingshot linage plots (`expCondLevel_A_cluster_SE_ptGMM_lineage.pdf`); 2) PCA and diffusion map seperation plots (`expCondLevel_A_cluster_SE_ptGMM_plots.pdf`); 3) heatmap of identified genes seperating lingeages (`expCondLevel_A_cluster_SE_ptGMM_GAMheatmap.pdf`); 4) corresponding gene list presented in heatmap (`expCondLevel_A_cluster_SE_ptGMM_GAMheatmapGenenames.txt`).
+
+  + Command line execution: `Rscript run_scRICA_pseudoTime.R --help`
+  
+      For above analysis, it can also be done with command line option shown as below:
+
+      ```{bash eval=FALSE}
+Rscript run_scRICA_pseudoTime.R --outputDir misc/ --hippoResNamePrefix tissueSep_SECE --expCondCheck 'expCond2' --rdsFname ~/Desktop/scRICA_demo.rds --cellclusters 'SE, CE' > $PWD/run_scRICA_pseudoTime_CESEonly.log 2>&1
+```
+  
 ## Feedback
-If you have further questions or suggestions regarding this package, please contact Yan Li at yli22@bsd.uchicago.edu from the bioinformatics core at the Center for Research Bioinformatics (CRI), biological science division (BSD), University of Chicago.
-
-
+If you have further questions or suggestions regarding this package, please contact Yan Li at liyan@uchicagomedicine.org from the bioinformatics core at the Center for Research Bioinformatics (CRI), biological science division (BSD), University of Chicago.
 
 

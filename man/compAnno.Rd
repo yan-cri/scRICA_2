@@ -7,12 +7,12 @@
 compAnno(seuratObj, seuratObj2Comp)
 }
 \arguments{
-\item{seuratObj}{the ident cells to be decomposed for comparisons.}
+\item{seuratObj}{object with known cells annotations, which is used as base line of comparisons.}
 
-\item{seuratObj2Comp}{the annotation cells to be compared with.}
+\item{seuratObj2Comp}{object cells/idents presented in rows are decomposed into known 'seuratObj' idents cells based on counts and percentages.}
 }
 \value{
-results in cell number and relative percentage of idents cells between 2 input seurat objects, all cells are decomposed on rows.
+results in cell number and relative percentage of idents cells between 2 input seurat objects, all cells are decomposed on rows for 'seuratObj2Comp' based on 'seuratObj'.
 }
 \description{
 compAnno() Function
@@ -21,6 +21,7 @@ compAnno() Function
 This function is used to make comparisons between 2 seurat objects. 'seuratObj2Comp' is the baseline, where 'seuratObj' is decomposed into.
 }
 \examples{
-compAnno()
+res <- compAnno(seuratObj = rds.knownAnnotations, seuratObj2Comp = rds.2decompose)
+res1$count; res1$per
 }
 \keyword{compAnno}

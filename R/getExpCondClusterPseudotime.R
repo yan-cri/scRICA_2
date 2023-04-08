@@ -4,15 +4,15 @@
 #' getExpCondClusterPseudotime() Function
 #' @details
 #' This function is used to perform functional pseudotime analysis via PCA, Diffusion Map, and slingshot
-#' @param resDir full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.
-#' @param rds User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.
+#' @param resDir specify an exiting full path of directory, where results will be saved.
+#' @param rds provide integrated RDS object, user can also provide the full path of the RDS where integrated RDS object is saved with above rdsDir option.
 #' @param newAnnotation logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.
 #' @param newAnnotationRscriptName if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.
 #' @param expCondCheck specify which experimental conditions to be explored, including sample, idents, or expCond1/2/....
 #' @param expCondCheckFname suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.
-#' @param expCond specify the specific experimental condition for pseudo time trajectory analysis, if not specified, all experimental conditions will be performed .
+#' @param expCond specify a specific experimental condition for pseudo time trajectory analysis, if not specified, all experimental conditions will be performed .
 #' @param cellcluster specify the specific cell cluster name for pseudo time trajectory analysis, if not specified, all cell clusters will be performed.
-#' @param slingshotclusterLabels specify slighshot cluster label options, 3 options are available here, they are 'NULL', 'seurat_clusters', or 'GMM'. By default is 'NULL'.
+#' @param slingshotclusterLabels specify slighshot cluster label options, 3 options are available here, they are 'NULL', 'seurat_clusters', or 'GMM'. By default is 'GMM'.
 #' @param topFeatureNo specify the number of features used in PCA pseudo-time trajectory calculation.
 #'
 #' @importFrom Seurat DefaultAssay
@@ -26,7 +26,11 @@
 #' @return
 #' a SingleCellExperiment where 3 methods functional pseudotime analysis results are saved in colData
 ## ------------------------------------------------------------------------------------ ##
-getExpCondClusterPseudotime <- function(resDir=NULL, rds=NULL, newAnnotation = 'F', newAnnotationRscriptName = NULL, expCondCheck='sample', expCondCheckFname = NULL, expCond = NULL, cellcluster = NULL, slingshotclusterLabels = NULL, topFeatureNo = 2000){
+getExpCondClusterPseudotime <- function(resDir=NULL, rds=NULL, newAnnotation = 'F',
+                                        newAnnotationRscriptName = NULL,
+                                        expCondCheck='sample', expCondCheckFname = NULL,
+                                        expCond = NULL, cellcluster = NULL,
+                                        slingshotclusterLabels = 'GMM', topFeatureNo = 2000){
   ##--------------------------------------------------------------------------------------##
   newAnnotation             <- as.logical(newAnnotation)
   if (newAnnotation & is.null(newAnnotationRscriptName)) stop("Please provide corresponding 'newAnnotationRscriptName', becasue 'newAnnotation' == True.")
@@ -111,7 +115,7 @@ getExpCondClusterPseudotime <- function(resDir=NULL, rds=NULL, newAnnotation = '
     if (!expCondCheck%in%colnames(seuratObjFinal@meta.data)) {
       stop("ERROR: 'expCondCheck' does not exist in your 'rds' metadata.")
     } else {
-      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data[, grep(as.character(expCondCheck), colnames(seuratObjFinal@meta.data))]
+      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data[, grep(sprintf('^%s$', as.character(expCondCheck)), colnames(seuratObjFinal@meta.data))]
     }
   }
   ##--------------------------------------------------------------------------------------##
@@ -133,7 +137,7 @@ getExpCondClusterPseudotime <- function(resDir=NULL, rds=NULL, newAnnotation = '
       ## subsetting different experimental conditions
       seuratObjFinalexpCond <- subset(seuratObjFinal, expCond == expCondLevel)
       ## ------
-      print(sprintf('START %s: pseudotime analysis will be performed on experimental condition %s level: %s for all seurat identified unsupervised/annotated cell clusters', i, expCondCheckFname, expCondLevel ))
+      print(sprintf('START %s: pseudotime analysis will be performed on experimental condition %s level: %s for all seurat identified unsupervised/annotated cell clusters', i, expCondCheck, expCondLevel ))
       cellclusterLevels     <- levels(Idents(seuratObjFinalexpCond))
       print("pseudotime analysis will be performed on below unsupervised/annotated cell clusters:")
       print(table(Idents(seuratObjFinalexpCond)))
@@ -142,7 +146,7 @@ getExpCondClusterPseudotime <- function(resDir=NULL, rds=NULL, newAnnotation = '
       for (c in 1:length(cellclusterLevels)) {
         tryCatch({
           cellclusterName              <- cellclusterLevels[c]
-          print(sprintf("START %s.%s: pseudotime analysis with GMM clustering for cell cluster = %s in experimental condition %s: %s", i, c, cellclusterName, expCondCheckFname, expCondLevel ))
+          print(sprintf("START %s.%s: pseudotime analysis with GMM clustering for cell cluster = %s in experimental condition %s: %s", i, c, cellclusterName, expCondCheck, expCondLevel ))
           seuratObjFinalexpCondCluster <- subset(seuratObjFinalexpCond, idents = as.character(cellclusterName) )
           pseudoRes                    <- NULL
           pseudoRes                    <- calcPCApseudo(obj = seuratObjFinalexpCondCluster, slingshotclusterLabels = slingshotclusterLabels, topFeatureNo = topFeatureNo,
@@ -155,7 +159,7 @@ getExpCondClusterPseudotime <- function(resDir=NULL, rds=NULL, newAnnotation = '
             plotPseudotimeLineages(pseudoRes = pseudoRes, plotname = sprintf('%s/expCondLevel_%s_cluster_%s', resDir, expCondLevel, gsub('/|-|[.]','', cellclusterName)))
             plotPseudotimeHeatmap(pseudoRes = pseudoRes, plotname = sprintf('%s/expCondLevel_%s_cluster_%s', resDir, expCondLevel, gsub('/|-|[.]','', cellclusterName)))
             print('END to make correspdoning calcPCApseudo() plots')
-            print(sprintf("FINISH %s.%s: pseudotime analysis for cell cluster = %s in experimental condition %s: %s", i, c, cellclusterName, expCondCheckFname, expCondLevel ))
+            print(sprintf("FINISH %s.%s: pseudotime analysis for cell cluster = %s in experimental condition %s: %s", i, c, cellclusterName, expCondCheck, expCondLevel ))
             ptGmmClusterRes[[c]]       <- pseudoRes
             ptGmmClusterResNames       <- c(ptGmmClusterResNames, cellclusterName)
           }
@@ -163,7 +167,7 @@ getExpCondClusterPseudotime <- function(resDir=NULL, rds=NULL, newAnnotation = '
         }, error=function(e){cat(paste(sprintf("ERROR NOTE: NOT complete pseudotime analysis in cluster levels %s:", cellclusterName)),conditionMessage(e), "\n")})
       }
       names(ptGmmClusterRes)           <- ptGmmClusterResNames
-      print(sprintf('END %s: FINISH pseudotime analysis with GMM clustering were performed on experimental condition %s level: %s for all seurat identified unsupervised/annotated cell clusters', i, expCondCheckFname, expCondLevel ))
+      print(sprintf('END %s: FINISH pseudotime analysis with GMM clustering were performed on experimental condition %s level: %s for all seurat identified unsupervised/annotated cell clusters', i, expCondCheck, expCondLevel ))
       ptGmmRes[[i]]                    <- ptGmmClusterRes
       print(sprintf("COMPLETE pseudotime analysis on experimental condtion %s", expCondLevels[i]))
       print('==========*********========*********==========*********=========')
@@ -179,7 +183,7 @@ getExpCondClusterPseudotime <- function(resDir=NULL, rds=NULL, newAnnotation = '
     ## subsetting different experimental conditions
     seuratObjFinalexpCond <- subset(seuratObjFinal, expCond == expCondLevel)
     ## ------
-    print(sprintf('START: pseudotime analysis will be performed on experimental condition %s level: %s for all seurat identified unsupervised/annotated cell clusters', expCondCheckFname, expCondLevel ))
+    print(sprintf('START: pseudotime analysis will be performed on experimental condition %s level: %s for all seurat identified unsupervised/annotated cell clusters', expCondCheck, expCondLevel ))
     cellclusterLevels     <- levels(Idents(seuratObjFinalexpCond))
     print("pseudotime analysis will be performed on below unsupervised/annotated cell clusters:")
     print(table(Idents(seuratObjFinalexpCond)))
@@ -188,7 +192,7 @@ getExpCondClusterPseudotime <- function(resDir=NULL, rds=NULL, newAnnotation = '
     for (c in 1:length(cellclusterLevels)) {
       tryCatch({
         cellclusterName              <- cellclusterLevels[c]
-        print(sprintf("START %s: pseudotime analysis with GMM clustering for cell cluster = %s in experimental condition %s: %s", c, cellclusterName, expCondCheckFname, expCondLevel ))
+        print(sprintf("START %s: pseudotime analysis with GMM clustering for cell cluster = %s in experimental condition %s: %s", c, cellclusterName, expCondCheck, expCondLevel ))
         seuratObjFinalexpCondCluster <- subset(seuratObjFinalexpCond, idents = as.character(cellclusterName) )
         pseudoRes                    <- NULL
         pseudoRes                    <- calcPCApseudo(obj = seuratObjFinalexpCondCluster, slingshotclusterLabels = slingshotclusterLabels, topFeatureNo = topFeatureNo,
@@ -201,7 +205,7 @@ getExpCondClusterPseudotime <- function(resDir=NULL, rds=NULL, newAnnotation = '
           plotPseudotimeLineages(pseudoRes = pseudoRes, plotname = sprintf('%s/expCondLevel_%s_cluster_%s', resDir, gsub('/|-|[.]','', expCondLevel), gsub('/|-|[.]','', cellclusterName)))
           plotPseudotimeHeatmap(pseudoRes = pseudoRes, plotname = sprintf('%s/expCondLevel_%s_cluster_%s', resDir, gsub('/|-|[.]','', expCondLevel), gsub('/|-|[.]','', cellclusterName)))
           print('END to make correspdoning calcPCApseudo() plots')
-          print(sprintf("FINISH %s: pseudotime analysis for cell cluster = %s in experimental condition %s: %s", c, cellclusterName, expCondCheckFname, expCondLevel ))
+          print(sprintf("FINISH %s: pseudotime analysis for cell cluster = %s in experimental condition %s: %s", c, cellclusterName, expCondCheck, expCondLevel ))
           ptGmmClusterRes[[c]]       <- pseudoRes
           ptGmmClusterResNames       <- c(ptGmmClusterResNames, cellclusterName)
         }
@@ -209,7 +213,7 @@ getExpCondClusterPseudotime <- function(resDir=NULL, rds=NULL, newAnnotation = '
       }, error=function(e){cat(paste(sprintf("ERROR NOTE: NOT complete pseudotime analysis in cluster levels %s:", cellclusterName)),conditionMessage(e), "\n")})
     }
     names(ptGmmClusterRes)           <- ptGmmClusterResNames
-    print(sprintf('END: FINISH pseudotime analysis with GMM clustering were performed on experimental condition %s level: %s for all seurat identified unsupervised/annotated cell clusters', expCondCheckFname, expCondLevel ))
+    print(sprintf('END: FINISH pseudotime analysis with GMM clustering were performed on experimental condition %s level: %s for all seurat identified unsupervised/annotated cell clusters', expCondCheck, expCondLevel ))
     ptGmmRes[[1]]                    <- ptGmmClusterRes
     print(sprintf("COMPLETE pseudotime analysis on experimental condtion %s", expCond))
     print('==========*********========*********==========*********=========')
@@ -232,10 +236,10 @@ getExpCondClusterPseudotime <- function(resDir=NULL, rds=NULL, newAnnotation = '
         # print('===================')
         ## conduct analysis on the specified cellcluster
         cellclusterName              <- cellcluster
-        print(sprintf("START %s: pseudotime analysis will be performed on experimental condition %s level: %s for '%s' cell clusters", i, expCondCheckFname, expCondLevel, cellcluster ))
+        print(sprintf("START %s: pseudotime analysis will be performed on experimental condition %s level: %s for '%s' cell clusters", i, expCondCheck, expCondLevel, cellcluster ))
         cellclusterLevels     <- levels(Idents(seuratObjFinalexpCond))
         if (any(!cellcluster %in% cellclusterLevels ) ) stop('Please provide the corresponding cell clusters in identfied idents for pseudotime analysis.')
-        # print(sprintf("START %s: pseudotime analysis with GMM clustering for cell cluster = %s in experimental condition %s: %s", i, cellclusterName, expCondCheckFname, expCondLevel ))
+        # print(sprintf("START %s: pseudotime analysis with GMM clustering for cell cluster = %s in experimental condition %s: %s", i, cellclusterName, expCondCheck, expCondLevel ))
         seuratObjFinalexpCondCluster <- subset(seuratObjFinalexpCond, idents = as.character(cellclusterName) )
         pseudoRes                    <- calcPCApseudo(obj = seuratObjFinalexpCondCluster, slingshotclusterLabels = slingshotclusterLabels, topFeatureNo = topFeatureNo,
                                                       resSave = 'T', resFnamePrefix = paste(sprintf('%s/expCondLevel_%s_cluster_%s', resDir, gsub('/|-|[.]','', expCondLevel), gsub('/|-|[.]','', cellclusterName) )) )
@@ -247,11 +251,11 @@ getExpCondClusterPseudotime <- function(resDir=NULL, rds=NULL, newAnnotation = '
           plotPseudotimeLineages(pseudoRes = pseudoRes, plotname = sprintf('%s/expCondLevel_%s_cluster_%s', resDir, gsub('/|-|[.]','', expCondLevel), gsub('/|-|[.]','', cellclusterName)))
           plotPseudotimeHeatmap(pseudoRes = pseudoRes, plotname = sprintf('%s/expCondLevel_%s_cluster_%s', resDir, gsub('/|-|[.]','', expCondLevel), gsub('/|-|[.]','', cellclusterName)))
           print('END to make correspdoning calcPCApseudo() plots')
-          print(sprintf("FINISH %s: pseudotime analysis for cell cluster = %s in experimental condition %s: %s", i, cellclusterName, expCondCheckFname, expCondLevel ))
+          print(sprintf("FINISH %s: pseudotime analysis for cell cluster = %s in experimental condition %s: %s", i, cellclusterName, expCondCheck, expCondLevel ))
           ptGmmClusterRes[[1]]       <- pseudoRes
           print('***********************************')
           names(ptGmmClusterRes)     <- cellclusterName
-          print(sprintf('END %s: FINISH pseudotime analysis with GMM clustering were performed on experimental condition %s level: %s for all seurat identified unsupervised/annotated cell clusters', i, expCondCheckFname, expCondLevel ))
+          print(sprintf('END %s: FINISH pseudotime analysis with GMM clustering were performed on experimental condition %s level: %s for all seurat identified unsupervised/annotated cell clusters', i, expCondCheck, expCondLevel ))
         }
         ptGmmRes[[i]]                <- ptGmmClusterRes
         print(sprintf("COMPLETE pseudotime analysis on experimental condtion %s", expCondLevel))
@@ -269,14 +273,14 @@ getExpCondClusterPseudotime <- function(resDir=NULL, rds=NULL, newAnnotation = '
     ## subsetting different experimental conditions
     seuratObjFinalexpCond <- subset(seuratObjFinal, expCond == expCondLevel)
     ## ------
-    print(sprintf('START: pseudotime analysis will be performed on experimental condition %s level: %s for all seurat identified unsupervised/annotated cell clusters', expCondCheckFname, expCondLevel ))
+    print(sprintf('START: pseudotime analysis will be performed on experimental condition %s level: %s for all seurat identified unsupervised/annotated cell clusters', expCondCheck, expCondLevel ))
     cellclusterLevels     <- levels(Idents(seuratObjFinalexpCond))
     print("pseudotime analysis will be performed on below unsupervised/annotated cell clusters:")
     print(table(Idents(seuratObjFinalexpCond)))
     print('===================')
     ## conduct analysis on the specified cellcluster
     cellclusterName              <- cellcluster
-    print(sprintf("START pseudotime analysis with GMM clustering for cell cluster = %s in experimental condition %s: %s", cellclusterName, expCondCheckFname, expCondLevel ))
+    print(sprintf("START pseudotime analysis with GMM clustering for cell cluster = %s in experimental condition %s: %s", cellclusterName, expCondCheck, expCondLevel ))
     seuratObjFinalexpCondCluster <- subset(seuratObjFinalexpCond, idents = as.character(cellclusterName) )
     pseudoRes                    <- NULL
     tryCatch({
@@ -291,10 +295,10 @@ getExpCondClusterPseudotime <- function(resDir=NULL, rds=NULL, newAnnotation = '
       plotPseudotimeLineages(pseudoRes = pseudoRes, plotname = sprintf('%s/expCondLevel_%s_cluster_%s', resDir, gsub('/|-|[.]','', expCondLevel), gsub('/|-|[.]','', cellclusterName)))
       plotPseudotimeHeatmap(pseudoRes = pseudoRes, plotname = sprintf('%s/expCondLevel_%s_cluster_%s', resDir, gsub('/|-|[.]','', expCondLevel), gsub('/|-|[.]','', cellclusterName)))
       print('END to make correspdoning calcPCApseudo() plots')
-      print(sprintf("FINISH pseudotime analysis for cell cluster = %s in experimental condition %s: %s", cellclusterName, expCondCheckFname, expCondLevel ))
+      print(sprintf("FINISH pseudotime analysis for cell cluster = %s in experimental condition %s: %s", cellclusterName, expCondCheck, expCondLevel ))
       ptGmmClusterRes[[1]]       <- pseudoRes
       names(ptGmmClusterRes)     <- cellclusterName
-      print(sprintf('END: FINISH pseudotime analysis with GMM clustering were performed on experimental condition %s level: %s for all seurat identified unsupervised/annotated cell clusters', expCondCheckFname, expCondLevel ))
+      print(sprintf('END: FINISH pseudotime analysis with GMM clustering were performed on experimental condition %s level: %s for all seurat identified unsupervised/annotated cell clusters', expCondCheck, expCondLevel ))
       ptGmmRes[[1]]              <- ptGmmClusterRes
       print(sprintf("COMPLETE pseudotime analysis on experimental condtion %s", expCondLevel))
       print('==========*********========*********==========*********=========')

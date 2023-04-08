@@ -22,13 +22,13 @@ getGoiFeatureplot(
 )
 }
 \arguments{
-\item{resDir}{full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.}
+\item{resDir}{specify an exiting full path of directory, where results will be saved.}
 
-\item{rds}{User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.}
+\item{rds}{provide integrated RDS object, user can also provide the full path of the RDS where integrated RDS object is saved with above rdsDir option.}
 
-\item{newAnnotation}{logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.}
+\item{newAnnotation}{logical option, whether to add the new cell types annotation for identified cell clusters from provided integrated RDS file.}
 
-\item{newAnnotationRscriptName}{if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.}
+\item{newAnnotationRscriptName}{if 'newAnnotation = T', please specify the full path of the R script where new cell annotations are defined.}
 
 \item{expCondCheck}{specify which experimental conditions to be explored, including sample, idents, or expCond1/2/....}
 

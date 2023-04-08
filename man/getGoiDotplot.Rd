@@ -20,28 +20,30 @@ getGoiDotplot(
   dotPlotMinExpCutoff = 0.3,
   dotPlotMaxExpCutoff = 2.5,
   dotPlotWidth = NULL,
+  scale.min = NA,
+  scale.max = NA,
   dotPlotHeight = NULL,
   legendPer = NULL,
   genetypebarPer = NULL,
   fontsize.x = 24,
   fontsize.y = 18,
   fontangle.x = 90,
-  fontangle.y = 90,
+  fontangle.y = 0,
   fontsize.legend1 = 20,
   fontsize.legend2 = NULL,
-  gridOn = as.logical(F),
+  gridOn = as.logical(T),
   geneTypeLegendOn = as.logical(T),
   debug = F
 )
 }
 \arguments{
-\item{resDir}{full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.}
+\item{resDir}{specify an exiting full path of directory, where results will be saved.}
 
-\item{rds}{User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.}
+\item{rds}{provide integrated RDS object, user can also provide the full path of the RDS where integrated RDS object is saved with above rdsDir option.}
 
-\item{newAnnotation}{logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.}
+\item{newAnnotation}{logical option, whether to add the new cell types annotation for identified cell clusters from provided integrated RDS file.}
 
-\item{newAnnotationRscriptName}{if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.}
+\item{newAnnotationRscriptName}{if 'newAnnotation = T', please specify the full path of the R script where new cell annotations are defined.}
 
 \item{goiFname}{path to file, where a list of marker/features genes are provided in column 'Gene', if column 'Cell Type' is also provided, option 'geneTypeOrder' can be used to adjust orders.}
 
@@ -55,7 +57,7 @@ getGoiDotplot(
 
 \item{expCond}{subset the specified experimental condition corresponding to 'expCondCheck' levels to make the corresponding dot plot.}
 
-\item{cellcluster}{specify cell clusters to be displayed on the dot plot}
+\item{cellcluster}{specify cell clusters to be displayed on the dot plot.}
 
 \item{dotPlotFnamePrefix}{prefix of the dot plot file name, if not defined, by default = 'goiDotplots'.}
 
@@ -69,9 +71,25 @@ getGoiDotplot(
 
 \item{legendPer}{specify the legend proportion in the dot plot, if not specified, by default = 0.1}
 
-\item{gridOn}{by default 'off', whether to have grid on the plot background}
+\item{genetypebarPer}{specify the proportion top gene types color bar, by default 0.01.}
 
-\item{geneTypeLegendOn}{by default 'on', whether to include legend in the plot}
+\item{fontsize.x}{specify the font size of gene names on x-axis, by default 24.}
+
+\item{fontsize.y}{specify the font size of samples attributes on y-axis, by default 18.}
+
+\item{fontangle.x}{change the x-axis text label position, by default vertically aligned with x-axis with 90 degree.}
+
+\item{fontangle.y}{change the y-axis text label position, by default horizontally displayed with y-axis with 90 degree.}
+
+\item{fontsize.legend1}{specify the font size of expression color legend bar.}
+
+\item{fontsize.legend2}{specify the font size of input gene list's types legend bar.}
+
+\item{gridOn}{logical option, whether to have grid on the plot background, by default it is on.}
+
+\item{geneTypeLegendOn}{logical option, whether to include feature genes type legend bar in the plot, by default 'on'.}
+
+\item{debug}{logical option, turn on to have extra analysis information printing out for debug, by defalut 'off'.}
 }
 \value{
 the dotplots of provided GOI(gene of interest) saved in '' inside the provided 'resDir'
@@ -80,7 +98,7 @@ the dotplots of provided GOI(gene of interest) saved in '' inside the provided '
 getGoiDotplot() Function
 }
 \details{
-This function is used to make dotplot of marker/features genes in provided 'goiFname'.
+This function is used to make feature genes dotplot of a set of marker/feature genes provided with 'goiFname' in an excel file.
 }
 \examples{
 getGoiDotplot(rds, goiFname, expCondCheck='sample/idents/expCond*')

@@ -2,10 +2,10 @@
 #' @details
 #' This function is used to identify DEGs in each identified/annotated cell cluster based on the experimental conditions from metadata table column 'sample', 'expCond1', or 'expCond2'
 #'
-#' @param resDir full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.
-#' @param rds User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.
-#' @param newAnnotation logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.
-#' @param newAnnotationRscriptName if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.
+#' @param resDir specify an exiting full path of directory, where results will be saved.
+#' @param rds provide integrated RDS object, user can also provide the full path of the RDS where integrated RDS object is saved with above rdsDir option.
+#' @param newAnnotation logical option, whether to add the new cell types annotation for identified cell clusters from provided integrated RDS file.
+#' @param newAnnotationRscriptName if 'newAnnotation = T', please specify the full path of the R script where new cell annotations are defined.
 #' @param expCondCheck specify which experimental conditions to be explored, including sample, idents, or expCond1/2/....
 #' @param expCondCheckFname suffix of the directory/folder and file name of the dot plot to be saved, if not defined, the same as the 'expCondCheck' option.
 #' @param cellcluster specify the specific cell cluster names for DE analysis, if not specified, all cell clusters will be performed .
@@ -147,7 +147,7 @@ getClusterExpCondDe <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnot
     if (!expCondCheck%in%colnames(seuratObjFinal@meta.data)) {
       stop("ERROR: 'expCondCheck' does not exist in your 'rds' metadata.")
     } else {
-      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data[, grep(as.character(expCondCheck), colnames(seuratObjFinal@meta.data))]
+      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data[, grep(sprintf('^%s$', as.character(expCondCheck)), colnames(seuratObjFinal@meta.data))]
     }
   }
   ##--------------------------------------------------------------------------------------##
@@ -295,22 +295,24 @@ getClusterExpCondDe <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnot
           }
         }
         if(debug) print('-=-=-=-=-=-=-=-=-=-=-=-=-=-=-')
+        if(debug) print('111111111111111')
         clusterDeMarkers[[i]]          <- deMarkers
-        normCounts[[i]] <- normCount
-        orgCounts[[i]]  <- orgCount
-        metaTabs[[i]]   <- metaTab
         if (deMethod!="DESeq2.bulk") {
           # print(sprintf('Maximum p_value is %s, Maximum adjusted p_value is %s', round(max(deMarkers$pvalue), digits = 4), round(max(deMarkers$padj, na.rm = T), digits = 4)))
           deMarkersAdjSig                <- deMarkers %>% dplyr::filter(p_val_adj <= pAdjValCutoff) %>% dplyr::filter(abs(avg_log2FC) >= logfc.threshold) %>% dplyr::mutate(perDiff = pct.1-pct.2) %>% dplyr::mutate(FC = ifelse(avg_log2FC>0, 2^avg_log2FC, -2^(-avg_log2FC)) )
           deMarkersAdjSigUp              <- deMarkersAdjSig %>% dplyr::filter(avg_log2FC > 0) %>% dplyr::arrange(desc(FC))
           deMarkersAdjSigDown            <- deMarkersAdjSig %>% dplyr::filter(avg_log2FC < 0) %>% dplyr::arrange(FC)
         } else {
+          if(debug) print('22222222222222')
+          normCounts[[i]] <- normCount
+          orgCounts[[i]]  <- orgCount
+          metaTabs[[i]]   <- metaTab
           # print(sprintf('Maximum p_value is %s, Maximum adjusted p_value is %s', round(max(deMarkers$p_val), digits = 4), round(max(deMarkers$p_val_adj), digits = 4)))
           deMarkersAdjSig                <- deMarkers %>% dplyr::filter(padj <= pAdjValCutoff) %>% dplyr::filter(abs(log2FoldChange) > logfc.threshold) %>% dplyr::mutate(FC = ifelse(log2FoldChange>0, 2^log2FoldChange, -2^(-log2FoldChange)) )
           deMarkersAdjSigUp              <- deMarkersAdjSig %>% dplyr::filter(log2FoldChange > 0) %>% dplyr::arrange(desc(FC))
           deMarkersAdjSigDown            <- deMarkersAdjSig %>% dplyr::filter(log2FoldChange < 0) %>% dplyr::arrange(FC)
         }
-
+        if(debug) print('333333333333')
         if (dim(deMarkersAdjSigUp)[1] > topNo) {
           topNo1 = topNo
         } else {
@@ -320,7 +322,7 @@ getClusterExpCondDe <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnot
             topNo1 = 0
           }
         }
-
+        if(debug) print('44444444444444')
         if (dim(deMarkersAdjSigDown)[1] > topNo) {
           topNo2 = topNo
         } else {
@@ -330,7 +332,7 @@ getClusterExpCondDe <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnot
             topNo2 = 0
           }
         }
-
+        if(debug) print('55555555555555')
         if (topNo1!=0 & topNo2!=0) {
           clusterTopDeMarkers[[i]]       <- list('up' = rownames(deMarkersAdjSigUp)[1:topNo1],
                                                  'down' = rownames(deMarkersAdjSigDown)[1:topNo2])
@@ -342,7 +344,7 @@ getClusterExpCondDe <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnot
           clusterTopDeMarkers[[i]]       <- NA
         }
 
-
+        if(debug) print('666666666666666')
         if (dim(deMarkersAdjSigUp)[1]!=0) {
           clusterTopDeMarkersUp          <- c(clusterTopDeMarkersUp, rownames(deMarkersAdjSigUp)[1:topNo1])
           clusterTopDeMarkersUpCluster   <- c(clusterTopDeMarkersUpCluster, rep(noClusters[i], length(rownames(deMarkersAdjSigUp)[1:topNo1])) )
@@ -355,6 +357,7 @@ getClusterExpCondDe <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnot
         print(sprintf('out of %s DE markers, %s are significantly DE at adjusted p-value of %s', dim(deMarkers)[1], dim(deMarkersAdjSig)[1], pAdjValCutoff))
         print(sprintf('out of %s significantly DE markers, %s are positively expressed, %s are negative expressed.', dim(deMarkersAdjSig)[1], dim(deMarkersAdjSigUp)[1], dim(deMarkersAdjSigDown)[1] ))
         ## -
+        if(debug) print('777777777777777')
         if (outputExcel) {
           if (i ==1) {
             if (dim(deMarkers)[1] > 0) write.xlsx(x = deMarkers, file = sprintf('%s.xlsx', resFname1), sheetName = paste('cluster', gsub('/|:|[ ]|-', '', noClusters[i]), sep = '_'), row.names = T, append = F )
@@ -373,6 +376,7 @@ getClusterExpCondDe <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnot
           if (dim(deMarkersAdjSigUp)[1] > 0) write.table(x = deMarkersAdjSigUp, file = sprintf('%s_cluster%s.txt', resFname3, gsub('/|:|[ ]|-', '', noClusters[i])), row.names = T, quote = F, col.names = NA, sep = '\t')
           if (dim(deMarkersAdjSigDown)[1] > 0) write.table(x = deMarkersAdjSigDown, file = sprintf('%s_cluster%s.txt', resFname4, gsub('/|:|[ ]|-', '', noClusters[i])), row.names = T, quote = F, col.names = NA, sep = '\t')
         }
+        if(debug) print('8888888888888888')
       }
       ## ---
     } else {
@@ -399,9 +403,11 @@ getClusterExpCondDe <- function(resDir=NULL, rds=NULL, newAnnotation=F, newAnnot
   ## ---
   names(clusterDeMarkers)            <- noClusters
   names(clusterTopDeMarkers)         <- noClusters
-  names(normCounts)                  <- noClusters
-  names(orgCounts)                   <- noClusters
-  names(metaTabs)                    <- noClusters
+  if (deMethod=='DESeq2.bulk') {
+    names(normCounts)                  <- noClusters
+    names(orgCounts)                   <- noClusters
+    names(metaTabs)                    <- noClusters
+  }
   print(sprintf('End step 1: identifing DEGs for each identified clusters based on sample name experimental conditions'))
   print('-=-=-=-=-=-=-=-=-=-=-=-=-=-=')
   if (deMethod=='DESeq2.bulk') {

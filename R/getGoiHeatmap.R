@@ -1,14 +1,13 @@
 #' getGoiHeatmap() Function
-#' @details
-#' This function is used to make heat-map of marker/features genes in provided 'goiFname' or geneNames.
 #'
-#' @param heatmap.view 3 options: 'ident', 'expCond', and 'expCond.ident' to make heatmap, by default 'idents'.
-#' @param resDir full path of integration results analysis are saved, where RDS file is saved inside the 'RDS_Dir'. This path is also returned by getClusterMarkers() execution.
-#' @param rds User also can provide the full path of RDS file instead of 'resDir' where RDS file is saved in. If this option is used, please also provide 'resDir' to specify where the analysis results will be saved.
-#' @param newAnnotation logical value to indicate whether to add the annotation for identified cell clusters from getClusterMarkers() integration analysis.
-#' @param newAnnotationRscriptName if 'newAnnotation = T', please specify here for the full path of the R script where cell clusters are defined.
-#' @param scaled whether input rds is scaled, by default False, will scale data based on selected 'cellcluster' and 'expCond'.
-#' @param resSaveFname whether to save re-scaled seurat object on the defined 'cellcluster' and 'expCond', by default it is 'NULL' without saving re-scaled RDS object.
+#' @details
+#' This function is used to make heatmap of marker/features genes in provided 'goiFname' or geneNames with 3 different visualization options on 1). identified cell clusters ('idents'); 2). specific samples attributes from an experimental condition levels ('expCond'); 3). combined levels of cell clusters and samples attributes ('expCond.idents).
+#'
+#' @param heatmap.view specify heatmap visualization options, including 3 options: 'idents', 'expCond', and 'expCond.idents' to make heatmap, by default 'idents'.
+#' @param resDir specify an exiting full path of directory, where results will be saved.
+#' @param rds provide integrated RDS object, user can also provide the full path of the RDS where integrated RDS object is saved with above rdsDir option.
+#' @param newAnnotation logical option, whether to add the new cell types annotation for identified cell clusters from provided integrated RDS file.
+#' @param newAnnotationRscriptName if 'newAnnotation = T', please specify the full path of the R script where new cell annotations are defined.
 #' @param goiFname path to file, where a list of marker/features genes are provided in column 'Gene', if column 'Cell Type' is also provided, option 'geneTypeOrder' can be used to adjust orders.
 #' @param geneNames provide gene names directly with this option, if do not want to use option 'goiFname'
 #' @param expCondCheck specify which experimental conditions to be explored, including sample, idents, or expCond1/2/....
@@ -23,8 +22,9 @@
 #' @param fontsize.top modify the font size of top legend color bar.
 #' @param fontsize.y modify the font size of y-axis (gene names).
 #' @param fontangle.y modify the y-axis (gene names) angle position.
-#' @param sample.merge whether to average cells expression values across samples respectively.
+#' @param display 3 options: 'cell', 'sample.merge' or 'expCond.merge'.
 #' @param draw.lines whether to have an empty cell space on heatmap to separate different groups.
+#' @param debug if on, extra debug printing meassages displayed, by default it is off.
 #'
 #' @importFrom ggplot2 theme
 #' @importFrom ggplot2 guides
@@ -57,6 +57,7 @@
 #' @importFrom scales hue_pal
 #' @importFrom ggplot2 geom_text
 #' @importFrom patchwork wrap_plots
+#' @importFrom Seurat %||%
 #'
 #' @keywords Heatmap
 #' @examples getGoiHeatmap(rds, geneNames/goiFname, expCondCheck='sample/idents/expCond*')
@@ -64,16 +65,18 @@
 #' @return the Heatmap of provided GOI(gene of interest) provided by 'geneNames' directly or presented in 'goiFname'.
 #'
 ## ---------------------------------------------------------------------------------------
-getGoiHeatmap <- function(heatmap.view = 'ident', resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL,
-                          scaled = F, resSaveFname = NULL,
+getGoiHeatmap <- function(heatmap.view = 'idents', resDir=NULL, rds=NULL, newAnnotation=F, newAnnotationRscriptName=NULL, slot = "scale.data",
                           goiFname = NULL, geneNames = NULL,
                           expCondCheck='sample', expCondCheckFname = NULL,
                           cellcluster = NULL , expCond = NULL, expCondReorderLevels = NULL,
                           plotFnamePrefix='goiHeatmap', plotWidth=25, plotHeight = 20,
-                          minVal = -2.5, maxVal = 2.5, fontsize.legend = 20,
+                          res.output = as.logical(F), outputFname = NULL,
+                          minVal = -2.5, maxVal = NULL, fontsize.legend = 20,
+                          features.process = as.logical('F'), features.process.lists = NULL, features.process.fns = '+',
                           fontangle.top = 0, fontsize.top = 5, fontsize.y = 20, fontangle.y = 0, hjust.top = 0, vjust.top = 0, barHeight.top = 0.02,
-                          sample.merge = as.logical(F), draw.lines = as.logical(T)) {
+                          display = 'cell', draw.lines = as.logical(T), debug = as.logical(F)) {
   ## ----
+  maxVal <- maxVal %||% ifelse(test = slot == "scale.data", yes = 2.5, no = 6)
   sel.expConds <- expCond ## to avoid 'expCond' otpion with metadata 'expCond' rename this paratmer into sel.expConds
   if (is.null(geneNames) & is.null(goiFname)) {
     stop("Please provide genes to make heatmap with either 'goiFname' or 'geneNames' otpion.")
@@ -172,10 +175,12 @@ getGoiHeatmap <- function(heatmap.view = 'ident', resDir=NULL, rds=NULL, newAnno
     ## Assign cell type identity to clusters
     ## redefine the level of Idents on the y-axis can be adjusted here by inputting order for cell annotation
     source(as.character(newAnnotationRscriptName))
-    print('-=-=-=-')
-    print('updated Idents are as below:')
-    print(table(Idents(seuratObjFinal)))
-    print('-=-=-=-')
+    if (debug) {
+      print('-=-=-=-')
+      print('updated Idents are as below:')
+      print(table(Idents(seuratObjFinal)))
+      print('-=-=-=-')
+    }
   }
   ##--------------------------------------------------------------------------------------##
   ## Assumption: original 'expCond' column represents samples information
@@ -190,7 +195,7 @@ getGoiHeatmap <- function(heatmap.view = 'ident', resDir=NULL, rds=NULL, newAnno
     if (!expCondCheck%in%colnames(seuratObjFinal@meta.data)) {
       stop("ERROR: 'expCondCheck' does not exist in your 'rds' metadata.")
     } else {
-      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data[, grep(as.character(expCondCheck), colnames(seuratObjFinal@meta.data))]
+      seuratObjFinal@meta.data$expCond <- seuratObjFinal@meta.data[, grep(sprintf('^%s$', as.character(expCondCheck)), colnames(seuratObjFinal@meta.data))]
     }
   }
   ##--------------------------------------------------------------------------------------##
@@ -203,7 +208,6 @@ getGoiHeatmap <- function(heatmap.view = 'ident', resDir=NULL, rds=NULL, newAnno
   }
   ## in provided, subset on 'expCond'
   expCondLevels           <- levels(factor(seuratObjFinal@meta.data$expCond))
-  # if (debug) print(expCondLevels)
   if (!is.null(sel.expConds)) {
     if (any(!sel.expConds %in% expCondLevels ) ) stop("Please provide the corresponding experimental condition levesl specified in 'expCondCheck' option.")
     print(sprintf('Subsetting %s specific expCond: %s', length(sel.expConds), paste(sel.expConds, collapse = ',')))
@@ -224,30 +228,31 @@ getGoiHeatmap <- function(heatmap.view = 'ident', resDir=NULL, rds=NULL, newAnno
   }
   ##--------------------------------------------------------------------------------------##
   Seurat::DefaultAssay(seuratObjFinal) <- "RNA"
+
   plotTheme <- ggplot2::theme(axis.text.y = element_text(color = "black", size = fontsize.y, angle = fontangle.y),
                               legend.text = element_text(color = "black", size = fontsize.legend),
                               legend.title = element_blank() )
-  if (!scaled) {
-    seuratObjFinal <- Seurat::ScaleData(object = seuratObjFinal, do.scale = T, do.center = T) ## by default, both do.scale/center are on, will scale the expression level for each gene feature by dividing the centered feature expression levels by their standard deviations
+  if (slot == "scale.data") {
+    seuratObjFinal <- Seurat::ScaleData(object = seuratObjFinal, do.scale = T, do.center = T, features = features) ## by default, both do.scale/center are on, will scale the expression level for each gene feature by dividing the centered feature expression levels by their standard deviations
   } else {
-    print("Input RDS is already scaled, no further scaling is implemented here.")
-  }
-  if (!is.null(resSaveFname)) {
-    saveRDS(object = seuratObjFinal, file = file.path(rdsDir, sprintf("%s.rds", resSaveFname)) )
+    print("Heatmap is based on normalized data only.")
   }
   print('Start: Making feature genes heatmap plot')
-  if (heatmap.view == 'ident') {
+  if (heatmap.view == 'idents') {
     ## ---
     print('Start to make heatmap seperated on Idents.')
     seuratObjFinal$expCond = Idents(seuratObjFinal)
     if (!is.null(expCondReorderLevels)) {
       if ( !all(expCondReorderLevels %in% levels(Idents(seuratObjFinal))) ) stop("Please provide correct corresponding 'expCondReorderLevels' to sort heatmap top legend bars.")
       seuratObjFinal$expCond <- factor(seuratObjFinal$expCond, levels = expCondReorderLevels)
+      if(debug) print((sprintf("expCondReorderLevels: %s", paste(expCondReorderLevels, collapse = ','))))
     }
     seuratObjFinal@meta.data$orgSample <- paste(seuratObjFinal$expCond, seuratObjFinal@meta.data$orgSample, sep = '_')
-    features.heatmap1 <- DoHeatmap2(object = seuratObjFinal, features = features, assay = 'RNA', slot = 'scale.data',
+    features.heatmap1 <- DoHeatmap2(object = seuratObjFinal, features = features, slot = slot,
+                                    res.output = res.output, outputFname = outputFname,
                                     group.by = 'expCond', angle = fontangle.top, size = fontsize.top, hjust = hjust.top, vjust =  vjust.top, group.bar.height = barHeight.top,
-                                    disp.min = minVal, disp.max = maxVal, sample.merge = sample.merge, draw.lines = draw.lines, expCondReorderLevels = expCondReorderLevels)
+                                    features.process = as.logical(features.process), features.process.lists = features.process.lists, features.process.fns = features.process.fns,
+                                    disp.min = minVal, disp.max = maxVal, display = display, draw.lines = draw.lines, expCondReorderLevels = expCondReorderLevels, debug = debug)
     pdf(file = file.path(plotResDir, sprintf('%s_heatmap.pdf', plotFnamePrefix )), width = plotWidth, height = plotHeight)
     print(features.heatmap1+ plotTheme + guides(colour = 'none'))
     dev.off()
@@ -259,36 +264,43 @@ getGoiHeatmap <- function(heatmap.view = 'ident', resDir=NULL, rds=NULL, newAnno
       # print(levels(factor(seuratObjFinal$expCond)))
       if ( !all(expCondReorderLevels %in% levels(factor(seuratObjFinal$expCond))) ) stop("Please provide correct corresponding 'expCondReorderLevels' to sort heatmap top legend bars.")
       seuratObjFinal@meta.data$expCond <- factor(seuratObjFinal@meta.data$expCond, levels = expCondReorderLevels)
+      if(debug) print((sprintf("expCondReorderLevels: %s", paste(expCondReorderLevels, collapse = ','))))
     }
-    features.heatmap1 <- DoHeatmap2(object = seuratObjFinal, features = features, assay = 'RNA', slot = 'scale.data',
+    if (debug) {
+      print(table(seuratObjFinal@meta.data$expCond))
+    }
+    features.heatmap1 <- DoHeatmap2(object = seuratObjFinal, features = features, assay = 'RNA', slot = slot,
+                                    res.output = res.output, outputFname = outputFname,
                                     group.by = 'expCond', angle = fontangle.top, size = fontsize.top, hjust = hjust.top, vjust =  vjust.top, group.bar.height = barHeight.top,
-                                    disp.min = minVal, disp.max = maxVal, sample.merge = sample.merge, draw.lines = draw.lines, expCondReorderLevels = expCondReorderLevels)
+                                    features.process = as.logical(features.process), features.process.lists = features.process.lists, features.process.fns = features.process.fns,
+                                    disp.min = minVal, disp.max = maxVal, display = display, draw.lines = draw.lines, expCondReorderLevels = expCondReorderLevels, debug = debug)
     pdf(file = file.path(plotResDir, sprintf('%s_heatmap.pdf', plotFnamePrefix )), width = plotWidth, height = plotHeight)
     print(features.heatmap1+ plotTheme + guides(colour = 'none'))
     # print(features.heatmap1+ plotTheme )
     dev.off()
     ## ---
-  } else if (heatmap.view == 'expCond.ident') {
+  } else if (heatmap.view == 'expCond.idents') {
     ## ---
     print('Start to make heatmap seperated on expCond and idents combinations.')
     seuratObjFinal <- AddMetaData(object = seuratObjFinal, metadata = paste(seuratObjFinal$expCond, Idents(seuratObjFinal), sep = ' '), col.name = 'expIdentComb')
     seuratObjFinal$expCond <- seuratObjFinal$expIdentComb
+    if (debug) {
+      print(table(seuratObjFinal@meta.data$expCond))
+    }
     ## -
     if (!is.null(expCondReorderLevels)) {
-      if ( !all(expCondReorderLevels %in% levels(factor(seuratObjFinal$expIdentComb))) ) stop("Please provide correct corresponding 'expCondReorderLevels' to sort heatmap top legend bars.")
-      seuratObjFinal@meta.data$expIdentComb <- factor(seuratObjFinal@meta.data$expIdentComb, levels = expCondReorderLevels)
+      if ( !all(expCondReorderLevels %in% levels(factor(seuratObjFinal$expCond))) ) stop("Please provide correct corresponding 'expCondReorderLevels' to sort heatmap top legend bars.")
+      seuratObjFinal@meta.data$expCond <- factor(seuratObjFinal@meta.data$expCond, levels = expCondReorderLevels)
+      if(debug) print((sprintf("expCondReorderLevels: %s", paste(expCondReorderLevels, collapse = ','))))
     }
     ## -
     seuratObjFinal@meta.data$orgSample <- paste(seuratObjFinal$expCond, seuratObjFinal@meta.data$orgSample, sep = '_')
-    # if (debug) {
-    #   print(sprintf("heatmap is displayed as: %s", paste(names(table(seuratObjFinal@meta.data$orgSample)), collapse = ', ') ))
-    #   # print(table(seuratObjFinal@meta.data$orgSample))
-    #   print('***************')
-    #   }
     ## -
-    features.heatmap1 <- DoHeatmap2(object = seuratObjFinal, features = features, assay = 'RNA', slot = 'scale.data',
+    features.heatmap1 <- DoHeatmap2(object = seuratObjFinal, features = features, assay = 'RNA', slot = slot,
+                                    res.output = res.output, outputFname = outputFname,
                                     group.by = 'expCond', angle = fontangle.top, size = fontsize.top, hjust = hjust.top, vjust =  vjust.top, group.bar.height = barHeight.top,
-                                    disp.min = minVal, disp.max = maxVal, sample.merge = sample.merge, draw.lines = draw.lines, expCondReorderLevels = expCondReorderLevels)
+                                    features.process = as.logical(features.process), features.process.lists = features.process.lists, features.process.fns = features.process.fns,
+                                    disp.min = minVal, disp.max = maxVal, display = display, draw.lines = draw.lines, expCondReorderLevels = expCondReorderLevels, debug = debug)
     pdf(file = file.path(plotResDir, sprintf('%s_heatmap.pdf', plotFnamePrefix )), width = plotWidth, height = plotHeight)
     print(features.heatmap1+ plotTheme + guides(colour = 'none'))
     dev.off()
@@ -301,25 +313,34 @@ getGoiHeatmap <- function(heatmap.view = 'ident', resDir=NULL, rds=NULL, newAnno
 
 ##----------------------------------------------------------------------------------------- ##
 ## DoHeatmap2 adding 'vjust' to adjust top color legend bar text position from Seurat::DoHeatmap
-DoHeatmap2 <- function (object, features = NULL, cells = NULL, group.by = "ident",
+DoHeatmap2 <- function (object, features = NULL, cells = NULL, group.by = "expCond",
           group.bar = TRUE, group.colors = NULL, disp.min = -2.5, disp.max = NULL,
-          slot = "scale.data", assay = NULL, label = TRUE, size = 5.5,
+          slot = NULL, assay = 'RNA', label = TRUE, size = 5.5,
           hjust = 0, vjust = 0, angle = 45, raster = TRUE, draw.lines = TRUE,
-          lines.width = NULL, group.bar.height = 0.02, combine = TRUE,
-          sample.merge = as.logical(F), expCondReorderLevels = NULL)
+          features.process = features.process, features.process.lists = features.process.lists, features.process.fns = features.process.fns,
+          lines.width = NULL, group.bar.height = 0.02, combine = TRUE, res.output = as.logical(F), outputFname = NULL,
+          display = 'cell', expCondReorderLevels = expCondReorderLevels, debug = as.logical(F))
 {
+  if(debug) {
+    print(sprintf("DoHeatmap2 use expCondReorderLevels: %s", paste(expCondReorderLevels, collapse = ',')))
+  }
+  if (features.process & is.null(features.process.lists)) stop("ERROR: 'features.process' is on, please provide corresponding 'features.process.lists'.")
+  if(is.null(slot)){slot = "scale.data"}
+  print(sprintf("Note: heatmap is using '%s'.", slot))
+  if(display == 'expCond.merge') draw.lines = as.logical(F)
+  if(debug) {
+    if (display == 'expCond.merge') print("display == 'expCond.merge', 'draw.lines' is not working.")
+  }
   cells <- cells %||% colnames(x = object)
   if (is.numeric(x = cells)) {
     cells <- colnames(x = object)[cells]
   }
-  assay <- assay %||% DefaultAssay(object = object)
-  DefaultAssay(object = object) <- assay
+  assay <- assay %||% Seurat::DefaultAssay(object = object)
+  Seurat::DefaultAssay(object = object) <- assay
   features <- features %||% VariableFeatures(object = object)
   features <- rev(x = unique(x = features))
-  disp.max <- disp.max %||% ifelse(test = slot == "scale.data",
-                                   yes = 2.5, no = 6)
-  possible.features <- rownames(x = GetAssayData(object = object,
-                                                 slot = slot))
+  disp.max <- disp.max %||% ifelse(test = slot == "scale.data", yes = 2.5, no = 6)
+  possible.features <- rownames(x = SeuratObject::GetAssayData(object = object, slot = slot))
   if (any(!features %in% possible.features)) {
     bad.features <- features[!features %in% possible.features]
     features <- features[features %in% possible.features]
@@ -331,26 +352,83 @@ DoHeatmap2 <- function (object, features = NULL, cells = NULL, group.by = "ident
             slot, " slot for the ", assay, " assay: ", paste(bad.features,
                                                              collapse = ", "))
   }
-  if (sample.merge) {
-    data0 <- as.data.frame(x = as.matrix(x = t(x = GetAssayData(object = object,slot = slot)[features, cells, drop = FALSE])))
-    object <- suppressMessages(expr = StashIdent(object = object,
-                                                 save.name = "ident"))
+  if (display == 'sample.merge') {
+    data0 <- as.data.frame(x = as.matrix(x = t(x = as.matrix(SeuratObject::GetAssayData(object = object,slot = slot)[features, cells, drop = FALSE]))))
+    object <- suppressMessages(expr = SeuratObject::StashIdent(object = object, save.name = "ident"))
     groups.use        <- object[[group.by]][cells, , drop = FALSE]
     groups.use.sample <- object[['orgSample']][cells, , drop = FALSE]
     if (sum(rownames(groups.use) == rownames(data0))!=dim(data0)[1]) stop("Error: heatmap plot input data and group levels dimension not match")
     # data0$cell.groups <- groups.use[[group.by]][match(rownames(data0), rownames(groups.use))]
-
-
     data0$cell.groups <- groups.use.sample[['orgSample']][match(rownames(data0), rownames(groups.use.sample))]
+    if (features.process) {
+      data1 = data0
+      data2 = data0 %>% dplyr::select('cell.groups') %>% as.data.frame()
+      if (length(features.process.fns)==1) features.process.fns = rep(features.process.fns, length(features.process.lists))
+      for(i in 1:length(features.process.lists)){
+        if (features.process.fns[i]=='/') {
+          index.nominator   = grep(paste(sprintf('^%s$', features.process.lists[[i]][1]), collapse = '|'), colnames(data1))
+          index.denominator = grep(paste(sprintf('^%s$', features.process.lists[[i]][2]), collapse = '|'), colnames(data1))
+          data2[,i+1] = (data1[,index.nominator])/(data1[,index.denominator]+1e10)
+        } else if (features.process.fns[i]=='+') {
+          data2[,i+1] = rowSums(data1[,grep(paste(sprintf('^%s$', features.process.lists[[i]]), collapse = '|'), colnames(data1))])
+        } else{
+          print("only '+' or '/' (features.process.fns) functions are supported right now")
+        }
+      }
+      if (!is.null(names(features.process.lists))) {
+        features = rev(names(features.process.lists))
+        colnames(data2) <- c('cell.groups', names(features.process.lists))
+      } else {
+        features = rev(paste('featuresCheck', 1:length(features.process.lists), sep = ''))
+        colnames(data2) <- c('cell.groups', paste('featuresCheck', 1:length(features.process.lists), sep = ''))
+      }
+      data0 = data2
+      if(debug) print(head(data0))
+      if(debug) print(sprintf("features.process features is %s", paste(features, collapse = ', ')))
+      if(debug) print(features.process.lists)
+    }
     data0 <- data0%>% dplyr::group_by(cell.groups) %>% dplyr::summarise_all(mean) %>% as.data.frame()
     data  <- data0 %>% dplyr::select(-cell.groups)
     rownames(data) <- data0$cell.groups
     plots <- vector(mode = "list", length = ncol(x = groups.use))
-  } else {
-    data <- as.data.frame(x = as.matrix(x = t(x = GetAssayData(object = object,
-                                                               slot = slot)[features, cells, drop = FALSE])))
-    object <- suppressMessages(expr = StashIdent(object = object,
-                                                 save.name = "ident"))
+  } else if (display == 'expCond.merge') {
+    data0 <- as.data.frame(x = as.matrix(x = t(x = as.matrix(SeuratObject::GetAssayData(object = object,slot = slot)[features, cells, drop = FALSE]))))
+    object <- suppressMessages(expr = SeuratObject::StashIdent(object = object, save.name = "ident"))
+    groups.use        <- object[[group.by]][cells, , drop = FALSE]
+    if (sum(rownames(groups.use) == rownames(data0))!=dim(data0)[1]) stop("Error: heatmap plot input data and group levels dimension not match")
+    data0$cell.groups <- groups.use[['expCond']][match(rownames(data0), rownames(groups.use))]
+    data0 <- data0 %>% dplyr::group_by(cell.groups) %>% dplyr::summarise_all(mean) %>% as.data.frame()
+    data  <- data0 %>% dplyr::select(-cell.groups)
+    rownames(data) <- data0$cell.groups
+    plots <- vector(mode = "list", length = ncol(x = groups.use))
+  } else if (display == 'cell'){
+    data <- as.data.frame(x = as.matrix(x = t(x = as.matrix(SeuratObject::GetAssayData(object = object,slot = slot)[features, cells, drop = FALSE]))))
+    object <- suppressMessages(expr = SeuratObject::StashIdent(object = object, save.name = "ident"))
+    if (features.process) {
+      data1 = data
+      data2 = data.frame(matrix(ncol = length(features.process.lists), nrow = dim(data)[1]))
+      if (length(features.process.fns)==1) features.process.fns = rep(features.process.fns, length(features.process.lists))
+      for(i in 1:length(features.process.lists)){
+        if (features.process.fns[i]=='/') {
+          index.nominator   = grep(paste(sprintf('^%s$', features.process.lists[[i]][1]), collapse = '|'), colnames(data1))
+          index.denominator = grep(paste(sprintf('^%s$', features.process.lists[[i]][2]), collapse = '|'), colnames(data1))
+          data2[,i] = (data1[,index.nominator])/(data1[,index.denominator]+1e10)
+        } else if (features.process.fns[i]=='+') {
+          data2[,i] = rowSums(data1[,grep(paste(sprintf('^%s$', features.process.lists[[i]]), collapse = '|'), colnames(data1))])
+        } else{
+          print("only '+' or '/' (features.process.fns) functions are supported right now")
+        }
+      }
+      rownames(data2) = rownames(data)
+      if (!is.null(names(features.process.lists))) {
+        features = rev(names(features.process.lists))
+        colnames(data2) <- names(features.process.lists)
+      } else {
+        features = rev(paste('featuresCheck', 1:length(features.process.lists), sep = ''))
+        colnames(data2) <- paste('featuresCheck', 1:length(features.process.lists), sep = '')
+      }
+      data = data2
+    }
     group.by <- group.by %||% "ident"
     groups.use <- object[[group.by]][cells, , drop = FALSE]
     plots <- vector(mode = "list", length = ncol(x = groups.use))
@@ -358,32 +436,41 @@ DoHeatmap2 <- function (object, features = NULL, cells = NULL, group.by = "ident
 
   for (i in 1:ncol(x = groups.use)) {
     data.group <- data
-    if (sample.merge){
+    if (display == 'sample.merge'){
       group.use0  <- merge(groups.use.sample, groups.use, by = 0)
       group.use0  <- group.use0[!duplicated(group.use0$orgSample),] %>% dplyr::select(c('orgSample', 'expCond'))
       group.use  <- group.use0$expCond
-    } else {
+    } else if (display == 'expCond.merge') {
+      group.use0  <- groups.use %>% dplyr::distinct(expCond, .keep_all = TRUE)
+      group.use   <- group.use0$expCond
+    } else if (display == 'cell') {
       group.use <- groups.use[, i, drop = TRUE]
     }
+    ## ---
     if (!is.factor(x = group.use)) {
       group.use <- factor(x = group.use)
     }
-    if (sample.merge) {
+    ## ---
+    if (display == 'sample.merge') {
       names(x = group.use) <- group.use0$orgSample
-      # print('77777777')
-      # print(sprintf("group.use levels is %s", levels(group.use)))
+      if (debug) {
+        print('77777777')
+        print(sprintf("%s group.use levels is %s", length(levels(group.use)), paste(levels(group.use), collapse = ', ')))
+      }
       if (!is.null(expCondReorderLevels)) {
         group.use <- factor(x = group.use, levels = expCondReorderLevels)
       }
-      # print('-=-=-=')
-      # print(sprintf("updated group.use levels is %s", levels(group.use)))
-      # print('77777777')
+      if (debug) {
+        print('-=-=-=')
+        print(sprintf(" %s updated group.use levels is %s", length(levels(group.use)), paste(levels(group.use), collapse = ', ')))
+        print('77777777')
+      }
       if (draw.lines) {
         lines.width <- lines.width %||% ceiling(x = nrow(x = data.group) *
                                                   0.0025)
         placeholder.cells <- sapply(X = 1:(length(x = levels(x = group.use)) *
                                              lines.width), FUN = function(x) {
-                                               return(RandomName(length = 20))
+                                               return(SeuratObject::RandomName(length = 20))
                                              })
         placeholder.groups <- rep(x = levels(x = group.use),
                                   times = lines.width)
@@ -398,22 +485,29 @@ DoHeatmap2 <- function (object, features = NULL, cells = NULL, group.by = "ident
                                                                              colnames(x = data.group)))
         data.group <- rbind(data.group, na.data.group)
       }
-    } else {
+    } else if (display == 'cell') {
       names(x = group.use) <- cells
-      # print('2222222222')
-      # print(sprintf("group.use levels is %s", levels(group.use)))
+      if (debug) {
+        print('2222222222')
+        print(sprintf("%s group.use levels is %s", length(levels(group.use)), paste(levels(group.use), collapse = ', ')))
+      }
+
       if (!is.null(expCondReorderLevels)) {
         group.use <- factor(x = group.use, levels = expCondReorderLevels)
       }
-      # print('-=-=-=')
-      # print(sprintf("updated group.use levels is %s", levels(group.use)))
-      # print('2222222222')
+
+      if(debug) {
+        print('-=-=-=')
+        print(sprintf(" %s updated group.use levels is %s", length(levels(group.use)), paste(levels(group.use), collapse = ', ')))
+        print('2222222222')
+      }
+
       if (draw.lines) {
         lines.width <- lines.width %||% ceiling(x = nrow(x = data.group) *
                                                   0.0025)
         placeholder.cells <- sapply(X = 1:(length(x = levels(x = group.use)) *
                                              lines.width), FUN = function(x) {
-                                               return(RandomName(length = 20))
+                                               return(SeuratObject::RandomName(length = 20))
                                              })
         placeholder.groups <- rep(x = levels(x = group.use),
                                   times = lines.width)
@@ -436,15 +530,50 @@ DoHeatmap2 <- function (object, features = NULL, cells = NULL, group.by = "ident
                                                                              colnames(x = data.group)))
         data.group <- rbind(data.group, na.data.group)
       }
+    } else if (display == 'expCond.merge') {
+      names(x = group.use) <- group.use0$expCond
+      if (debug) {
+        print('99999999999')
+        print(sprintf("%s group.use levels is %s", length(levels(group.use)), paste(levels(group.use), collapse = ', ')))
+      }
+      if (!is.null(expCondReorderLevels)) {
+        group.use <- factor(x = group.use, levels = expCondReorderLevels)
+      }
+      if (debug) {
+        print('-=-=-=')
+        print(sprintf(" %s updated group.use levels is %s", length(levels(group.use)), paste(levels(group.use), collapse = ', ')))
+        print('99999999999')
+      }
+      if (draw.lines) {
+        lines.width <- lines.width %||% ceiling(x = nrow(x = data.group) *
+                                                  0.0025)
+        placeholder.cells <- sapply(X = 1:(length(x = levels(x = group.use)) *
+                                             lines.width), FUN = function(x) {
+                                               return(SeuratObject::RandomName(length = 20))
+                                             })
+        placeholder.groups <- rep(x = levels(x = group.use),
+                                  times = lines.width)
+        group.levels <- levels(x = group.use)
+        names(x = placeholder.groups) <- placeholder.cells
+        group.use <- as.vector(x = group.use)
+        names(x = group.use) <- group.use0$orgSample
+        group.use <- factor(x = c(group.use, placeholder.groups),
+                            levels = group.levels)
+        na.data.group <- matrix(data = NA, nrow = length(x = placeholder.cells),
+                                ncol = ncol(x = data.group), dimnames = list(placeholder.cells,
+                                                                             colnames(x = data.group)))
+        data.group <- rbind(data.group, na.data.group)
+      }
+
     }
-    # print('3333333333')
-    # print(dim(group.use))
-    # print('0000')
-    # print(sprintf('saved in %s', file.path(getwd(), 'group_use.txt')))
-    # write.table(x = group.use, file = file.path(getwd(), 'group_use.txt'), quote = F, sep = '\t', row.names = T, col.names = T)
-    # print(table(group.use))
-    # print('3333333333')
+
     lgroup <- length(levels(group.use))
+    if(res.output) {
+      if(is.null(outputFname)) outputFname = file.path(getwd(), 'heatmap_countInput')
+      print(sprintf("heatmap count input is also saved in %s", outputFname))
+      save(data.group, group.use, file = sprintf('%s.Rdata', outputFname))
+    }
+    if(debug) print(sprintf("Final plot features is %s", paste(features, collapse = ', ')))
     plot <- SingleRasterMap(data = data.group, raster = raster,
                             disp.min = disp.min, disp.max = disp.max, feature.order = features,
                             cell.order = names(x = sort(x = group.use)), group.by = group.use)
@@ -452,8 +581,7 @@ DoHeatmap2 <- function (object, features = NULL, cells = NULL, group.by = "ident
       default.colors <- c(hue_pal()(length(x = levels(x = group.use))))
       if (!is.null(x = names(x = group.colors))) {
         cols <- unname(obj = group.colors[levels(x = group.use)])
-      }
-      else {
+      } else {
         cols <- group.colors[1:length(x = levels(x = group.use))] %||%
           default.colors
       }
@@ -474,7 +602,7 @@ DoHeatmap2 <- function (object, features = NULL, cells = NULL, group.by = "ident
       }
       group.use2 <- sort(x = group.use)
       if (draw.lines) {
-        na.group <- RandomName(length = 20)
+        na.group <- SeuratObject::RandomName(length = 20)
         levels(x = group.use2) <- c(levels(x = group.use2),
                                     na.group)
         group.use2[placeholder.cells] <- na.group
@@ -515,7 +643,7 @@ DoHeatmap2 <- function (object, features = NULL, cells = NULL, group.by = "ident
         plot <- plot + geom_text(stat = "identity", data = label.x.pos,
                                  aes_string(label = "group", x = "label.x.pos"),
                                  y = y.max + y.max * 0.03 * 0.5, angle = angle,
-                                 hjust = hjust, size = size)
+                                 hjust = hjust, vjust = vjust, size = size)
         plot <- suppressMessages(plot + coord_cartesian(ylim = c(0,
                                                                  y.max + y.max * 0.002 * max(nchar(x = levels(x = group.use))) *
                                                                    size), clip = "off"))

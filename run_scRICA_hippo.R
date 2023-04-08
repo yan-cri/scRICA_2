@@ -38,7 +38,7 @@ parser$add_argument("--cellclusters", type="character",
 
 
 parser$add_argument("--initialLable", type="character",
-                    default = 'True',
+                    default = 'False',
                     help="Logical, where to run lighthippo starting with inital cluster",
                     metavar='')
 
@@ -65,31 +65,29 @@ sel.expConds     <- paste(unlist(strsplit(args$expCond, split = ', ')), sep = ',
 if (is.null(args$cellAnnotation)) {
   if (args$expCondCheck == 'all') {
     getHippoRes(rds = rds1, newAnnotation = F,
-                expCondCheck = 'sample',
                 cellcluster  = sel.cellClusters, noClusters = as.numeric(args$noCluster),
                 sparseMatrix = as.logical(args$sparseMatrix), initial.label.on = as.logical(args$initialLable),
-                hippoResNamePrefix = args$hippoResNamePrefix, topN = 100)
+                hippoResNamePrefix = args$hippoResNamePrefix)
   } else {
     getHippoRes(rds = rds1, newAnnotation = F,
                 expCondCheck = as.character(args$expCondCheck),
                 cellcluster  = sel.cellClusters, expCond = sel.expConds, noClusters = as.numeric(args$noCluster),
                 sparseMatrix = as.logical(args$sparseMatrix), initial.label.on = as.logical(args$initialLable),
-                hippoResNamePrefix = args$hippoResNamePrefix, topN = 100)
+                hippoResNamePrefix = args$hippoResNamePrefix)
   }
 
 } else {
   if (args$expCondCheck == 'all') {
     getHippoRes(rds = rds1, newAnnotation=T, newAnnotationRscriptName=args$cellAnnotation,
-                expCondCheck = 'sample',
                 cellcluster  = sel.cellClusters, noClusters = as.numeric(args$noCluster),
                 sparseMatrix = as.logical(args$sparseMatrix), initial.label.on = as.logical(args$initialLable),
-                hippoResNamePrefix = args$hippoResNamePrefix, topN = 100)
+                hippoResNamePrefix = args$hippoResNamePrefix)
   } else {
     getHippoRes(rds = rds1, newAnnotation=T, newAnnotationRscriptName=args$cellAnnotation,
                 expCondCheck = as.character(args$expCondCheck),
                 cellcluster  = sel.cellClusters, expCond = sel.expConds, noClusters = as.numeric(args$noCluster),
                 sparseMatrix = as.logical(args$sparseMatrix), initial.label.on = as.logical(args$initialLable),
-                hippoResNamePrefix = args$hippoResNamePrefix, topN = 100)
+                hippoResNamePrefix = args$hippoResNamePrefix)
   }
 }
 ## -------------------------------------------------------------------------------------##

@@ -24,7 +24,7 @@
 #' @return
 #' a SingleCellExperiment where 3 methods functional pseudo time analysis results are saved in colData
 ## ------------------------------------------------------------------------------------ ##
-calcPCApseudo <- function(obj, slingshotclusterLabels = NULL, topFeatureNo = 2000, resSave = 'F', resFnamePrefix = 'TEST') {
+calcPCApseudo <- function(obj, slingshotclusterLabels = 'GMM', topFeatureNo = 2000, resSave = 'F', resFnamePrefix = 'TEST') {
   ## ------
   ## This analysis is based on RNA assay regardless whether integrative assay has been implemented
   ## 0. decide the obj input and change into 'SingleCellExperiment' object

@@ -4,14 +4,14 @@
 #' processQC() Function
 #' @details
 #' This function is used to read-in cellranger results into Seurat object by defining w/wo doublets removal.
-#' @param metadata required, metadata table with at least 4 required columns: 'sample', 'path', 'doubletsRmMethod', and 'expCond1'.
-#' @param multiomics optional, default = F
-#' @param extraFilter optional, default = F, if 'TRUE', column 'filterFname' needs to be included in the provided metadata table.
+#' @param metadata metadata table with at least 4 required columns: 'sample', 'path', 'doubletsRmMethod', and 'expCond1'.
+#' @param multiomics logical option to specify whether multiomics sequencing data is used, by default = F.
+#' @param extraFilter logical option to specify whether extra cells in excel file specified in the column 'filterFname' of metadata table need to be removded from the analysis, by default = F.
 #' @param resDirName define the folder/directory name where integration analysis results will be saved, if not defined, by default results will be saved at the current working directory in a folder named as 'scRICA_results'.
 #' @param genomeSpecies specify sample's genome species, by default 'human', currently supporting human, mouse, and rate.
-#' @param minCells the minimum detected number of cells to be included in the analysis used by Seurat, bu default = 3.
-#' @param minFeatures the minimum number of expressed gene features for cells included in the analysis used by Seurat, by default = 200.
-#' @param mtFiltering logical to indicate whether to filter mitochondrial content, by default 'FALSE'.
+#' @param minCells specify the minimum detected number of cells with an gene expression to be included in the analysis, this parameter is used by Seurat, bu default = 3.
+#' @param minFeatures specify the minimum number of expressed gene features for cells per cell included in the analysis, this parameter is used by Seurat, by default = 200.
+#' @param mtFiltering logical option to indicate whether to filter high mitochondrial content specified in option 'mtPerCutoff', by default 'FALSE'.
 #' @param mtPerCutoff if 'mtFiltering = T', this option is required to indicate the percentage cut-off for mitochondrial content filtering.
 #'
 #' @importFrom Seurat Read10X

@@ -38,7 +38,7 @@
 #' a plot with corresponding specified x, y-axis used for plot
 #'
 #' ## ------------------------------------------------------------------------------------ ##
-plotPseudotime     <- function(pseudoRes, xCol, xLabel, yCol, yLabel, colCol, colLabel) {
+plotPseudotime     <- function(pseudoRes, xCol, xLabel=NULL, yCol, yLabel=NULL, colCol, colLabel=NULL) {
   ## ---
   # library(ggplot2)
   # library(cowplot)
@@ -47,9 +47,9 @@ plotPseudotime     <- function(pseudoRes, xCol, xLabel, yCol, yLabel, colCol, co
   # library(dplyr)
   # library(SingleCellExperiment)
   ## -
-  if(missing(xLabel)) xLabel <- as.character(xCol)
-  if(missing(yLabel)) yLabel <- as.character(yCol)
-  if(missing(colLabel)) colLabel <- as.character(colCol)
+  if(is.null(xLabel)) xLabel <- as.character(xCol)
+  if(is.null(yLabel)) yLabel <- as.character(yCol)
+  if(is.null(colLabel)) colLabel <- as.character(colCol)
   ## -
   ## rename defined x, y (yCluster) and col column into 'x', 'y' and 'col
   df2plotOrg       <- as.data.frame(colData(pseudoRes$sceObj))
