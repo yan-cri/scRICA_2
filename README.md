@@ -80,7 +80,7 @@ This RDS includes an integration study from our human cell atlas study of Fallop
 
 
 ### 4. Usage implementation
-It can be seen from the vignettes of scRICA, which is accessiable with `browseVignettes(package = 'scRICA')` or at `vignettes/scRICA_workflow_implementation.html`
+It can be seen from the vignettes of scRICA, which is accessiable with `browseVignettes(package = 'scRICA')` or at https://rpubs.com/yli_cri/1025790.
 
 ## Feedback
 If you have further questions or suggestions regarding this package, please contact Yan Li at yli22@bsd.uchicago.edu from the bioinformatics core at the Center for Research Bioinformatics (CRI), biological science division (BSD), University of Chicago.
