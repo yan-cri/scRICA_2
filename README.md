@@ -29,7 +29,7 @@ BiocManager::install("tradeSeq")
   * github installation
 
 ```r
-devtools::install_github(repo = 'yan-cri/scRICA', build_vignettes = T, force = T)
+devtools::install_github(repo = 'yan-cri/scRICA', build_vignettes = F, force = T)
 library(scRICA)
 ```
   
@@ -37,7 +37,7 @@ library(scRICA)
      + Download package to your local computer to the local computer via `git clone https://github.com/yan-cri/scRICA.git`
      + Install downloaded scRICA package via:
 ```r
-devtools::install('Path/to/Downloaded/scRICA', build_vignettes = T)
+devtools::install('Path/to/Downloaded/scRICA', build_vignettes = F)
 library(scRICA)
 ```
 
